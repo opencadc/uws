@@ -71,6 +71,19 @@
 package ca.nrc.cadc.uws.web.restlet.resources;
 
 import ca.nrc.cadc.uws.Job;
+import ca.nrc.cadc.uws.JobRunner;
+import ca.nrc.cadc.uws.InvalidServiceException;
+import ca.nrc.cadc.uws.JobAttribute;
+import ca.nrc.cadc.uws.util.StringUtil;
+import ca.nrc.cadc.uws.util.BeanUtil;
+import org.w3c.dom.Element;
+import org.w3c.dom.Document;
+import org.restlet.Client;
+import org.restlet.ext.xml.DomRepresentation;
+import org.restlet.data.Protocol;
+import org.restlet.data.Response;
+
+import java.io.IOException;
 
 
 /**
@@ -98,4 +111,65 @@ public abstract class BaseJobResource extends UWSResource
     {
         return Long.parseLong(getRequestAttribute("jobID"));
     }
+
+    /**
+     * Obtain a new instance of the Job Runner interface as defined in the
+     * Context
+     *
+     * @return  The JobRunner instance.
+     */
+    @SuppressWarnings("unchecked")
+    protected JobRunner createJobRunner()
+    {
+        if (!StringUtil.hasText(
+                getContext().getParameters().getFirstValue(
+                        BeanUtil.UWS_RUNNER)))
+        {
+            throw new InvalidServiceException(
+                    "The JobRunner is mandatory!\n\n Please set the "
+                    + BeanUtil.UWS_RUNNER + "context-param in the web.xml, "
+                    + "or insert it into the Context manually.");
+        }
+
+        final String jobRunnerClassName =
+                getContext().getParameters().getFirstValue(BeanUtil.UWS_RUNNER);
+        final BeanUtil beanUtil = new BeanUtil(jobRunnerClassName);
+
+        return (JobRunner) beanUtil.createBean();
+    }
+
+    /**
+     * Obtain the XML List element for the given Attribute.
+     *
+     * Remember, the Element returned here belongs to the Document from the
+     * Response of the call to get the List.  This means that the client of
+     * this method call will need to import the Element, via the
+     * Document#importNode method, or an exception will occur.
+     *
+     * @param jobAttribute      The Attribute to obtain XML for.
+     * @return                  The Element, or null if none found.
+     * @throws java.io.IOException      If the Document could not be formed from the
+     *                          Representation.
+     */
+    protected Element getRemoteElement(final JobAttribute jobAttribute)
+            throws IOException
+    {
+        final StringBuilder elementURI = new StringBuilder(128);
+        final Client client = new Client(getContext(), Protocol.HTTP);
+
+        elementURI.append(getHostPart());
+        elementURI.append("/async/");
+        elementURI.append(getJobID());
+        elementURI.append("/");
+        elementURI.append(jobAttribute.getAttributeName());
+
+        final Response response = client.get(elementURI.toString());
+        final DomRepresentation domRep =
+                new DomRepresentation(response.getEntity());
+        final Document document = domRep.getDocument();
+
+        document.normalizeDocument();
+
+        return document.getDocumentElement();
+    }    
 }

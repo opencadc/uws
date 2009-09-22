@@ -70,22 +70,18 @@
 
 package ca.nrc.cadc.uws.web.restlet;
 
-import org.restlet.Application;
 import org.restlet.Restlet;
 import org.restlet.Context;
 import org.restlet.routing.Router;
-import org.restlet.data.MediaType;
 import ca.nrc.cadc.uws.util.BeanUtil;
-import ca.nrc.cadc.uws.util.StringUtil;
-import ca.nrc.cadc.uws.InvalidServiceException;
 import ca.nrc.cadc.uws.JobManager;
 import ca.nrc.cadc.uws.JobPersistence;
 
 
 /**
- * The UWS Restlet Application.
+ * The UWS Restlet Application to handle Asynchronous calls.
  */
-public class UWSApplication extends Application
+public class UWSAsyncApplication extends AbstractUWSApplication
 {
     /**
      * Constructor. Note this constructor is convenient because you don't have
@@ -94,7 +90,7 @@ public class UWSApplication extends Application
      * the application to a virtual host via one of its attach*() methods that
      * a proper context will be set.
      */
-    public UWSApplication()
+    public UWSAsyncApplication()
     {
         init();
     }
@@ -107,24 +103,12 @@ public class UWSApplication extends Application
      *                {@link org.restlet.Context#createChildContext()} method to
      *                ensure a proper isolation with the other applications.
      */
-    public UWSApplication(final Context context)
+    public UWSAsyncApplication(final Context context)
     {
         super(context);
         init();
     }
 
-
-    /**
-     * Method to initialize this Application.
-     */
-    private void init()
-    {
-        setStatusService(new UWSStatusService(true));
-
-        // Make XML the preferred choice.
-        getMetadataService().addExtension(MediaType.TEXT_XML.getName(),
-                                          MediaType.TEXT_XML, true);        
-    }
 
     /**
      * Creates a root Restlet that will receive all incoming calls. In general,
@@ -133,13 +117,14 @@ public class UWSApplication extends Application
      * This method is intended to be overridden by subclasses.
      *
      * This method will also setup singleton Service objects in the Context.
+     * This gets done here so as to ensure the Context is properly initialized.
      *
      * @return The root Restlet.
      */
     @Override
     public Restlet createRoot()
     {
-        final Router router = new UWSRouter(getContext());
+        final Router router = new UWSAsyncRouter(getContext());
 
         getContext().getAttributes().put(
                 BeanUtil.UWS_EXECUTOR_SERVICE,
@@ -160,31 +145,5 @@ public class UWSApplication extends Application
                                          jobPersistence);        
 
         return router;
-    }
-
-    /**
-     * Create the object needed.
-     *
-     * @param contextBeanName       The Bean name in the context.
-     * @param mandatory             Whether this bean is Mandatory.
-     * @return                      The Object instantiated.
-     */
-    protected Object createBean(final String contextBeanName,
-                                final boolean mandatory)
-    {
-        if (mandatory && !StringUtil.hasText(
-                getContext().getParameters().getFirstValue(contextBeanName)))
-        {
-            throw new InvalidServiceException(
-                    "This bean is mandatory!\n\n Please set the "
-                    + contextBeanName + "context-param in the web.xml, "
-                    + "or insert it into the Context manually.");
-        }
-
-        final String clazz = getContext().getParameters().
-                getFirstValue(contextBeanName);
-        final BeanUtil beanUtil = new BeanUtil(clazz);
-
-        return beanUtil.createBean();
     }
 }
