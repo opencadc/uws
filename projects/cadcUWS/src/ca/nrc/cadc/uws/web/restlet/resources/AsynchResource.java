@@ -86,6 +86,8 @@ import ca.nrc.cadc.uws.web.restlet.JobAssembler;
 import ca.nrc.cadc.uws.web.WebRepresentationException;
 import java.net.MalformedURLException;
 
+import javax.security.auth.Subject;
+
 
 /**
  * Resource to handle Asynchronous calls.
@@ -105,6 +107,7 @@ public class AsynchResource extends UWSResource
     {
         final Form form = new Form(entity);
         final Map<String, String> errors = validate(form);
+        final Subject subject = getSubject();
         
         if (!errors.isEmpty())
         {
@@ -116,7 +119,7 @@ public class AsynchResource extends UWSResource
 
         try
         {
-            final JobAssembler jobAssembler = new JobAssembler(form);
+            final JobAssembler jobAssembler = new JobAssembler(form, subject);
             job = jobAssembler.assemble();
         }
         catch (ParseException e)

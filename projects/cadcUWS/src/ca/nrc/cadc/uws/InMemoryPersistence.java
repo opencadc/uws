@@ -146,7 +146,8 @@ public class InMemoryPersistence implements JobPersistence
                                                job.getErrorSummary(),
                                                job.getOwner(), job.getRunId(),
                                                job.getResultsList(),
-                                               job.getParameterList());
+                                               job.getParameterList(),
+                                               job.getSubject());
         }
 
         jobMap.put(jobID, persistentJob);
