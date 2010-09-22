@@ -72,12 +72,9 @@ package ca.nrc.cadc.uws.web.restlet.resources;
 
 import ca.nrc.cadc.uws.ExecutionPhase;
 import ca.nrc.cadc.uws.InvalidResourceException;
-import ca.nrc.cadc.uws.InvalidServiceException;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobAttribute;
-import ca.nrc.cadc.uws.JobRunner;
 import ca.nrc.cadc.uws.util.StringUtil;
-import ca.nrc.cadc.uws.util.BeanUtil;
 
 import org.apache.log4j.Logger;
 import org.restlet.data.Form;
@@ -155,29 +152,4 @@ public abstract class BaseJobResource extends UWSResource
                                    && phase.equals("ABORT")));
     }
 
-    /**
-     * Obtain a new instance of the Job Runner interface as defined in the
-     * Context
-     *
-     * @return  The JobRunner instance.
-     */
-    @SuppressWarnings("unchecked")
-    protected JobRunner createJobRunner()
-    {
-        if (!StringUtil.hasText(
-                getContext().getParameters().getFirstValue(
-                        BeanUtil.UWS_RUNNER)))
-        {
-            throw new InvalidServiceException(
-                    "The JobRunner is mandatory!\n\n Please set the "
-                    + BeanUtil.UWS_RUNNER + "context-param in the web.xml, "
-                    + "or insert it into the Context manually.");
-        }
-
-        final String jobRunnerClassName =
-                getContext().getParameters().getFirstValue(BeanUtil.UWS_RUNNER);
-        final BeanUtil beanUtil = new BeanUtil(jobRunnerClassName);
-
-        return (JobRunner) beanUtil.createBean();
-    }
 }
