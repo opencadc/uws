@@ -69,9 +69,12 @@
 
 package ca.nrc.cadc.uws;
 
+import ca.nrc.cadc.util.HexUtil;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.List;
-import java.util.Random;
 
 import javax.sql.DataSource;
 
@@ -92,13 +95,35 @@ public abstract class DatabasePersistence implements JobPersistence
     private static final String ID_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789";
     
     // shared random number generator for jobID generation
-    private Random rnd = new Random(System.currentTimeMillis());
+    private SecureRandom rnd;
 
     /**
      * DatabasePersistence constructor.
      */
     public DatabasePersistence()
     {
+        // add extra seed info: clock
+        byte[] clock = HexUtil.toBytes(System.currentTimeMillis());
+        byte[] addr = null;
+        try
+        {
+            // add extra seed info: ip address
+            InetAddress inet = InetAddress.getLocalHost();
+            if ( !inet.isLoopbackAddress() )
+                addr = inet.getAddress();
+        }
+        catch(UnknownHostException ignore) { }
+        initRNG(clock, addr);
+    }
+
+    // package access for test code
+    void initRNG(byte[] clock, byte[] addr)
+    {
+        this.rnd = new SecureRandom();
+        if (clock != null)
+            rnd.setSeed(clock);
+        if (addr != null)
+            rnd.setSeed(addr);
     }
     
     /**
