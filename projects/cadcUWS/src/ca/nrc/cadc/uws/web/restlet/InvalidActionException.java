@@ -31,11 +31,9 @@
  ****  C A N A D I A N   A S T R O N O M Y   D A T A   C E N T R E  *****
  ************************************************************************
  */
-package ca.nrc.cadc.uws.web;
+package ca.nrc.cadc.uws.web.restlet;
 
-import ca.nrc.cadc.uws.UWSException;
-
-public class InvalidActionException extends UWSException
+public class InvalidActionException extends RuntimeException
 {
     /**
      * Constructs a new runtime exception with the specified detail message and

@@ -68,46 +68,59 @@
 */
 
 
-package ca.nrc.cadc.uws;
+package ca.nrc.cadc.uws.web.restlet.resources;
 
-import java.util.Collection;
+
+import org.apache.log4j.Logger;
+import org.junit.Before;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Test;
+
+
 
 /**
- * Service interface for job persistence. The implementation class name used 
- * must be configured as a context-param with key <code>ca.nrc.cadc.uws.JobPersistence</code>.
- * 
- * JobPersistence implementations are always instantiated via their no-arg constructor.
+ * TestCase for the Asynchronous Resource.
  */
-public interface JobPersistence
+public class AsynchResourceTest
 {
+    private static Logger log = Logger.getLogger(AsynchResourceTest.class);
+    
     /**
-     * Obtain a Job from the persistence layer.
+     * Sets up the fixture, for example, open a network connection.
+     * This method is called before a test is executed.
      *
-     * @param jobID     The job identifier.
-     * @return          Job instance, or null if none found.
+     * @throws Exception for anything that goes wrong.
      */
-    Job getJob(final String jobID);
+    @Before
+    public void setUp()
+    {
+             
+    }
 
     /**
-     * Delete the specified job.
-     *
-     * @param jobID
+     * Tears down the fixture, for example, close a network connection.
+     * This method is called after a test is executed.
      */
-    void delete(String jobID);
+    @After
+    public void tearDown()
+    {
+        
+    }
 
-    /**
-     * Obtain a listing of Job instances.
-     *
-     * @return  Collection of Job instances, or empty Collection.  Never null.
-     */
-    Collection<Job> getJobs();
+    @Test
+    public void accept()
+    {
+        try
+        {
+            
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
 
-    /**
-     * Persist the given Job.
-     *
-     * @param job       Job to persist.
-     * @return          The persisted Job, complete with a surrogate key, if
-     *                  necessary.
-     */
-    Job persist(final Job job);
+    
 }

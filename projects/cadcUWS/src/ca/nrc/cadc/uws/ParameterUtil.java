@@ -67,7 +67,7 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.uws.util;
+package ca.nrc.cadc.uws;
 
 import java.util.ArrayList;
 import java.util.List;

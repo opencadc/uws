@@ -8,7 +8,7 @@
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -67,108 +67,49 @@
 ************************************************************************
 */
 
+package ca.nrc.cadc.uws.server;
 
-package ca.nrc.cadc.uws;
-
-
-import java.util.Collection;
-import java.util.Random;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentHashMap;
+import ca.nrc.cadc.uws.Job;
 
 /**
- * Default implementation of the Job ORM.  It consists of an in memory Map.
+ * The JobExecutor is responsible for changing the phase of the job from PENDING
+ * to QUEUED and running the job.
+ *
+ * @author pdowler
  */
-public class InMemoryPersistence implements JobPersistence
+public interface JobExecutor 
 {
-    // The Database.
-    private final ConcurrentMap<String, Job> jobMap =
-            new ConcurrentHashMap<String, Job>();
-
-    
     /**
-     * Default constructor.
-     */
-    public InMemoryPersistence()
-    {
-    }
-
-    /**
-     * Obtain a Job from the persistence layer.
+     * Execute the specified job in asynchronous mode.
      *
-     * @param jobID The job identifier.
-     * @return Job instance, or null if none found.
+     * @param job the details of this intance of the job
+     * @throws JobNotFoundException
+     * @throws JobPersistenceException
+     * @throws JobPhaseException
      */
-    public Job getJob(final String jobID)
-    {
-        synchronized(jobMap)
-        {
-            return jobMap.get(jobID);
-        }
-    }
+    public void execute(Job job)
+        throws JobNotFoundException, JobPersistenceException, JobPhaseException;
 
     /**
-     * Delete the specified job.
+     * Execute the specified job in synchronous mode.
      *
-     * @param jobID
+     * @param job
+     * @param sync
+     * @throws JobNotFoundException
+     * @throws JobPersistenceException
+     * @throws JobPhaseException
      */
-    public void delete(String jobID)
-    {
-        synchronized(jobMap)
-        {
-            jobMap.remove(jobID);
-        }
-    }
-
-    public Collection<Job> getJobs()
-    {
-        synchronized(jobMap)
-        {
-            return jobMap.values();
-        }
-    }
+    public void execute(Job job, SyncOutput sync)
+        throws JobNotFoundException, JobPersistenceException, JobPhaseException;
 
     /**
-     * Persist the given Job.
-     *
-     * @param job Job to persist.
-     * @return The persisted Job, complete with a surrogate key, if
-     *         necessary.
+     * Abrt the specified job.
+     * 
+     * @param job
+     * @throws JobNotFoundException
+     * @throws JobPersistenceException
+     * @throws JobPhaseException
      */
-    public Job persist(final Job job)
-    {
-        Job ret;
-        synchronized(jobMap)
-        {
-
-            if (job.getID() == null || job.getID().length() == 0)
-            {
-                // create and add new job to map
-                ret = new Job(generateID(), job);
-                jobMap.put(ret.getID(), ret);
-            }
-            else
-            {
-                // modify existing job
-                ret = jobMap.get(job.getID());
-                ret.setAll(job);
-            }
-        }
-        return ret;
-    }
-
-    // generate a random modest-length lower case string
-    private static int ID_LENGTH = 16;
-    private static String ID_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789";
-
-    private static String generateID()
-    {
-        Random rnd = new Random(System.currentTimeMillis());
-        char[] c = new char[ID_LENGTH];
-        c[0] = ID_CHARS.charAt(rnd.nextInt(ID_CHARS.length() - 10)); // letters only
-        for (int i=1; i<ID_LENGTH; i++)
-            c[i] = ID_CHARS.charAt(rnd.nextInt(ID_CHARS.length()));
-        return new String(c);
-    }
-
+    public void abort(Job job)
+        throws JobNotFoundException, JobPersistenceException, JobPhaseException;
 }

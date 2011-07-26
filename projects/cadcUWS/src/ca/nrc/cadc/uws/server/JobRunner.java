@@ -67,36 +67,33 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.uws;
+package ca.nrc.cadc.uws.server;
 
-import java.io.IOException;
-import java.io.OutputStream;
+import ca.nrc.cadc.uws.Job;
 
 /**
- * Simple wrapper to set up synchronous output from a SyncJobRunner. All HTTP headers
- * must be set befoer the OutputStream is opened. the caller is responsibel for closing
- * the OutputStream.
- *
- * @author jburke
+ * Interface for the code that implements the actual job execution.
+ * 
+ * @author pdowler
  */
-public interface SyncOutput
+public interface JobRunner extends Runnable
 {
-    /**
-     * Set an HTTP header parameter. Calls to this method that occur after the
-     * OutputStream is opened are silently ignored.
-     *
-     * @param key header key.
-     * @param value header value.
-     */
-    void setHeader(String key, String value);
+    public void setJobUpdater(JobUpdater jobUpdater);
+
+    public void setJob(Job job);
 
     /**
-     * Returns an OutputStream for streaming search results.
-     *
-     * @throws IOException
-     * @return OutputStream
+     * Set the job runner to do synchronous output to the specified
+     * output.
+     * 
+     * @param output
      */
-    OutputStream getOutputStream()
-        throws IOException;
+    public void setSyncOutput(SyncOutput output);
+
+    /**
+     * Execute the job.
+     */
+    public void run();
+
 
 }

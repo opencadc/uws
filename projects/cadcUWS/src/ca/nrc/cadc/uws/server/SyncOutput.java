@@ -67,40 +67,43 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.uws;
+package ca.nrc.cadc.uws.server;
 
-public class JobPersistenceException extends UWSException
+import java.io.IOException;
+import java.io.OutputStream;
+
+/**
+ * Simple wrapper to set up synchronous output from a SyncJobRunner. All HTTP headers
+ * must be set befoer the OutputStream is opened. the caller is responsibel for closing
+ * the OutputStream.
+ *
+ * @author jburke
+ */
+public interface SyncOutput
 {
     /**
-     * Constructs a new runtime exception with the specified detail message and
-     * cause.  <p>Note that the detail message associated with
-     * <code>cause</code> is <i>not</i> automatically incorporated in
-     * this runtime exception's detail message.
+     * Set the HTTP response code. Calls to this method that occur after the
+     * OutputStream is opened are silently ignored.
      *
-     * @param message the detail message (which is saved for later retrieval
-     *                by the {@link #getMessage()} method).
-     * @param cause   the cause (which is saved for later retrieval by the
-     *                {@link #getCause()} method).  (A <tt>null</tt> value is
-     *                permitted, and indicates that the cause is nonexistent or
-     *                unknown.)
-     * @since 1.4
+     * @param code
      */
-    public JobPersistenceException(String message, Throwable cause)
-    {
-        super(message, cause);
-    }
+    void setResponseCode(int code);
 
     /**
-     * Constructs a new runtime exception with the specified detail message.
-     * The cause is not initialized, and may subsequently be initialized by a
-     * call to {@link #initCause}.
+     * Set an HTTP header parameter. Calls to this method that occur after the
+     * OutputStream is opened are silently ignored.
      *
-     * @param message the detail message. The detail message is saved for
-     *                later retrieval by the {@link #getMessage()} method.
+     * @param key header key.
+     * @param value header value.
      */
-    public JobPersistenceException(String message)
-    {
-        super(message);
-    }
+    void setHeader(String key, String value);
 
+    /**
+     * Returns an OutputStream for streaming search results.
+     *
+     * @throws IOException
+     * @return OutputStream
+     */
+    OutputStream getOutputStream()
+        throws IOException;
 }

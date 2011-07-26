@@ -67,168 +67,93 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.uws;
+package ca.nrc.cadc.uws.server;
 
-import ca.nrc.cadc.util.HexUtil;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.security.SecureRandom;
-import java.util.Collection;
+import ca.nrc.cadc.uws.ErrorSummary;
+import ca.nrc.cadc.uws.ExecutionPhase;
+import ca.nrc.cadc.uws.Result;
+import java.util.Date;
 import java.util.List;
 
-import javax.sql.DataSource;
-
 /**
- * Class to provide database persistence of jobs through the use
- * of the JobDAO.
- * 
- * A new JobDAO object is instantiated upon each request to ensure
- * its thread safety.
- * 
- * @author majorb
  *
+ * @author pdowler
  */
-public abstract class DatabasePersistence implements JobPersistence
+public interface JobUpdater
 {
-    // generate a random modest-length lower case string
-    private static final int ID_LENGTH = 16;
-    private static final String ID_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789";
-    
-    // shared random number generator for jobID generation
-    private SecureRandom rnd;
-
-    /**
-     * DatabasePersistence constructor.
-     */
-    public DatabasePersistence()
-    {
-        // add extra seed info: clock
-        byte[] clock = HexUtil.toBytes(System.currentTimeMillis());
-        byte[] addr = null;
-        try
-        {
-            // add extra seed info: ip address
-            InetAddress inet = InetAddress.getLocalHost();
-            if ( !inet.isLoopbackAddress() )
-                addr = inet.getAddress();
-        }
-        catch(UnknownHostException ignore) { }
-        initRNG(clock, addr);
-    }
-
-    // package access for test code
-    void initRNG(byte[] clock, byte[] addr)
-    {
-        this.rnd = new SecureRandom();
-        if (clock != null)
-            rnd.setSeed(clock);
-        if (addr != null)
-            rnd.setSeed(addr);
-    }
-    
-    /**
-     * Create a new JobDAO and set the appropriate resources.
-     * 
-     * TODO:  Refactor the relationship between DatabasePersistence
-     *        and JobDAO so that there isn't a circular dependency
-     *        (jobDAO.setDatabasePersistence(this))
-     * 
-     * @return A new JobDAO
-     */
-    private JobDAO createJobDAO()
-    {
-        JobDAO jobDAO = new JobDAO();
-        jobDAO.setDataSource(this.getDataSource());
-        jobDAO.setDatabasePersistence(this);
-        return jobDAO;
-    }
-
-    /**
-     * Delete the job.
-     */
-    @Override
-    public void delete(String jobID)
-    {
-        JobDAO jobDAO = createJobDAO();
-        jobDAO.delete(jobID);
-    }
-
-    /**
-     * Get the job.
-     */
-    @Override
-    public Job getJob(String jobID)
-    {
-        JobDAO jobDAO = createJobDAO();
-        return jobDAO.getJob(jobID);
-    }
-
-    /**
-     * Get all the jobs.
-     */
-    @Override
-    public Collection<Job> getJobs()
-    {
-        JobDAO jobDAO = createJobDAO();
-        return jobDAO.getJobs();
-    }
-
-    /**
-     * Save the job.
-     */
-    @Override
-    public Job persist(Job job)
-    {
-        JobDAO jobDAO = createJobDAO();
-        return jobDAO.persist(job);
-    }
-
-    // package access for use by JobDAO
-    String generateID()
-    {
-        synchronized(rnd)
-        {
-            char[] c = new char[ID_LENGTH];
-            c[0] = ID_CHARS.charAt(rnd.nextInt(ID_CHARS.length() - 10)); // letters only
-            for (int i=1; i<ID_LENGTH; i++)
-                c[i] = ID_CHARS.charAt(rnd.nextInt(ID_CHARS.length()));
-            return new String(c);
-        }
-    }
-    
-    /**
-     * Returns the name of the Job table.
+     /**
+     * Get the current execution phase of the specified job.
      *
-     * @return job table name.
+     * @param jobID
+     * @return the current phase
+     * @throws JobNotFoundException
+     * @throws JobPersistenceException
      */
-    protected abstract String getJobTable();
+    public ExecutionPhase getPhase(String jobID)
+        throws JobNotFoundException, JobPersistenceException;
 
     /**
-     * Returns the name of the Parameter table for the given Parameter name.
+     * Try to change the phase from <em>start</em> to <em>end</em>. The transition is
+     * successful IFF the current phase is equal to the starting phase and the phase
+     * update succeeds.
      *
-     * @param name Parameter name.
-     * @return Parameter table name for this Parameter name.
+     * @param jobID
+     * @param start
+     * @param end
+     * @return the resulting phase or null if the the transition was not successful.
+     * @throws JobNotFoundException
+     * @throws JobPersistenceException
      */
-    protected abstract String getParameterTable(String name);
+    public ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end)
+        throws JobNotFoundException, JobPersistenceException;
 
     /**
-     * Returns the name of the Result table.
-     * 
-     * @return Result table name.
-     */
-    protected abstract String getResultTable();
-
-    /**
-     * Returns a List containing the names of all Parameter tables.
+     * Try to change the phase from <em>start</em> to <em>end</em> and, if successful,
+     * set the startTime (end=EXECUTING) or endTime (end=COMPLETED | ERROR | ABORTED).
+     * The transition is successful IFF the current phase is equal to the starting
+     * phase and the phase update succeeds. The date argument is ignored if the end
+     * phase is not one of those listed above.
      *
-     * @return List of Parameter table names.
+     * @param jobID
+     * @param start
+     * @param end
+     * @param date
+     * @return the resulting phase or null if the the transition was not successful.
+     * @throws JobNotFoundException
+     * @throws JobPersistenceException
      */
-    protected abstract List<String> getParameterTables();
-    
-    /**
-     * Returns the datasource to be used.
-     * @return
-     */
-    protected abstract DataSource getDataSource();
+    public ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end, Date date)
+        throws JobNotFoundException, JobPersistenceException;
 
+    /**
+     * Conditionally change phase from start to end and, if successful, add the specified results to the
+     * job and set the startTime (end=EXECUTING) or endTime (end=COMPLETED | ERROR | ABORTED).
+     *
+     * @param jobID
+     * @param start
+     * @param end
+     * @param results
+     * @param date
+     * @return the final phase (end) or null if not successful
+     * @throws JobNotFoundException
+     * @throws JobPersistenceException
+     */
+    public ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end, List<Result> results, Date date)
+        throws JobNotFoundException, JobPersistenceException;
+
+    /**
+     * Conditionally change phase from start to end and, if successful, set the 
+     * error summary and set the startTime (end=EXECUTING) or endTime (end=COMPLETED | ERROR | ABORTED).
+     *
+     * @param jobID
+     * @param start
+     * @param end
+     * @param error
+     * @param date
+     * @return the final phase (end) or null if not successful
+     * @throws JobNotFoundException
+     * @throws JobPersistenceException
+     */
+    public ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end, ErrorSummary error, Date date)
+        throws JobNotFoundException, JobPersistenceException;
 }

@@ -33,8 +33,10 @@
  */
 package ca.nrc.cadc.uws.web;
 
-import ca.nrc.cadc.uws.web.restlet.resources.AsynchResourceTestCase;
-import ca.nrc.cadc.uws.web.restlet.resources.JobAsynchResourceExecutionTest;
+import ca.nrc.cadc.uws.web.restlet.resources.AsynchResourceTest;
+import ca.nrc.cadc.uws.web.restlet.resources.ErrorResourceTest;
+import ca.nrc.cadc.uws.web.restlet.resources.ParameterListResourceTest;
+import ca.nrc.cadc.uws.web.restlet.resources.ResultListResourceTest;
 import ca.nrc.cadc.uws.web.restlet.resources.ResultResourceTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -43,10 +45,12 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses
 ({
-        AsynchResourceTestCase.class,
-        JobAsynchResourceExecutionTest.class,
-        ResultResourceTest.class
+        AsynchResourceTest.class,
+        ErrorResourceTest.class,
+        ResultResourceTest.class,
+        ResultListResourceTest.class,
+        ParameterListResourceTest.class
 })
-public class CADCUWSTestSuite
+public class ResourceTestSuite
 {
 }
