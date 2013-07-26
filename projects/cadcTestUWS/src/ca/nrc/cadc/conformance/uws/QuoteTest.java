@@ -69,23 +69,17 @@
 
 package ca.nrc.cadc.conformance.uws;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.util.Calendar;
-import java.util.Date;
-
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.junit.Test;
-
 import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.util.Log4jInit;
-
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebResponse;
+import java.text.DateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class QuoteTest extends AbstractUWSTest
 {
@@ -97,6 +91,7 @@ public class QuoteTest extends AbstractUWSTest
     }
 
     private Date testStartDate;
+    private DateFormat dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
 
     public QuoteTest()
     {
@@ -124,27 +119,27 @@ public class QuoteTest extends AbstractUWSTest
             log.debug(Util.getResponseHeaders(response));
             log.debug("Response.getText():\r\n" + response.getText());
 
-            assertEquals("GET response Content-Type header to " + resourceUrl + " is incorrect",
+            Assert.assertEquals("GET response Content-Type header to " + resourceUrl + " is incorrect",
                     "text/plain", response.getContentType());
 
             String quote = response.getText();
 
-            assertNotNull("Response quote should not be null.", quote);
+            Assert.assertNotNull("Response quote should not be null.", quote);
 
             // Check Quote is after testStartDate.
             @SuppressWarnings("deprecation")
-            Date quoteDate = DateUtil.toDate(quote, DateUtil.IVOA_DATE_FORMAT);
-            assertTrue("Quote date must be after startTime date", quoteDate.after(testStartDate));
+            Date quoteDate = dateFormat.parse(quote);
+            Assert.assertTrue("Quote date must be after startTime date", quoteDate.after(testStartDate));
 
             // Delete the job.
             deleteJob(conversation, jobId);
 
             log.info("QuoteTest.testQuote completed.");
         }
-        catch (Throwable t)
+        catch (Exception unexpected)
         {
-            log.error(t);
-            fail(t.getMessage());
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
         }
     }
     

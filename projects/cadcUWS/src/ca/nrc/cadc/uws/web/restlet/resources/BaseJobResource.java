@@ -195,7 +195,7 @@ public abstract class BaseJobResource extends UWSResource
                 form.getFirstValue(JobAttribute.EXECUTION_PHASE.
                         getAttributeName().toUpperCase());
 
-        return jobIsPending(executionPhase) || ((getPathInfo().endsWith("phase")
+        return jobIsPending(executionPhase) || ((getRequestPath().endsWith("phase")
                                    && StringUtil.hasLength(phase)
                                    && phase.equals("ABORT")));
     }

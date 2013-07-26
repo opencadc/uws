@@ -69,11 +69,13 @@
 
 package ca.nrc.cadc.uws.server;
 
+import java.util.Date;
+
+import org.apache.log4j.Logger;
+
 import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.uws.ExecutionPhase;
 import ca.nrc.cadc.uws.Job;
-import java.util.Date;
-import org.apache.log4j.Logger;
 
 /**
  *
@@ -87,7 +89,7 @@ public abstract class AbstractExecutor  implements JobExecutor
     protected Class<JobRunner> jobRunnerClass;
 
     private AbstractExecutor() { }
-    
+
     protected AbstractExecutor(JobUpdater jobUpdater, Class jobRunnerClass)
     {
         if (jobUpdater == null)
@@ -98,6 +100,7 @@ public abstract class AbstractExecutor  implements JobExecutor
         this.jobRunnerClass = jobRunnerClass;
     }
 
+    @Override
     public void terminate()
         throws InterruptedException
     {
@@ -114,6 +117,7 @@ public abstract class AbstractExecutor  implements JobExecutor
         this.jobRunnerClass = jobRunnerClass;
     }
 
+    @Override
     public final void execute(Job job)
         throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException
     {
@@ -134,8 +138,9 @@ public abstract class AbstractExecutor  implements JobExecutor
      * @throws JobNotFoundException
      * @throws JobPersistenceException
      * @throws JobPhaseException
-     * @throws TransientException 
+     * @throws TransientException
      */
+    @Override
     public final void execute(Job job, SyncOutput sync)
         throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException
     {
@@ -212,20 +217,21 @@ public abstract class AbstractExecutor  implements JobExecutor
      * @throws JobNotFoundException
      * @throws JobPersistenceException
      * @throws JobPhaseException
-     * @throws TransientException 
+     * @throws TransientException
      */
+    @Override
     public void abort(Job job)
         throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException
     {
         log.debug("abort: " + job.getID());
         // can plausibly go from PENDING, QUEUED, EXECUTING -> ABORTED
-        ExecutionPhase ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.EXECUTING, ExecutionPhase.ABORTED, new Date());
+        ExecutionPhase ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.PENDING, ExecutionPhase.ABORTED, new Date());
         if (!ExecutionPhase.ABORTED.equals(ep))
         {
             ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.QUEUED, ExecutionPhase.ABORTED, new Date());
             if (!ExecutionPhase.ABORTED.equals(ep))
             {
-                ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.PENDING, ExecutionPhase.ABORTED, new Date());
+                ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.EXECUTING, ExecutionPhase.ABORTED, new Date());
                 if (!ExecutionPhase.ABORTED.equals(ep))
                     return; // no phase change - do nothing
             }
