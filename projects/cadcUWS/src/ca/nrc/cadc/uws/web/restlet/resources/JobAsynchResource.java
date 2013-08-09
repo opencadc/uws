@@ -153,7 +153,7 @@ public class JobAsynchResource extends BaseJobResource
                 job = getJobManager().get(jobID);
             StringRepresentation representation = null;
 
-            final String pathInfo = getPathInfo();
+            final String pathInfo = getRequestPath();
             if (pathInfo.endsWith("phase"))
                 representation = new StringRepresentation(job.getExecutionPhase().toString());
             else if (pathInfo.endsWith("executionduration"))
@@ -235,7 +235,7 @@ public class JobAsynchResource extends BaseJobResource
     @Post
     public void accept(final Representation entity)
     {
-        final String pathInfo = getPathInfo();
+        final String pathInfo = getRequestPath();
         Subject subject = getSubject();
         if (subject == null) // anon
         {

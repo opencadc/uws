@@ -262,56 +262,11 @@ public abstract class UWSResource extends ServerResource
         elementURI.append(ref.getSchemeProtocol().getSchemeName());
         elementURI.append("://");
         elementURI.append(ref.getHostDomain());
-//        elementURI.append(getContextPath());
+        int p = ref.getHostPort();
+        if (p != -1)
+            elementURI.append(":").append(p);
 
         return elementURI.toString();
-    }
-
-    /**
-     * Obtain the String pathInfo.
-     * http://www.mysite.com/mycontext/my/path
-     * Will return 'path' (without quotes). 
-     *
-     * @return  String path info.
-     */
-    protected String getPathInfo()
-    {
-        String pathInfo = getRequest().getResourceRef().getPath().trim();
-
-        if (pathInfo.endsWith("/"))
-        {
-            pathInfo = pathInfo.substring(0, pathInfo.length() - 1);
-        }
-
-        return pathInfo;
-    }
-
-    /**
-     * Obtain the equivalent of the Servlet Context Path.  This is usually
-     * the context of the current web application, or the part of the URL
-     * that comes after the host:port.
-     *
-     * In the example of http://myhost/myapp, this method would return
-     * /myapp.
-     *
-     * @return      String Context Path.
-     */
-    protected String getContextPath()
-    {
-        final Reference ref = getRequest().getResourceRef();
-        final String[] pieces = ref.getPath().split("/");
-        final String pathPrepend;
-
-        if (!ref.getPath().startsWith("/"))
-        {
-            pathPrepend = "/" + pieces[0];
-        }
-        else
-        {
-            pathPrepend = "/" + pieces[1];
-        }
-
-        return pathPrepend;
     }
 
     /**
@@ -321,7 +276,7 @@ public abstract class UWSResource extends ServerResource
      */
     protected String getRequestPath()
     {
-        String path = getRequest().getOriginalRef().getPath();
+        String path = getRequest().getOriginalRef().getPath().trim();
         if (path.endsWith("/"))
         {
             path = path.substring(0, path.length() - 1);
