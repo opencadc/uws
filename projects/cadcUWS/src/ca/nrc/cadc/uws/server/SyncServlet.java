@@ -118,12 +118,12 @@ public class SyncServlet extends HttpServlet
     private static Logger log = Logger.getLogger(SyncServlet.class);
     private static final long serialVersionUID = 201009291100L;
     private static final String JOB_EXEC = "run";
-    
+
     private JobManager jobManager;
     private Class inlineContentHandlerClass;
     private boolean execOnGET = false;
     private boolean execOnPOST = false;
-    
+
     @Override
     public void init(ServletConfig config) throws ServletException
     {
@@ -143,7 +143,7 @@ public class SyncServlet extends HttpServlet
             log.info("execOnPOST: " + execOnPOST);
 
             jobManager = createJobManager(config);
-            
+
             String cname = InlineContentHandler.class.getName();
             String pname = config.getInitParameter(cname);
             if (pname == null)
@@ -264,6 +264,15 @@ public class SyncServlet extends HttpServlet
         log.debug("doPost - DONE");
     }
 
+    @Override
+    protected void doHead(HttpServletRequest request, HttpServletResponse response)
+        throws ServletException, IOException
+    {
+        log.debug("doHead - START");
+        response.setStatus(HttpServletResponse.SC_NOT_IMPLEMENTED);
+        log.debug("doHead - DONE");
+    }
+
     private void doit(final boolean execOnCreate, final HttpServletRequest request, final HttpServletResponse response)
         throws ServletException, IOException
     {
@@ -290,6 +299,7 @@ public class SyncServlet extends HttpServlet
             {
                 Subject.doAs(subject, new PrivilegedExceptionAction<Object>()
                 {
+                    @Override
                     public Object run()
                         throws PrivilegedActionException
                     {
@@ -324,7 +334,7 @@ public class SyncServlet extends HttpServlet
     {
         log.debug("doit: execOnCreate=" + execOnCreate);
         SyncOutputImpl syncOutput = null;
-        
+
         String jobID = null;
         Job job = null;
         String action = null;
@@ -337,7 +347,7 @@ public class SyncServlet extends HttpServlet
                 job = getJobCreator().create(request);
                 job = jobManager.create(job);
                 jobID = job.getID();
-                
+
                 log.debug("created job: " + jobID);
                 if (execOnCreate)
                 {
@@ -357,7 +367,7 @@ public class SyncServlet extends HttpServlet
             else
                 // get job from persistence
                 job = jobManager.get(jobID);
-                
+
             // set the protocol of the request
             job.setProtocol(request.getScheme());
 
@@ -532,7 +542,8 @@ public class SyncServlet extends HttpServlet
         }
 
         public boolean isOpen() { return ostream != null; }
-        
+
+        @Override
         public OutputStream getOutputStream()
             throws IOException
         {
@@ -544,6 +555,7 @@ public class SyncServlet extends HttpServlet
             return ostream;
         }
 
+        @Override
         public void setResponseCode(int code)
         {
             if (ostream == null) // header not committed
@@ -551,6 +563,7 @@ public class SyncServlet extends HttpServlet
             else
                 log.warn("setResponseCode: " + code + " AFTER OutputStream opened, ignoring");
         }
+        @Override
         public void setHeader(String key, String value)
         {
             if (ostream == null) // header not committed
