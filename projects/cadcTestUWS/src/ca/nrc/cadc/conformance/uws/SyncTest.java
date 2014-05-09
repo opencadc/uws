@@ -88,6 +88,7 @@ import org.xml.sax.SAXException;
 import ca.nrc.cadc.util.Log4jInit;
 
 import com.meterware.httpunit.GetMethodWebRequest;
+import com.meterware.httpunit.HttpException;
 import com.meterware.httpunit.PostMethodWebRequest;
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebRequest;
@@ -140,6 +141,7 @@ public class SyncTest extends AbstractUWSTest
             log.warn("no properties files for " + this.getClass().getSimpleName());
             return;
         }
+        String fname = null;
         try
         {
             // For each properties file.
@@ -149,7 +151,8 @@ public class SyncTest extends AbstractUWSTest
                 log.debug("processing properties file: " + properties.filename);
                 log.debug("\r\n" + properties);
                 log.debug("**************************************************");
-
+                fname = properties.filename;
+                
                 // Build the POST request.
                 StringBuilder sb = new StringBuilder();
 
@@ -202,13 +205,26 @@ public class SyncTest extends AbstractUWSTest
                 log.debug("**************************************************");
                 log.debug("HTTP GET: " + request.getURL().toString());
 
-                process(conversation, request, contentType);
+                if (properties.filename.contains("ERROR"))
+                {
+                    try
+                    {
+                        process(conversation, request, contentType);
+                        fail("expected HttpException for " + properties.filename);
+                    }
+                    catch(HttpException ex)
+                    {
+                        log.debug("caught expected: " + ex);
+                    }
+                }
+                else
+                    process(conversation, request, contentType);
             }
         }
         catch (Exception unexpected)
         {
-            log.error("unexcpected exception", unexpected);
-            fail("unexcpected exception: " + unexpected);
+            log.error("unexpected exception for " + fname, unexpected);
+            fail("unexpected exception: " + unexpected);
         }
     }
 
@@ -220,6 +236,7 @@ public class SyncTest extends AbstractUWSTest
             log.warn("no properties files for " + this.getClass().getSimpleName());
             return;
         }
+        String fname = null;
         try
         {
             // For each properties file.
@@ -229,6 +246,7 @@ public class SyncTest extends AbstractUWSTest
                 log.debug("processing properties file: " + properties.filename);
                 log.debug("\r\n" + properties);
                 log.debug("**************************************************");
+                fname = properties.filename;
                 
                 // see if there are realm/userid/password preconditions
                 String realm = null;
@@ -274,13 +292,26 @@ public class SyncTest extends AbstractUWSTest
                 log.debug("HTTP POST: " + request.getURL().toString());
                 log.debug(Util.getRequestParameters(request));
 
-                process(conversation, request, contentType);
+                if (properties.filename.contains("ERROR"))
+                {
+                    try
+                    {
+                        process(conversation, request, contentType);
+                        fail("expected HttpException for " + properties.filename);
+                    }
+                    catch(HttpException ex)
+                    {
+                        log.debug("caught expected: " + ex);
+                    }
+                }
+                else
+                    process(conversation, request, contentType);
             }
         }
         catch (Exception unexpected)
         {
-            log.error("unexcpected exception", unexpected);
-            fail("unexcpected exception: " + unexpected);
+            log.error("unexpected exception for " + fname, unexpected);
+            fail("unexpected exception: " + unexpected);
         }
     }
 
