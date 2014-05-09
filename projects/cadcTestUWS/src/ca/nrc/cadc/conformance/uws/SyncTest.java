@@ -210,7 +210,8 @@ public class SyncTest extends AbstractUWSTest
                     try
                     {
                         process(conversation, request, contentType);
-                        fail("expected HttpException for " + properties.filename);
+                        // not all services require 4xx aka failure
+                        //fail("expected HttpException for " + properties.filename);
                     }
                     catch(HttpException ex)
                     {
@@ -297,7 +298,8 @@ public class SyncTest extends AbstractUWSTest
                     try
                     {
                         process(conversation, request, contentType);
-                        fail("expected HttpException for " + properties.filename);
+                        // not all services require 4xx aka failure
+                        //fail("expected HttpException for " + properties.filename);
                     }
                     catch(HttpException ex)
                     {
