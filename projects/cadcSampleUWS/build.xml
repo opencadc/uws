@@ -89,7 +89,7 @@
     <import file="extras.xml" optional="true" />
     
     <property name="project" value="cadcSampleUWS" />
-    <property name="webapp" value="cadcSampleUWS" />
+    <property name="warfile" value="${project}.war" />
 
 
     <!-- JAR files to be included in classpath and war file -->
