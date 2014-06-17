@@ -69,20 +69,6 @@
 
 package ca.nrc.cadc.uws.sample;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
-import org.apache.log4j.Logger;
-import org.jdom2.Document;
-import org.jdom2.Element;
-
 import ca.nrc.cadc.net.NetUtil;
 import ca.nrc.cadc.uws.ErrorSummary;
 import ca.nrc.cadc.uws.ErrorType;
@@ -94,7 +80,19 @@ import ca.nrc.cadc.uws.Result;
 import ca.nrc.cadc.uws.server.JobRunner;
 import ca.nrc.cadc.uws.server.JobUpdater;
 import ca.nrc.cadc.uws.server.SyncOutput;
-import ca.nrc.cadc.uws.util.XmlUtil;
+import ca.nrc.cadc.xml.XmlUtil;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import org.apache.log4j.Logger;
+import org.jdom2.Document;
+import org.jdom2.Element;
 
 /**
  * Basic Job Runner class. The sample job takes two params:</p>

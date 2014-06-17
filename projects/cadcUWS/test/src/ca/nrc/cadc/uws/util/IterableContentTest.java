@@ -91,7 +91,7 @@ import ca.nrc.cadc.util.Log4jInit;
  */
 public class IterableContentTest
 {
-    private static Logger log = Logger.getLogger(XmlUtilTest.class);
+    private static Logger log = Logger.getLogger(IterableContentTest.class);
     static
     {
         Log4jInit.setLevel("ca.nrc.cadc", org.apache.log4j.Level.INFO);
