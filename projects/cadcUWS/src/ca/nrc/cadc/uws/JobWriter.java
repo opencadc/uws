@@ -83,7 +83,7 @@ import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 
 import ca.nrc.cadc.date.DateUtil;
-import ca.nrc.cadc.uws.util.XmlUtil;
+import ca.nrc.cadc.xml.XmlUtil;
 
 /**
  * Writes a Job as XML to an output.
@@ -411,8 +411,8 @@ public class JobWriter
                 try
                 {
                     // The JobInfo content can't be validated since the schema(s) aren't known
-                    // butw e still need to parse and extract the root/document element
-                    Document doc = XmlUtil.validateXml(jobInfo.getContent(), null);
+                    // but we still need to parse and extract the root/document element
+                    Document doc = XmlUtil.buildDocument(jobInfo.getContent());
                     element.addContent(doc.getRootElement().detach()); 
                 }
                 catch (Exception e)

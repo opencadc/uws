@@ -97,7 +97,7 @@ import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.XMLOutputter;
 
 import ca.nrc.cadc.date.DateUtil;
-import ca.nrc.cadc.uws.util.XmlUtil;
+import ca.nrc.cadc.xml.XmlUtil;
 
 /**
  * Constructs a Job from an XML source. This class is not thread safe but it is

@@ -109,9 +109,9 @@ import ca.nrc.cadc.uws.Result;
  * 
  * @author pdowler
  */
-public abstract class JobDAOTest
+public abstract class AbstractJobDAOTest
 {
-    private static Logger log = Logger.getLogger(JobDAOTest.class);
+    private static Logger log = Logger.getLogger(AbstractJobDAOTest.class);
 
     static DataSource dataSource;
     static JobDAO.JobSchema JOB_SCHEMA;
