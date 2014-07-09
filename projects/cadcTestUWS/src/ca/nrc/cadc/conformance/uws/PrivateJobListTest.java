@@ -112,7 +112,7 @@ public class PrivateJobListTest extends AbstractUWSTest
             WebConversation conversation = new WebConversation();
             WebResponse response = get(conversation, serviceUrl);
             int code = response.getResponseCode();
-            Assert.assertEquals(code, 403);
+            Assert.assertEquals(403, code);
             
         }
         catch(HttpException expected)
