@@ -34,11 +34,15 @@
 package ca.nrc.cadc.uws.web.restlet;
 
 import ca.nrc.cadc.auth.CookiePrincipal;
+import ca.nrc.cadc.auth.DelegationToken;
 import ca.nrc.cadc.auth.HttpPrincipal;
+import ca.nrc.cadc.auth.InvalidDelegationTokenException;
 import ca.nrc.cadc.auth.PrincipalExtractor;
 import ca.nrc.cadc.auth.SSOCookieManager;
 import ca.nrc.cadc.auth.X509CertificateChain;
+import ca.nrc.cadc.util.ArrayUtil;
 import ca.nrc.cadc.util.StringUtil;
+import java.security.AccessControlException;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
@@ -59,6 +63,7 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
     
     private final Request request;
     private X509CertificateChain chain;
+    private DelegationToken token;
 
     /**
      * Hidden no-arg constructor for testing.
@@ -86,7 +91,33 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
                 (Collection<X509Certificate>) getRequest().getAttributes().get(
                         "org.restlet.https.clientCertificates");
             if ((requestCertificates != null) && (!requestCertificates.isEmpty()))
-                chain = new X509CertificateChain(requestCertificates);
+                this.chain = new X509CertificateChain(requestCertificates);
+        }
+        
+        if (token == null)
+        {
+            // add user if they have a valid delegation token
+            Series<Cookie> cookies = getRequest().getCookies();
+            if (cookies == null || cookies.isEmpty())
+                return;
+            for (Cookie cookie : cookies)
+            {
+                if (SSOCookieManager.DELEGATION_COOKIE_NAME.equals(cookie.getName()))
+                {
+                    try
+                    {
+                        // note: the requestURI aka path in this context is not meaningful in 
+                        // verifying the scope of the delegation token: so be lazy
+                        this.token = DelegationToken.parse(cookie.getValue(), null);
+                    }
+                    catch (InvalidDelegationTokenException ex) 
+                    {
+                        log.debug("invalid DelegationToken: " + cookie.getValue());
+                        throw new AccessControlException("invalid delegation token");
+                    }
+                    finally { }
+                }
+            }
         }
     }
     public X509CertificateChain getCertificateChain()
@@ -103,6 +134,12 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
         return principals;
     }
 
+    public DelegationToken getDelegationToken() 
+    {
+        return token;
+    }
+
+    
 
     /**
      * Add known principals.
@@ -131,7 +168,6 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
             CookiePrincipal cp = ssoCookieManager.createPrincipal(tmp);
             principals.add(cp);
         }
-        
     }
 
     /**
@@ -142,6 +178,9 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
         final String httpUser = getAuthenticatedUsername();
         if (StringUtil.hasText(httpUser))
             principals.add(new HttpPrincipal(httpUser));
+        
+        if (token != null)
+            principals.add(token.getUser());
     }
 
     /**
