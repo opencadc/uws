@@ -33,6 +33,8 @@
  */
 package ca.nrc.cadc.uws.web.restlet;
 
+import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.auth.DelegationToken;
 import java.security.Principal;
 import java.util.HashSet;
 import java.util.Set;
@@ -56,6 +58,7 @@ import java.util.concurrent.ConcurrentMap;
 import org.junit.Test;
 import static org.easymock.EasyMock.*;
 import static org.junit.Assert.*;
+import org.restlet.data.Form;
 
 
 public class RestletPrincipalExtractorTest
@@ -64,6 +67,41 @@ public class RestletPrincipalExtractorTest
     private final Request mockRequest = createMock(Request.class);
 
 
+    @Test
+    public void testGetDelegationToken() throws Exception
+    {
+        setTestSubject(new RestletPrincipalExtractor()
+        {
+            @Override
+            public Request getRequest()
+            {
+                return getMockRequest();
+            }
+        });
+        
+        final ConcurrentMap<String, Object> attributes =
+                new ConcurrentHashMap<String, java.lang.Object>();
+        
+        Form mockHeaders = createMock(Form.class);
+        attributes.put("org.restlet.http.headers", mockHeaders);
+        expect(mockHeaders.getFirstValue(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
+        
+        expect(getMockRequest().getAttributes()).andReturn(attributes).atLeastOnce();
+
+        replay(getMockRequest());
+
+        DelegationToken dt = getTestSubject().getDelegationToken();
+        assertNull("Should have no token", dt);
+        
+        //Set<Principal> ps = new HashSet<Principal>();
+        //getTestSubject().addHTTPPrincipal(ps);
+        //assertTrue("Should have no principals.", ps.isEmpty());
+        
+        
+
+        verify(getMockRequest());
+    }
+    
     @Test
     public void addCookiePrincipal() throws Exception
     {
@@ -170,8 +208,12 @@ public class RestletPrincipalExtractorTest
 
         final ConcurrentMap<String, Object> attributes =
                 new ConcurrentHashMap<String, java.lang.Object>();
-
-        expect(getMockRequest().getAttributes()).andReturn(attributes).once();
+        
+        Form mockHeaders = createMock(Form.class);
+        attributes.put("org.restlet.http.headers", mockHeaders);
+        expect(mockHeaders.getFirstValue(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
+        
+        expect(getMockRequest().getAttributes()).andReturn(attributes).atLeastOnce();
 
         replay(getMockRequest());
 
@@ -188,6 +230,10 @@ public class RestletPrincipalExtractorTest
         // TEST 2
         reset(getMockRequest());
 
+        mockHeaders = createMock(Form.class);
+        attributes.put("org.restlet.http.headers", mockHeaders);
+        expect(mockHeaders.getFirstValue(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
+        
         final Calendar notAfterCal = Calendar.getInstance();
         notAfterCal.set(1977, Calendar.NOVEMBER, 25, 3, 21, 0);
         notAfterCal.set(Calendar.MILLISECOND, 0);
@@ -206,7 +252,7 @@ public class RestletPrincipalExtractorTest
         certificates1.add(mockCertificate);
 
         attributes.put("org.restlet.https.clientCertificates", certificates1);
-        expect(getMockRequest().getAttributes()).andReturn(attributes).once();
+        expect(getMockRequest().getAttributes()).andReturn(attributes).atLeastOnce();
 
         expect(mockCertificate.getNotAfter()).andReturn(notAfterDate).once();
         expect(mockCertificate.getSubjectX500Principal()).
