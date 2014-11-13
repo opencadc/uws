@@ -33,6 +33,7 @@
  */
 package ca.nrc.cadc.uws.web.restlet;
 
+import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.CookiePrincipal;
 import ca.nrc.cadc.auth.DelegationToken;
 import ca.nrc.cadc.auth.HttpPrincipal;
@@ -40,7 +41,6 @@ import ca.nrc.cadc.auth.InvalidDelegationTokenException;
 import ca.nrc.cadc.auth.PrincipalExtractor;
 import ca.nrc.cadc.auth.SSOCookieManager;
 import ca.nrc.cadc.auth.X509CertificateChain;
-import ca.nrc.cadc.util.ArrayUtil;
 import ca.nrc.cadc.util.StringUtil;
 import java.security.AccessControlException;
 import java.security.Principal;
@@ -51,6 +51,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 import org.restlet.Request;
 import org.restlet.data.Cookie;
+import org.restlet.data.Form;
 import org.restlet.util.Series;
 
 
@@ -96,6 +97,30 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
         
         if (token == null)
         {
+            Form headers = (Form) getRequest().getAttributes().get("org.restlet.http.headers");
+            String tokenValue = headers.getFirstValue(AuthenticationUtil.AUTH_HEADER);
+            if ( StringUtil.hasText(tokenValue) )
+            {
+                try
+                {
+                    this.token = DelegationToken.parse(tokenValue, request.getResourceRef().getPath());
+                }
+                catch (InvalidDelegationTokenException ex) 
+                {
+                    log.debug("invalid DelegationToken: " + tokenValue, ex);
+                    throw new AccessControlException("invalid delegation token");
+                }
+                catch(RuntimeException ex)
+                {
+                    log.debug("invalid DelegationToken: " + tokenValue, ex);
+                    throw new AccessControlException("invalid delegation token");
+                }
+                finally { }
+            }
+        }
+        /*
+        if (token == null)
+        {
             // add user if they have a valid delegation token
             Series<Cookie> cookies = getRequest().getCookies();
             if (cookies == null || cookies.isEmpty())
@@ -115,10 +140,16 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
                         log.debug("invalid DelegationToken: " + cookie.getValue());
                         throw new AccessControlException("invalid delegation token");
                     }
+                    catch(RuntimeException ex)
+                    {
+                        log.debug("invalid DelegationToken: " + cookie.getValue());
+                        throw new AccessControlException("invalid delegation token");
+                    }
                     finally { }
                 }
             }
         }
+        */
     }
     public X509CertificateChain getCertificateChain()
     {
@@ -136,6 +167,7 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
 
     public DelegationToken getDelegationToken() 
     {
+        init();
         return token;
     }
 
