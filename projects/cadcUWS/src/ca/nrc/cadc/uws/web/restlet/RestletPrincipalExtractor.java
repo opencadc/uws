@@ -194,11 +194,14 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
         
         for (Cookie cookie : cookies)
         {
-            SSOCookieManager ssoCookieManager = new SSOCookieManager();
-
-            javax.servlet.http.Cookie tmp = new javax.servlet.http.Cookie(cookie.getName(), cookie.getValue());
-            CookiePrincipal cp = ssoCookieManager.createPrincipal(tmp);
-            principals.add(cp);
+            if (SSOCookieManager.DEFAULT_SSO_COOKIE_NAME.equals(cookie.getName())
+                    && StringUtil.hasText(cookie.getValue()))
+            {
+                SSOCookieManager ssoCookieManager = new SSOCookieManager();
+                javax.servlet.http.Cookie tmp = new javax.servlet.http.Cookie(cookie.getName(), cookie.getValue());
+                CookiePrincipal cp = ssoCookieManager.createPrincipal(tmp);
+                principals.add(cp);
+            }
         }
     }
 
