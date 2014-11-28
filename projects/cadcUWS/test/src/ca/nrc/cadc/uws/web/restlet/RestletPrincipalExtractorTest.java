@@ -34,6 +34,7 @@
 package ca.nrc.cadc.uws.web.restlet;
 
 import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.auth.CookiePrincipal;
 import ca.nrc.cadc.auth.DelegationToken;
 import java.security.Principal;
 import java.util.HashSet;
@@ -52,6 +53,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -132,8 +134,10 @@ public class RestletPrincipalExtractorTest
         // TEST 2
         reset(getMockRequest());
 
-        requestCookies.add("CADC_SSO",
-                           "username=TESTUSER|sessionID=88|token=TOKEN");
+        String sessionID = UUID.randomUUID().toString();
+        requestCookies.add("FOO", null);
+        requestCookies.add("CADC_SSO", sessionID);
+        requestCookies.add("BAR", "baz");
 
         expect(getMockRequest().getCookies()).andReturn(requestCookies).once();
 
@@ -143,6 +147,9 @@ public class RestletPrincipalExtractorTest
 
         assertEquals("Should have one cookie principal.", 1,
                      ps.size());
+        CookiePrincipal cp = (CookiePrincipal) ps.iterator().next();
+        assertEquals(sessionID, cp.getSessionId());
+        
 
         verify(getMockRequest());
     }
