@@ -256,18 +256,16 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
     {
         final String username;
 
-        if (getRequest().getChallengeResponse() != null)
-        {
-            username = getRequest().getChallengeResponse().getIdentifier();
-        }
-        else if (!getRequest().getClientInfo().getPrincipals().isEmpty())
+        if (!getRequest().getClientInfo().getPrincipals().isEmpty())
         {
             // Put in to support Safari not injecting a Challenge Response.
             // Grab the first principal's name as the username.
-            username = getRequest().getClientInfo().getPrincipals().
-                    get(0).getName();
+            // update: this is *always* right and works with realms; the previous
+            // call to getRequest().getChallengeResponse().getIdentifier() would
+            // return whatever username the caller provided in a non-authenticating call
+            username = getRequest().getClientInfo().getPrincipals().get(0).getName();
         }
-        else
+        else 
         {
             username = null;
         }
