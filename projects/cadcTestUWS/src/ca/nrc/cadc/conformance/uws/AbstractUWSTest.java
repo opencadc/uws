@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.conformance.uws;
 
+import ca.nrc.cadc.xml.XmlUtil;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -101,22 +102,28 @@ import com.meterware.httpunit.PostMethodWebRequest;
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebRequest;
 import com.meterware.httpunit.WebResponse;
+import java.util.TreeMap;
 
 
 public abstract class AbstractUWSTest
 {
     private static Logger log = Logger.getLogger(AbstractUWSTest.class);
 
-    protected static final String UWS_SCHEMA_RESOURCE = "UWS-v1.0.xsd";
-    protected static final String PARSER = "org.apache.xerces.parsers.SAXParser";
+    private static final String UWS_SCHEMA_URL = "http://www.ivoa.net/xml/UWS/v1.0";
+    private static final String UWS_SCHEMA_RESOURCE = "UWS-v1.0.xsd";
+    private static final String XLINK_SCHEMA_URL = "http://www.w3.org/1999/xlink";
+    private static final String XLINK_SCHEMA_RESOURCE = "XLINK.xsd";
+    
 
     private static SAXBuilder parser;
     private static SAXBuilder validatingParser;
 
     protected static final int REQUEST_TIMEOUT = 300; // 5 minutes
     protected static String serviceUrl;
-    protected static String serviceSchema;
+    //protected static String serviceSchema;
     protected static Level level;
+    
+    protected Map<String, String> schemaMap = new TreeMap<String,String>();
 
     public AbstractUWSTest()
     {
@@ -126,21 +133,33 @@ public abstract class AbstractUWSTest
         if (serviceUrl == null)
             throw new RuntimeException("service.url System property not set");
         log.debug("serviceUrl: " + serviceUrl);
-
-        URL url = AbstractUWSTest.class.getClassLoader().getResource(UWS_SCHEMA_RESOURCE);
-        serviceSchema = url.toString();
-        log.debug("serviceSchema: " + serviceSchema);
-
+        
+        String uwsSchemaUrl = XmlUtil.getResourceUrlString(UWS_SCHEMA_RESOURCE, AbstractUWSTest.class);
+        log.debug("uwsSchemaUrl: " + uwsSchemaUrl);
+        
+        String xlinkSchemaUrl = XmlUtil.getResourceUrlString(XLINK_SCHEMA_RESOURCE, AbstractUWSTest.class);
+        log.debug("xlinkSchemaUrl: " + xlinkSchemaUrl);
+        
+        schemaMap.put(UWS_SCHEMA_URL, uwsSchemaUrl);
+        schemaMap.put(XLINK_SCHEMA_URL, xlinkSchemaUrl);
+            
+        parser = XmlUtil.createBuilder(null);
+        /*
         parser = new SAXBuilder(new XMLReaderSAX2Factory(false, PARSER));
         parser.setProperty("http://apache.org/xml/properties/schema/external-schemaLocation", 
-                "http://www.ivoa.net/xml/UWS/v1.0 " + serviceSchema);
-
+                "http://www.ivoa.net/xml/UWS/v1.0 " + serviceSchema
+                + " http://www.w3c.org/1999/xlink " + xlinkSchema);
+        */
+        
+        validatingParser = XmlUtil.createBuilder(schemaMap);
+        /*
         validatingParser = new SAXBuilder(new XMLReaderSAX2Factory(true, PARSER));
         validatingParser.setFeature("http://xml.org/sax/features/validation", true);
         validatingParser.setFeature("http://apache.org/xml/features/validation/schema", true);
         validatingParser.setFeature("http://apache.org/xml/features/validation/schema-full-checking", true);
         validatingParser.setProperty("http://apache.org/xml/properties/schema/external-schemaLocation",
-                "http://www.ivoa.net/xml/UWS/v1.0 " + serviceSchema);
+                "http://www.ivoa.net/xml/UWS/v1.0 " + serviceSchema + );
+        */
     }
 
     protected Document buildDocument(String xml, boolean validate)
