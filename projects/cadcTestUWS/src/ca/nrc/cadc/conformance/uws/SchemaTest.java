@@ -104,6 +104,8 @@ public class SchemaTest extends AbstractUWSTest
         try
         {
             // Create DOM document from XML.
+            String serviceSchema = schemaMap.get("http://www.ivoa.net/xml/UWS/v1.0");
+            
             String schema = urlToString(serviceSchema);
             Document document = buildDocument(schema, false);
             assertNotNull("Unable to build a DOM document from the schema", document);
