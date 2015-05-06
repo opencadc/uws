@@ -86,7 +86,7 @@ import ca.nrc.cadc.uws.Parameter;
  * 
  * @author pdowler
  */
-public interface JobManager 
+public interface JobManager
 {
     /**
      * Shutdown and release any resources. This includes ThreadPools, connections, open files, etc.

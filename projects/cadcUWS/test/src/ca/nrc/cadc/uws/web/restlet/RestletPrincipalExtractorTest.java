@@ -168,7 +168,6 @@ public class RestletPrincipalExtractorTest
 
         final ClientInfo clientInfo = new ClientInfo();
 
-        expect(getMockRequest().getChallengeResponse()).andReturn(null).once();
         expect(getMockRequest().getClientInfo()).andReturn(clientInfo).once();
 
         replay(getMockRequest());
@@ -178,25 +177,6 @@ public class RestletPrincipalExtractorTest
         getTestSubject().addHTTPPrincipal(ps);
 
         assertTrue("Should have no principals.", ps.isEmpty());
-
-        verify(getMockRequest());
-
-
-        //
-        // TEST 2
-        reset(getMockRequest());
-
-        final ChallengeResponse challengeResponse =
-                new ChallengeResponse(ChallengeScheme.HTTP_BASIC, "TESTUSER",
-                                      "TESTPASS".toCharArray());
-        expect(getMockRequest().getChallengeResponse()).andReturn(
-                challengeResponse).times(2);
-
-        replay(getMockRequest());
-
-        getTestSubject().addHTTPPrincipal(ps);
-
-        assertEquals("Should have one HTTP principal.", 1, ps.size());
 
         verify(getMockRequest());
     }

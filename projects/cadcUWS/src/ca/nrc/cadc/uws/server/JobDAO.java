@@ -638,7 +638,7 @@ public class JobDAO
     {
         Object owner = identManager.toOwner(subject);
         if (owner == null)
-            throw new IllegalArgumentException("Job listing not allowed.");
+            throw new UnsupportedOperationException("anonymous job listing not allowed");
 
         log.debug("iterator(" + owner + ")");
         try

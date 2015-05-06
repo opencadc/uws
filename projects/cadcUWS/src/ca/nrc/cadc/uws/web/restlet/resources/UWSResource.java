@@ -314,7 +314,7 @@ public abstract class UWSResource extends ServerResource
     {
         return (JobManager) getContextAttribute(UWSAsyncApplication.UWS_JOB_MANAGER);
     }
-
+    
     /*
      *
      */

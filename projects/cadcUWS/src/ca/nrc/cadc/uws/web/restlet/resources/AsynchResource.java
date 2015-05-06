@@ -208,7 +208,7 @@ public class AsynchResource extends UWSResource
         catch (UnsupportedOperationException e)
         {
             // not implemented--turn into a 'Forbidden'
-            throw new AccessControlException("permission denied: job list");
+            throw new AccessControlException("permission denied: " + e.getMessage());
         }
         catch (TransientException e)
         {

@@ -3,12 +3,12 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2011.                            (c) 2011.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -62,108 +62,54 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
+*  $Revision: 5 $
 *
 ************************************************************************
 */
 
+package ca.nrc.cadc.uws;
 
-package ca.nrc.cadc.uws.web.restlet;
 
-import org.restlet.service.StatusService;
-import org.restlet.data.Status;
-import org.restlet.data.MediaType;
-import org.restlet.Request;
-import org.restlet.Response;
+import ca.nrc.cadc.util.Log4jInit;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import ca.nrc.cadc.uws.server.JobNotFoundException;
-import ca.nrc.cadc.uws.server.JobPersistenceException;
-import ca.nrc.cadc.uws.server.JobPhaseException;
-import java.security.AccessControlException;
-import org.restlet.resource.ResourceException;
-
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
- * Status service to handle errors more appropriately.
+ *
+ * @author pdowler
  */
-public class UWSStatusService extends StatusService
+public class ExecutionPhaseTest 
 {
-    private static final Logger LOGGER =
-            Logger.getLogger(UWSStatusService.class);
+    private static final Logger log = Logger.getLogger(ExecutionPhaseTest.class);
 
-
-    /**
-     * Constructor.
-     *
-     * @param enabled True if the service has been enabled.
-     */
-    public UWSStatusService(final boolean enabled)
+    static
     {
-        super(enabled);
+        Log4jInit.setLevel("ca.nrc.cadc.uws", Level.INFO);
     }
-
-
-    /**
-     * Returns a status for a given exception or error. By default it unwraps
-     * the status of {@link org.restlet.resource.ResourceException}. For other
-     * exceptions or errors, it returns an
-     * {@link org.restlet.data.Status#SERVER_ERROR_INTERNAL} status and logs a
-     * severe message.<br>
-     * <br>
-     * In order to customize the default behavior, this method can be
-     * overridden.
-     *
-     * @param throwable The exception or error caught.
-     * @param request   The request handled.
-     * @param response  The response updated.
-     * @return The representation of the given status.
-     */
-    @Override
-    public Status getStatus(Throwable throwable, Request request, Response response)
+    
+    @Test
+    public void testIsActive()
     {
-        // unwrap checked exceptions from UWS library
-        if (RuntimeException.class.equals(throwable.getClass())
-                && throwable.getCause() != null)
-            throwable = throwable.getCause();
-
-        StringBuilder sb = new StringBuilder();
-        if (throwable.getCause() != null)
-            sb.append(throwable.getCause().getMessage());
-        else
-            sb.append(throwable.getMessage());
-        sb.append("\n");
-        response.setEntity(sb.toString(), MediaType.TEXT_PLAIN);
-
-        if (throwable instanceof JobNotFoundException)
+        try
         {
-            return Status.CLIENT_ERROR_NOT_FOUND;
+            Assert.assertTrue(ExecutionPhase.PENDING.isActive());
+            Assert.assertTrue(ExecutionPhase.QUEUED.isActive());
+            Assert.assertTrue(ExecutionPhase.EXECUTING.isActive());
+            
+            Assert.assertFalse(ExecutionPhase.COMPLETED.isActive());
+            Assert.assertFalse(ExecutionPhase.ERROR.isActive());
+            Assert.assertFalse(ExecutionPhase.HELD.isActive());
+            Assert.assertFalse(ExecutionPhase.ABORTED.isActive());
+            Assert.assertFalse(ExecutionPhase.SUSPENDED.isActive());
+            Assert.assertFalse(ExecutionPhase.UNKNOWN.isActive());
+            Assert.assertFalse(ExecutionPhase.ARCHIVED.isActive());
         }
-        else if (throwable instanceof JobPersistenceException)
+        catch(Exception unexpected)
         {
-            return Status.SERVER_ERROR_INTERNAL;
-        }
-        else if (throwable instanceof JobPhaseException)
-        {
-            return Status.CLIENT_ERROR_BAD_REQUEST;
-        }
-        else if (throwable instanceof AccessControlException)
-        {
-            return new Status(Status.CLIENT_ERROR_FORBIDDEN, throwable.getMessage());
-        }
-        else if (throwable instanceof InvalidResourceException ||
-                throwable.getCause() instanceof InvalidResourceException)
-        {
-            return Status.CLIENT_ERROR_NOT_FOUND;
-        }
-        else if (throwable instanceof InvalidActionException ||
-                throwable.getCause() instanceof InvalidActionException)
-        {
-            return Status.CLIENT_ERROR_METHOD_NOT_ALLOWED;
-        }
-        else
-        {
-            LOGGER.error("unexpected Throwable", throwable);
-            return super.getStatus(throwable, request, response);
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
         }
     }
 }
