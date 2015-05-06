@@ -162,7 +162,6 @@ public class JobAsynchResource extends BaseJobResource
             StringRepresentation representation = null;
 
             final String pathInfo = getRequestPath();
-            LOGGER.warn("represent: pathInfo = " + pathInfo);
             if (pathInfo.endsWith("phase"))
                 representation = new StringRepresentation(job.getExecutionPhase().toString());
             else if (pathInfo.endsWith("executionduration"))
@@ -176,7 +175,7 @@ public class JobAsynchResource extends BaseJobResource
             else // the job
             {
                 String waitStr = getQuery().getFirstValue("WAIT");
-                LOGGER.warn("represent: wait = " + waitStr);
+                LOGGER.debug("represent: wait = " + waitStr);
                 if (waitStr != null)
                 {
                     try
@@ -184,23 +183,22 @@ public class JobAsynchResource extends BaseJobResource
                         Long wait = new Long(waitStr);
                         if (wait > MAX_WAIT)
                             wait = MAX_WAIT;
-                        LOGGER.warn("wait: " + wait);
+                        LOGGER.debug("wait: " + wait);
                         ExecutionPhase ep = job.getExecutionPhase();
                         if (ep.isActive())
                         {
                             ExecutionPhase cur = ep;
                             long rem = 1000*wait;
                             long dt = 1000L*Math.min(POLL_INTERVAL, wait);
-                            long num = 1000*wait/dt;
-                            LOGGER.warn("wait: " + wait + " phase: " + ep.getValue() + " dt(ms): " + dt + " num: " + num);
+                            LOGGER.debug("wait: " + wait + " phase: " + ep.getValue() + " dt(ms): " + dt);
                             while (rem > 0 && ep.equals(cur))
                             {
                                 long t = Math.min(rem, dt);
-                                LOGGER.warn("sleep: " + t);
+                                LOGGER.debug("sleep: " + t);
                                 try { Thread.sleep(t); }
                                 catch(InterruptedException ex) { LOGGER.debug("interrupted: wait at phase " + ep.getValue()); }
-                                // sadly, the optimal JobUpdater.getPhase is not available in JobManager API
-                                cur = getJobManager().get(jobID).getExecutionPhase();
+                                job = getJobManager().get(jobID); // always keep/return the latest job state
+                                cur = job.getExecutionPhase();
                                 rem -= dt;
                             }
                         }
