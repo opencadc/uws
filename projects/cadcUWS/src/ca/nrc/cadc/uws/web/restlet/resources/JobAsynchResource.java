@@ -174,7 +174,7 @@ public class JobAsynchResource extends BaseJobResource
                 representation = new StringRepresentation(job.getOwnerID());
             else // the job
             {
-                String waitStr = getQuery().getFirstValue("WAIT");
+                String waitStr = getQuery().getFirstValue("WAIT", true);
                 LOGGER.debug("represent: wait = " + waitStr);
                 if (waitStr != null)
                 {

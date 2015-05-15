@@ -12,7 +12,7 @@ import org.apache.log4j.Logger;
  *
  * @author pdowler
  */
-public class JobDAOTest_PostgreSQL extends AbstractJobDAOTest
+public class PostgresJobDAOTest extends AbstractJobDAOTest
 {
     private static Logger log = Logger.getLogger(AbstractJobDAOTest.class);
 

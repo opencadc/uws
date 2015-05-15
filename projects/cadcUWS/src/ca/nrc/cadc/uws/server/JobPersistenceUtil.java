@@ -78,6 +78,7 @@ import org.apache.log4j.Logger;
 import ca.nrc.cadc.uws.ExecutionPhase;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobRef;
+import java.util.NoSuchElementException;
 
 /**
  * Static utility methods to help implement the JobPersistence interface.
@@ -265,37 +266,5 @@ public class JobPersistenceUtil
         Job ret = new Job(job);
         assignID(ret, job.getID());
         return ret;
-    }
-
-    /**
-     * Creates an iterator with immutable access to the jobs in the underlying
-     * iterator. This iterator suppresses remove (throws UnsupportedOperationException)
-     * and returns deep copies of all the jobs.
-     * 
-     * @param inner
-     * @return immutable job iterator
-     */
-    public static Iterator<JobRef> createImmutableIterator(Iterator<Job> inner)
-    {
-        return new JobIterator(inner);
-    }
-
-    private static class JobIterator implements Iterator<JobRef>
-    {
-        private Iterator<Job> inner;
-        JobIterator(Iterator<Job> inner) { this.inner = inner; }
-        public boolean hasNext()
-        {
-            return inner.hasNext();
-        }
-        public JobRef next()
-        {
-            Job next = inner.next();
-            return new JobRef(next.getID(), next.getExecutionPhase());
-        }
-        public void remove()
-        {
-            throw new UnsupportedOperationException();
-        }
     }
 }

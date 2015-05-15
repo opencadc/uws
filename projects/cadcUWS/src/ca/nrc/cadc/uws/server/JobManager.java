@@ -74,6 +74,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import ca.nrc.cadc.net.TransientException;
+import ca.nrc.cadc.uws.ExecutionPhase;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobRef;
 import ca.nrc.cadc.uws.Parameter;
@@ -127,7 +128,15 @@ public interface JobManager
      * 
      * @return
      */
-    public Iterator<JobRef> iterator()
+    public Iterator<JobRef> iterator(String appname)
+        throws JobPersistenceException, TransientException;
+    
+    /**
+     * Get an iterator over the current jobs in the specified phase.
+     * 
+     * @return
+     */
+    public Iterator<JobRef> iterator(String appname, ExecutionPhase phase)
         throws JobPersistenceException, TransientException;
 
     /**
@@ -165,6 +174,7 @@ public interface JobManager
      * @param params
      * @throws JobNotFoundException
      * @throws JobPersistenceException
+     * @throws JobPhaseException
      * @throws TransientException 
      */
     public void update(String jobID, List<Parameter> params)

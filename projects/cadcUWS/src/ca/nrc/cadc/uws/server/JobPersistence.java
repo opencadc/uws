@@ -73,6 +73,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import ca.nrc.cadc.net.TransientException;
+import ca.nrc.cadc.uws.ExecutionPhase;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobRef;
 import ca.nrc.cadc.uws.Parameter;
@@ -139,9 +140,18 @@ public interface JobPersistence
      *
      * @return iterator over visible jobs
      */
-    public Iterator<JobRef> iterator()
+    public Iterator<JobRef> iterator(String appname)
         throws JobPersistenceException, TransientException;
 
+    /**
+     * Obtain a listing of JobRef instances in the specified phase.
+     *
+     * @param phase
+     * @return iterator over visible jobs
+     */
+    public Iterator<JobRef> iterator(String appname, ExecutionPhase phase)
+        throws JobPersistenceException, TransientException;
+    
     // optimised access methods
 
     /**

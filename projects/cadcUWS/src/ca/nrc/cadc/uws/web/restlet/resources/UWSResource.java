@@ -188,16 +188,14 @@ public abstract class UWSResource extends ServerResource
      *
      * @param error        Error in the form.
      */
-    protected void generateErrorRepresentation(final Status status, final String error)
+    protected void generateErrorRepresentation(final Status status, final String errorMsg)
     {
-        final StringBuilder errorMessage = new StringBuilder(128);
-
-        errorMessage.append("Errors found during Job Creation: \n");
-        errorMessage.append(error);
-
+        StringBuilder sb = new StringBuilder();
+        sb.append(errorMsg);
+        if (!errorMsg.endsWith("\n"))
+            sb.append("\n");
         getResponse().setStatus(status);
-        getResponse().setEntity(
-                new StringRepresentation(errorMessage.toString()));
+        getResponse().setEntity(new StringRepresentation(sb.toString()));
     }
     
     /**

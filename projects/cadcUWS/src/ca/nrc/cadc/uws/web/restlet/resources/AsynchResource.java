@@ -69,6 +69,8 @@
 
 package ca.nrc.cadc.uws.web.restlet.resources;
 
+import ca.nrc.cadc.auth.AuthMethod;
+import ca.nrc.cadc.auth.AuthenticationUtil;
 import java.io.IOException;
 import java.security.AccessControlException;
 import java.security.PrivilegedAction;
@@ -87,6 +89,7 @@ import org.restlet.resource.Post;
 
 import ca.nrc.cadc.io.ByteLimitExceededException;
 import ca.nrc.cadc.net.TransientException;
+import ca.nrc.cadc.uws.ExecutionPhase;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobListWriter;
 import ca.nrc.cadc.uws.JobRef;
@@ -198,12 +201,35 @@ public class AsynchResource extends UWSResource
     
     private void doBuildXML(final Document document) throws IOException
     {
+        String phaseStr = getQuery().getFirstValue("PHASE", true);
+        LOGGER.debug("represent: phase = " + phaseStr);
         try
         {
-            Iterator<JobRef> jobs = getJobManager().iterator();
+            Subject caller = AuthenticationUtil.getCurrentSubject();
+            AuthMethod am = AuthenticationUtil.getAuthMethod(caller);
+            if (am == null || AuthMethod.ANON.equals(am))
+            {
+                generateErrorRepresentation(Status.CLIENT_ERROR_FORBIDDEN, "anonymous job listing not permitted");
+            }
+            
+            ExecutionPhase phase = null;
+            if (phaseStr != null)
+                phase = ExecutionPhase.toValue(phaseStr);
+            
+            String path = getRequestPath();
+            int i = path.indexOf('/', 2); // the second /
+            String appname = path.substring(0, i+1); // include second /
+            
+            Iterator<JobRef> jobs = getJobManager().iterator(appname, phase);
             JobListWriter jobListWriter = new JobListWriter();
             Element root = jobListWriter.getRootElement(jobs);
             document.setRootElement(root);
+        }
+        catch(IllegalArgumentException ex)
+        {
+            String msg = "invalid parameter: phase=" + phaseStr;
+            LOGGER.debug(msg);
+            generateErrorRepresentation(Status.CLIENT_ERROR_BAD_REQUEST, msg);
         }
         catch (UnsupportedOperationException e)
         {
