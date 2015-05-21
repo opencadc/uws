@@ -112,7 +112,7 @@ public class JobAsynchResource extends BaseJobResource
     private static final Logger LOGGER = Logger.getLogger(JobAsynchResource.class);
 
     private static final long MAX_WAIT = 60L;
-    private static final long POLL_INTERVAL = 6L;
+    private static final long POLL_INTERVAL[] = { 1L, 2L, 4L, 8L };
     
     private static final String RUN = "RUN";
     private static final String ABORT = "ABORT";
@@ -188,11 +188,12 @@ public class JobAsynchResource extends BaseJobResource
                         if (ep.isActive())
                         {
                             ExecutionPhase cur = ep;
+                            int n = 0;
                             long rem = 1000*wait;
-                            long dt = 1000L*Math.min(POLL_INTERVAL, wait);
-                            LOGGER.debug("wait: " + wait + " phase: " + ep.getValue() + " dt(ms): " + dt);
                             while (rem > 0 && ep.equals(cur))
                             {
+                                long dt = 1000L*Math.min(POLL_INTERVAL[n], wait);
+                                LOGGER.debug("wait: " + wait + " phase: " + ep.getValue() + " dt(ms): " + dt);
                                 long t = Math.min(rem, dt);
                                 LOGGER.debug("sleep: " + t);
                                 try { Thread.sleep(t); }
@@ -200,6 +201,8 @@ public class JobAsynchResource extends BaseJobResource
                                 job = getJobManager().get(jobID); // always keep/return the latest job state
                                 cur = job.getExecutionPhase();
                                 rem -= dt;
+                                if (n < POLL_INTERVAL.length - 1)
+                                    n++;
                             }
                         }
                     }
