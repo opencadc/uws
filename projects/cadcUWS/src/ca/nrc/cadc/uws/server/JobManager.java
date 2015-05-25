@@ -126,7 +126,10 @@ public interface JobManager
     /**
      * Get an iterator over the current jobs.
      * 
+     * @param appname
      * @return
+     * @throws ca.nrc.cadc.uws.server.JobPersistenceException
+     * @throws ca.nrc.cadc.net.TransientException
      */
     public Iterator<JobRef> iterator(String appname)
         throws JobPersistenceException, TransientException;
@@ -134,9 +137,13 @@ public interface JobManager
     /**
      * Get an iterator over the current jobs in the specified phase.
      * 
+     * @param appname
+     * @param phases
      * @return
+     * @throws ca.nrc.cadc.uws.server.JobPersistenceException
+     * @throws ca.nrc.cadc.net.TransientException
      */
-    public Iterator<JobRef> iterator(String appname, ExecutionPhase phase)
+    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases)
         throws JobPersistenceException, TransientException;
 
     /**

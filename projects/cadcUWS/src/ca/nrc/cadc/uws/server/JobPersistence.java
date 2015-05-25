@@ -149,7 +149,7 @@ public interface JobPersistence
      * @param phase
      * @return iterator over visible jobs
      */
-    public Iterator<JobRef> iterator(String appname, ExecutionPhase phase)
+    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases)
         throws JobPersistenceException, TransientException;
     
     // optimised access methods

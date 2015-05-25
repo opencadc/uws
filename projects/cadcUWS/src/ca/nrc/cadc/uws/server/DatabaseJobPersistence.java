@@ -183,11 +183,11 @@ public abstract class DatabaseJobPersistence implements JobPersistence, JobUpdat
     {
         return iterator(appname, null);
     }
-    public Iterator<JobRef> iterator(String appname, ExecutionPhase phase)
+    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases)
         throws JobPersistenceException, TransientException
     {
         JobDAO dao = getDAO();
-        return dao.iterator(appname, phase);
+        return dao.iterator(appname, phases);
     }
 
     public Job put(Job job)

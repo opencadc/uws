@@ -95,6 +95,9 @@ import ca.nrc.cadc.uws.JobListWriter;
 import ca.nrc.cadc.uws.JobRef;
 import ca.nrc.cadc.uws.server.JobPersistenceException;
 import ca.nrc.cadc.uws.web.restlet.RestletJobCreator;
+import java.util.ArrayList;
+import java.util.List;
+import org.restlet.data.Form;
 
 
 /**
@@ -201,8 +204,9 @@ public class AsynchResource extends UWSResource
     
     private void doBuildXML(final Document document) throws IOException
     {
-        String phaseStr = getQuery().getFirstValue("PHASE", true);
-        LOGGER.debug("represent: phase = " + phaseStr);
+        Form query = getQuery();
+        String[] phases = query.getValuesArray("PHASE", true);
+        String phaseStr = null;
         try
         {
             Subject caller = AuthenticationUtil.getCurrentSubject();
@@ -212,15 +216,18 @@ public class AsynchResource extends UWSResource
                 generateErrorRepresentation(Status.CLIENT_ERROR_FORBIDDEN, "anonymous job listing not permitted");
             }
             
-            ExecutionPhase phase = null;
-            if (phaseStr != null)
-                phase = ExecutionPhase.toValue(phaseStr);
+            List<ExecutionPhase> phaseList = new ArrayList<ExecutionPhase>();
+            for (String es : phases)
+            {
+                phaseStr = es; // see error handling below
+                phaseList.add(ExecutionPhase.toValue(phaseStr));
+            }
             
             String path = getRequestPath();
             int i = path.indexOf('/', 2); // the second /
             String appname = path.substring(0, i+1); // include second /
             
-            Iterator<JobRef> jobs = getJobManager().iterator(appname, phase);
+            Iterator<JobRef> jobs = getJobManager().iterator(appname, phaseList);
             JobListWriter jobListWriter = new JobListWriter();
             Element root = jobListWriter.getRootElement(jobs);
             document.setRootElement(root);
@@ -243,7 +250,7 @@ public class AsynchResource extends UWSResource
         }
         catch (JobPersistenceException e)
         {
-            LOGGER.error(e);
+            LOGGER.error("persistence fail", e);
             generateErrorRepresentation(Status.SERVER_ERROR_INTERNAL, "Internal error.");
         }
     }

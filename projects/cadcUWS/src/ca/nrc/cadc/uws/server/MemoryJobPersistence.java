@@ -264,17 +264,20 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
      * 
      * @return
      */
-    public Iterator<JobRef> iterator(String appname, ExecutionPhase phase)
+    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases)
     {
         List<JobRef> tmp = new ArrayList<JobRef>();
+        boolean skipArchived = (phases == null || phases.isEmpty());
+        boolean filter = (phases != null && !phases.isEmpty());
+        
         synchronized(jobs)
         {
             for (Job j : jobs.values())
             {
                 if (appname == null || j.getRequestPath().startsWith(appname))
                 {
-                    if ( (phase == null && !ExecutionPhase.ARCHIVED.equals(j.getExecutionPhase()))
-                        || (j.getExecutionPhase().equals(phase)) )
+                    if ( (skipArchived && !ExecutionPhase.ARCHIVED.equals(j.getExecutionPhase()))
+                        || (filter && phases.contains(j.getExecutionPhase())) )
                         tmp.add(new JobRef(j.getID(), j.getExecutionPhase()));
                 }
             }
