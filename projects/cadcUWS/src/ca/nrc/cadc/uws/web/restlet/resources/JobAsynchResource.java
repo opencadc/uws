@@ -174,13 +174,17 @@ public class JobAsynchResource extends BaseJobResource
                 representation = new StringRepresentation(job.getOwnerID());
             else // the job
             {
-                String waitStr = getQuery().getFirstValue("WAIT", true);
-                LOGGER.debug("represent: wait = " + waitStr);
-                if (waitStr != null)
+                Form query = getQuery();
+                org.restlet.data.Parameter p = query.getFirst("WAIT", true);
+                if (p != null)
                 {
+                    String waitStr = p.getValue();
                     try
                     {
-                        Long wait = new Long(waitStr);
+                        Long wait = MAX_WAIT;
+                        LOGGER.debug("represent: wait = " + waitStr);
+                        if (waitStr != null)
+                            wait = new Long(waitStr);
                         if (wait > MAX_WAIT)
                             wait = MAX_WAIT;
                         LOGGER.debug("wait: " + wait);
