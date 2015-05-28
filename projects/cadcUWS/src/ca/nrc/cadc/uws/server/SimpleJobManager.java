@@ -229,10 +229,16 @@ public class SimpleJobManager implements JobManager
         return job;
     }
     
-    public Iterator<JobRef> iterator()
+    public Iterator<JobRef> iterator(String appname)
         throws JobPersistenceException, TransientException
     {
-        return jobPersistence.iterator();
+        return jobPersistence.iterator(appname);
+    }
+    
+    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases)
+        throws JobPersistenceException, TransientException
+    {
+        return jobPersistence.iterator(appname, phases);
     }
 
     public void update(String jobID, Date destruction, Long duration, Date quote)

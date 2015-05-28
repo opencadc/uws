@@ -69,6 +69,8 @@
 
 package ca.nrc.cadc.uws.web.restlet.resources;
 
+import ca.nrc.cadc.auth.AuthMethod;
+import ca.nrc.cadc.auth.AuthenticationUtil;
 import java.io.IOException;
 import java.security.AccessControlException;
 import java.security.PrivilegedAction;
@@ -87,11 +89,15 @@ import org.restlet.resource.Post;
 
 import ca.nrc.cadc.io.ByteLimitExceededException;
 import ca.nrc.cadc.net.TransientException;
+import ca.nrc.cadc.uws.ExecutionPhase;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobListWriter;
 import ca.nrc.cadc.uws.JobRef;
 import ca.nrc.cadc.uws.server.JobPersistenceException;
 import ca.nrc.cadc.uws.web.restlet.RestletJobCreator;
+import java.util.ArrayList;
+import java.util.List;
+import org.restlet.data.Form;
 
 
 /**
@@ -198,17 +204,44 @@ public class AsynchResource extends UWSResource
     
     private void doBuildXML(final Document document) throws IOException
     {
+        Form query = getQuery();
+        String[] phases = query.getValuesArray("PHASE", true);
+        String phaseStr = null;
         try
         {
-            Iterator<JobRef> jobs = getJobManager().iterator();
+            Subject caller = AuthenticationUtil.getCurrentSubject();
+            AuthMethod am = AuthenticationUtil.getAuthMethod(caller);
+            if (am == null || AuthMethod.ANON.equals(am))
+            {
+                generateErrorRepresentation(Status.CLIENT_ERROR_FORBIDDEN, "anonymous job listing not permitted");
+            }
+            
+            List<ExecutionPhase> phaseList = new ArrayList<ExecutionPhase>();
+            for (String es : phases)
+            {
+                phaseStr = es; // see error handling below
+                phaseList.add(ExecutionPhase.toValue(phaseStr));
+            }
+            
+            String path = getRequestPath();
+            int i = path.indexOf('/', 2); // the second /
+            String appname = path.substring(0, i+1); // include second /
+            
+            Iterator<JobRef> jobs = getJobManager().iterator(appname, phaseList);
             JobListWriter jobListWriter = new JobListWriter();
             Element root = jobListWriter.getRootElement(jobs);
             document.setRootElement(root);
         }
+        catch(IllegalArgumentException ex)
+        {
+            String msg = "invalid parameter: phase=" + phaseStr;
+            LOGGER.debug(msg);
+            generateErrorRepresentation(Status.CLIENT_ERROR_BAD_REQUEST, msg);
+        }
         catch (UnsupportedOperationException e)
         {
             // not implemented--turn into a 'Forbidden'
-            throw new AccessControlException("permission denied: job list");
+            throw new AccessControlException("permission denied: " + e.getMessage());
         }
         catch (TransientException e)
         {
@@ -217,7 +250,7 @@ public class AsynchResource extends UWSResource
         }
         catch (JobPersistenceException e)
         {
-            LOGGER.error(e);
+            LOGGER.error("persistence fail", e);
             generateErrorRepresentation(Status.SERVER_ERROR_INTERNAL, "Internal error.");
         }
     }

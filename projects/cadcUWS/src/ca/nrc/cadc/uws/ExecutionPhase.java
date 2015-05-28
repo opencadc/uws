@@ -112,7 +112,8 @@ public enum ExecutionPhase
     UNKNOWN("UNKNOWN"),
     HELD("HELD"),
     SUSPENDED("SUSPENDED"),
-    ABORTED("ABORTED");
+    ABORTED("ABORTED"),
+    ARCHIVED("ARCHIVED");
 
     private String value;
 
@@ -127,4 +128,12 @@ public enum ExecutionPhase
     }
 
     public String getValue() { return value; }
+    
+    public boolean isActive()
+    {
+        // the default compareTo order is the order of value declarations above
+        if (this.compareTo(COMPLETED) < 0)
+            return true;
+        return false;
+    }
 }

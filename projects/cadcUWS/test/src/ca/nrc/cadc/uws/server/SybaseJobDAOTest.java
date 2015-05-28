@@ -14,7 +14,7 @@ import org.apache.log4j.Logger;
  *
  * @author pdowler
  */
-public class JobDAOTest_Sybase extends AbstractJobDAOTest
+public class SybaseJobDAOTest extends AbstractJobDAOTest
 {
     private static Logger log = Logger.getLogger(AbstractJobDAOTest.class);
 

@@ -618,32 +618,34 @@ public class JobDAO
      * Iterate over the jobs owned by the user in the subject contained in the
      * access control context.
      *
+     * @param phase
      * @return job iterator
+     * @throws JobPersistenceException
+     * @throws TransientException
      */
-    public Iterator<JobRef> iterator() throws TransientException, JobPersistenceException
+    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases) 
+        throws TransientException, JobPersistenceException
     {
-        log.debug("iterator");
         AccessControlContext acContext = AccessController.getContext();
         Subject subject = Subject.getSubject(acContext);
-        return iterator(subject);
+        return iterator(subject, appname, phases);
     }
 
     /**
      * Iterator over jobs owned by the specified owner.
      *
-     * @param ownerID
+     * @param subject
+     * @param phase
      * @return job iterator
      */
-    public Iterator<JobRef> iterator(Subject subject) throws TransientException, JobPersistenceException
+    public Iterator<JobRef> iterator(Subject subject, String appname, List<ExecutionPhase> phases) 
+        throws TransientException, JobPersistenceException
     {
         Object owner = identManager.toOwner(subject);
-        if (owner == null)
-            throw new IllegalArgumentException("Job listing not allowed.");
-
         log.debug("iterator(" + owner + ")");
         try
         {
-            JobListIterator jobListIterator = new JobListIterator(jdbc, owner);
+            JobListIterator jobListIterator = new JobListIterator(jdbc, owner, appname, phases);
             prof.checkpoint("JobListStatementCreator");
             return jobListIterator;
         }
@@ -1192,43 +1194,97 @@ public class JobDAO
     class JobListStatementCreator implements PreparedStatementCreator
     {
         private Object owner;
+        private String appname;
+        private List<ExecutionPhase> phases;
         private String lastJobID;
 
-        public JobListStatementCreator(String lastJobID)
+        public JobListStatementCreator(String lastJobID, Object owner, String appname, List<ExecutionPhase> phases)
         {
             this.lastJobID = lastJobID;
+            this.appname = appname;
+            this.owner = owner;
+            this.phases = phases;
         }
-
-        public void setOwner(Object owner) { this.owner = owner; }
 
         public PreparedStatement createPreparedStatement(Connection conn) throws SQLException
         {
             String sql = getSQL();
-            PreparedStatement ret = conn.prepareStatement(sql);
-            ret.setObject(1, owner);
             log.debug(sql);
+            PreparedStatement ret = conn.prepareStatement(sql);
+            int arg = 1;
+            if (owner != null)
+            {
+                log.debug(arg + " : " + owner);
+                ret.setObject(arg++, owner);
+            }
+
+            if (phases != null && !phases.isEmpty())
+            {
+                for (ExecutionPhase ep : phases)
+                {
+                    log.debug(arg + " : " + ep);
+                    ret.setString(arg++, ep.getValue());
+                }
+            }
+            else
+            {
+                log.debug(arg + " : " + ExecutionPhase.ARCHIVED);
+                ret.setString(arg++, ExecutionPhase.ARCHIVED.getValue());
+            }
+                
+            
+            if (lastJobID != null)
+            {
+                log.debug(arg + " : " + lastJobID);
+                ret.setString(arg++, lastJobID);
+            }
+            
+            if (appname != null)
+            {
+                appname += "%"; // like
+                log.debug(arg + " : " + appname);
+                ret.setString(arg++, appname);
+            }
             return ret;
         }
 
         protected String getSQL()
         {
             StringBuilder sb = new StringBuilder();
-            
+
+            sb.append("SELECT ");
             if (jobSchema.limitWithTop)
+                sb.append("TOP ").append(BATCH_SIZE);
+            
+            sb.append(" jobID, executionPhase FROM ");
+            sb.append(jobSchema.jobTable);
+            sb.append(" WHERE deletedByUser = 0");
+            if (owner != null)
+                sb.append(" AND ownerID = ?");
+            if (phases != null && !phases.isEmpty())
             {
-                sb.append("SELECT TOP " + BATCH_SIZE + " jobID, executionPhase FROM ");
-                sb.append(jobSchema.jobTable);
-                sb.append(" WHERE ownerID = ? AND deletedByUser = 0 AND jobID > '" + lastJobID + "' ");
-                sb.append(" ORDER BY jobID ASC " );
+                sb.append(" AND executionPhase IN (");
+                Iterator i = phases.iterator();
+                while (i.hasNext())
+                {
+                    i.next();
+                    sb.append("?");
+                    if (i.hasNext())
+                        sb.append(",");
+                }
+                sb.append(")");
             }
             else
-            {
-                sb.append("SELECT jobID, executionPhase FROM ");
-                sb.append(jobSchema.jobTable);
-                sb.append(" WHERE ownerID = ? AND deletedByUser = 0 AND jobID > '" + lastJobID + "' ");
-                sb.append(" ORDER BY jobID ASC " );
+                sb.append(" AND executionPhase != ?");
+            if (lastJobID != null)
+                sb.append(" AND jobID > ?");
+            if (appname != null)
+                sb.append(" AND requestPath LIKE ?");
+            sb.append(" ORDER BY jobID ASC " );
+            
+            if (!jobSchema.limitWithTop)
                 sb.append(" LIMIT " + BATCH_SIZE );
-            }
+            
             return sb.toString();
         }
     }
@@ -1700,13 +1756,17 @@ public class JobDAO
     {
         private JdbcTemplate jdbcTemplate;
         private Iterator<JobRef> jobRefIterator;
-        private String lastJobID = "";
+        private String lastJobID = null;
         private Object owner;
+        private String appname;
+        private List<ExecutionPhase> phases;
         
-        JobListIterator(JdbcTemplate jdbc, Object owner)
+        JobListIterator(JdbcTemplate jdbc, Object owner, String appname, List<ExecutionPhase> phases)
         {
             this.jdbcTemplate = jdbc;
             this.owner = owner;
+            this.appname = appname;
+            this.phases = phases;
             this.jobRefIterator = getNextBatchIterator();
         }
 
@@ -1730,8 +1790,7 @@ public class JobDAO
         @SuppressWarnings("unchecked")
         private Iterator<JobRef> getNextBatchIterator() 
         {
-            JobListStatementCreator sc = new JobListStatementCreator(this.lastJobID);
-            sc.setOwner(this.owner);
+            JobListStatementCreator sc = new JobListStatementCreator(lastJobID, owner, appname, phases);
             List<JobRef> jobs = this.jdbcTemplate.query(sc, new RowMapper() 
                 {
             	    // mapRow is required to preserve the order of the ResultSet
