@@ -74,6 +74,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import ca.nrc.cadc.net.TransientException;
+import ca.nrc.cadc.uws.ExecutionPhase;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobRef;
 import ca.nrc.cadc.uws.Parameter;
@@ -86,7 +87,7 @@ import ca.nrc.cadc.uws.Parameter;
  * 
  * @author pdowler
  */
-public interface JobManager 
+public interface JobManager
 {
     /**
      * Shutdown and release any resources. This includes ThreadPools, connections, open files, etc.
@@ -125,9 +126,24 @@ public interface JobManager
     /**
      * Get an iterator over the current jobs.
      * 
+     * @param appname
      * @return
+     * @throws ca.nrc.cadc.uws.server.JobPersistenceException
+     * @throws ca.nrc.cadc.net.TransientException
      */
-    public Iterator<JobRef> iterator()
+    public Iterator<JobRef> iterator(String appname)
+        throws JobPersistenceException, TransientException;
+    
+    /**
+     * Get an iterator over the current jobs in the specified phase.
+     * 
+     * @param appname
+     * @param phases
+     * @return
+     * @throws ca.nrc.cadc.uws.server.JobPersistenceException
+     * @throws ca.nrc.cadc.net.TransientException
+     */
+    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases)
         throws JobPersistenceException, TransientException;
 
     /**
@@ -165,6 +181,7 @@ public interface JobManager
      * @param params
      * @throws JobNotFoundException
      * @throws JobPersistenceException
+     * @throws JobPhaseException
      * @throws TransientException 
      */
     public void update(String jobID, List<Parameter> params)

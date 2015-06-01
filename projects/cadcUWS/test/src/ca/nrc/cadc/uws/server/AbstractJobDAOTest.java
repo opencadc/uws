@@ -513,7 +513,7 @@ public abstract class AbstractJobDAOTest
                         ret = dao.put(job3, subject);
                         id3 = ret.getID();
                         
-                        Iterator<JobRef> it = dao.iterator();
+                        Iterator<JobRef> it = dao.iterator("/foo", null);
                         boolean found1 = false, found2 = false, found3 = false;
                         String next = null;
                         while (it.hasNext())
