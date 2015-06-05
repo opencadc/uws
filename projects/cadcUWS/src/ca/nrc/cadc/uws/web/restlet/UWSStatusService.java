@@ -126,11 +126,13 @@ public class UWSStatusService extends StatusService
                 && throwable.getCause() != null)
             throwable = throwable.getCause();
 
-        response.setEntity("Unable to complete your request: "
-                           + (throwable.getCause() == null
-                              ? throwable : throwable.getCause()).getMessage()
-                           + "\n",
-                           MediaType.TEXT_PLAIN);
+        StringBuilder sb = new StringBuilder();
+        if (throwable.getCause() != null)
+            sb.append(throwable.getCause().getMessage());
+        else
+            sb.append(throwable.getMessage());
+        sb.append("\n");
+        response.setEntity(sb.toString(), MediaType.TEXT_PLAIN);
 
         if (throwable instanceof JobNotFoundException)
         {

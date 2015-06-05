@@ -90,6 +90,7 @@ import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobRef;
 import ca.nrc.cadc.uws.Parameter;
 import ca.nrc.cadc.uws.Result;
+import java.util.ArrayList;
 
 /**
  *
@@ -252,11 +253,37 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
      * 
      * @return
      */
-    public Iterator<JobRef> iterator()
+    public Iterator<JobRef> iterator(String appname)
     {
-        return JobPersistenceUtil.createImmutableIterator(jobs.values().iterator());
+        return iterator(appname);
     }
     
+    /**
+     * Iterator over the jobs. Note that this could fail if the underlying job list
+     * is modified while iterating.
+     * 
+     * @return
+     */
+    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases)
+    {
+        List<JobRef> tmp = new ArrayList<JobRef>();
+        boolean skipArchived = (phases == null || phases.isEmpty());
+        boolean filter = (phases != null && !phases.isEmpty());
+        
+        synchronized(jobs)
+        {
+            for (Job j : jobs.values())
+            {
+                if (appname == null || j.getRequestPath().startsWith(appname))
+                {
+                    if ( (skipArchived && !ExecutionPhase.ARCHIVED.equals(j.getExecutionPhase()))
+                        || (filter && phases.contains(j.getExecutionPhase())) )
+                        tmp.add(new JobRef(j.getID(), j.getExecutionPhase()));
+                }
+            }
+        }
+        return tmp.iterator();
+    }
 
     public Job put(Job job)
     {

@@ -91,6 +91,7 @@ import org.restlet.resource.Post;
 
 import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.net.TransientException;
+import ca.nrc.cadc.uws.ExecutionPhase;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobAttribute;
 import ca.nrc.cadc.uws.JobWriter;
@@ -100,6 +101,7 @@ import ca.nrc.cadc.uws.server.JobPersistenceException;
 import ca.nrc.cadc.uws.server.JobPhaseException;
 import ca.nrc.cadc.uws.web.restlet.InvalidActionException;
 import ca.nrc.cadc.uws.web.restlet.RestletJobCreator;
+import org.restlet.data.Status;
 
 
 /**
@@ -109,6 +111,9 @@ public class JobAsynchResource extends BaseJobResource
 {
     private static final Logger LOGGER = Logger.getLogger(JobAsynchResource.class);
 
+    private static final long MAX_WAIT = 60L;
+    private static final long POLL_INTERVAL[] = { 1L, 2L, 4L, 8L };
+    
     private static final String RUN = "RUN";
     private static final String ABORT = "ABORT";
     private static final String SHUTDOWN = "SHUTDOWN";
@@ -150,7 +155,10 @@ public class JobAsynchResource extends BaseJobResource
         try
         {
             if (job == null)
+            {
                 job = getJobManager().get(jobID);
+                job.setProtocol(protocol);
+            }
             StringRepresentation representation = null;
 
             final String pathInfo = getRequestPath();
@@ -164,6 +172,51 @@ public class JobAsynchResource extends BaseJobResource
                 representation = new StringRepresentation(dateFormat.format(job.getQuote()));
             else if (pathInfo.endsWith("owner"))
                 representation = new StringRepresentation(job.getOwnerID());
+            else // the job
+            {
+                Form query = getQuery();
+                org.restlet.data.Parameter p = query.getFirst("WAIT", true);
+                if (p != null)
+                {
+                    String waitStr = p.getValue();
+                    try
+                    {
+                        Long wait = MAX_WAIT;
+                        LOGGER.debug("represent: wait = " + waitStr);
+                        if (waitStr != null)
+                            wait = new Long(waitStr);
+                        if (wait > MAX_WAIT)
+                            wait = MAX_WAIT;
+                        LOGGER.debug("wait: " + wait);
+                        ExecutionPhase ep = job.getExecutionPhase();
+                        if (ep.isActive())
+                        {
+                            ExecutionPhase cur = ep;
+                            int n = 0;
+                            long rem = 1000*wait;
+                            while (rem > 0 && ep.equals(cur))
+                            {
+                                long dt = 1000L*Math.min(POLL_INTERVAL[n], wait);
+                                LOGGER.debug("wait: " + wait + " phase: " + ep.getValue() + " dt(ms): " + dt);
+                                long t = Math.min(rem, dt);
+                                LOGGER.debug("sleep: " + t);
+                                try { Thread.sleep(t); }
+                                catch(InterruptedException ex) { LOGGER.debug("interrupted: wait at phase " + ep.getValue()); }
+                                job = getJobManager().get(jobID); // always keep/return the latest job state
+                                cur = job.getExecutionPhase();
+                                rem -= dt;
+                                if (n < POLL_INTERVAL.length - 1)
+                                    n++;
+                            }
+                        }
+                    }
+                    catch(NumberFormatException ex)
+                    {
+                        getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
+                        return new StringRepresentation("invalid WAIT value: " + waitStr);
+                    }
+                }
+            }
 
             if (representation != null)
                 return representation;

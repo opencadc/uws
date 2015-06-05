@@ -192,8 +192,8 @@
                 <pathelement path="${build}/test/src"/>
                 <pathelement path="${jars}:${testingJars}"/>
             </classpath>
-            <test name="ca.nrc.cadc.uws.server.JobDAOTest_Sybase" />
-            <test name="ca.nrc.cadc.uws.server.JobDAOTest_PostgreSQL" />
+            <test name="ca.nrc.cadc.uws.server.SybaseJobDAOTest" />
+            <test name="ca.nrc.cadc.uws.server.PostgresJobDAOTest" />
             <formatter type="plain" usefile="false" />
         </junit>
     </target>
