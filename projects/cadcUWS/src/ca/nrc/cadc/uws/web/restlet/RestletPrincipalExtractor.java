@@ -186,20 +186,8 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
      */
     protected void addPrincipals(Set<Principal> principals)
     {
-        addCookiePrincipal(principals);
         addHTTPPrincipal(principals);
         addX500Principal(principals);
-    }
-
-    /**
-     * Add the cookie principal, if it exists.
-     */
-    protected void addCookiePrincipal(Set<Principal> principals)
-    {
-        if (cookiePrincipal != null)
-        {
-            principals.add(cookiePrincipal);
-        }
     }
 
     /**
@@ -208,10 +196,13 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
     protected void addHTTPPrincipal(Set<Principal> principals)
     {
         final String httpUser = getAuthenticatedUsername();
-        if (StringUtil.hasText(httpUser))
-            principals.add(new HttpPrincipal(httpUser));
         
-        if (token != null)
+        // only add one HttpPrincipal, precedence order
+        if (StringUtil.hasText(httpUser)) // user from HTTP AUTH
+            principals.add(new HttpPrincipal(httpUser));
+        else if (cookiePrincipal != null) // user from cookie
+            principals.add(cookiePrincipal);
+        else if (token != null) // user from token
             principals.add(token.getUser());
     }
 
