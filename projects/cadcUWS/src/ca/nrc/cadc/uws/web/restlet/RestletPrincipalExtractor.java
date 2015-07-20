@@ -126,7 +126,7 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
             }
         }
         
-        Series<Cookie> cookies = request.getCookies();
+        Series<Cookie> cookies = getRequest().getCookies();
         if (cookies == null || (cookies.size() == 0))
             return;
         
