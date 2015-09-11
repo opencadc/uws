@@ -189,6 +189,10 @@ public abstract class AbstractExecutor  implements JobExecutor
         }
     }
 
+    /**
+     * Implementors can override here to get a specific instance of a Job Runner.
+     *
+     **/
     protected JobRunner getJobRunner() throws IllegalAccessException,
                                               InstantiationException
     {
