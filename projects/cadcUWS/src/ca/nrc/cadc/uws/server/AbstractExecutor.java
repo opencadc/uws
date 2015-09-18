@@ -190,7 +190,6 @@ public abstract class AbstractExecutor  implements JobExecutor
 
     /**
      * Create the new instance of a Job Runner.  Sub classes can override.
-     * 
      */
     protected JobRunner getJobRunner() throws InstantiationException, IllegalAccessException
     {
