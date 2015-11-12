@@ -173,6 +173,12 @@ public class ThreadExecutorTest
         }
     }
 
+    /**
+     * TODO - The assertion that the thread will abort in less than thirty
+     * TODO - milliseconds fails forty percent (40%) of the time.  Please
+     * TODO - fix this assertion.
+     * TODO - jenkinsd 2015.10.26
+     */
     @Test
     public void testAbort()
     {
