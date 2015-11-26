@@ -173,6 +173,12 @@ public class ThreadExecutorTest
         }
     }
 
+    /**
+     * TODO - The assertion that the thread will abort in less than thirty
+     * TODO - milliseconds fails forty percent (40%) of the time.  Please
+     * TODO - fix this assertion.
+     * TODO - jenkinsd 2015.10.26
+     */
     @Test
     public void testAbort()
     {
@@ -180,7 +186,7 @@ public class ThreadExecutorTest
         {
             TestJobUpdater ju = new TestJobUpdater();
             ThreadExecutor exec = new ThreadExecutor(ju, TestJobRunner.class);
-            Job job = new TestJob(100L);
+            Job job = new TestJob(200L);
             ju.jobs.put(job.getID(), job);
             
             long t1 = System.currentTimeMillis();
@@ -191,7 +197,7 @@ public class ThreadExecutorTest
             log.debug("aborted job: " + dt + "ms");
             ExecutionPhase actual = ju.getPhase(job.getID());
             Assert.assertEquals("phase", ExecutionPhase.ABORTED, actual);
-            Assert.assertTrue("duration < 30ms", dt < 30L); // test job sleep was actually interrupted
+            Assert.assertTrue("duration < 100ms", dt < 100L); // test job sleep was actually interrupted
         }
         catch(Exception unexpected)
         {

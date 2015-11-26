@@ -132,6 +132,8 @@
     <target name="setup-test">
         <copy file="test/src/resources/foo.xsd" todir="${build}/test/class"/>
         <copy file="test/src/resources/bar.xsd" todir="${build}/test/class"/>
+        <copy file="src/resources/UWS-v1.0.xsd" todir="${build}/test/class"/>
+        <copy file="src/resources/XLINK.xsd" todir="${build}/test/class"/>
     </target>
     
     <target name="misc-test" depends="compile-test">

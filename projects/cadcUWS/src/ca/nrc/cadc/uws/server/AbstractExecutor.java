@@ -160,8 +160,7 @@ public abstract class AbstractExecutor  implements JobExecutor
 
         try
         {
-            log.debug(job.getID() + ": creating " + jobRunnerClass.getName());
-            final JobRunner jobRunner = getJobRunner();
+            JobRunner jobRunner = getJobRunner();
             jobRunner.setJobUpdater(jobUpdater);
             jobRunner.setJob(job);
             jobRunner.setSyncOutput(sync);
@@ -190,12 +189,11 @@ public abstract class AbstractExecutor  implements JobExecutor
     }
 
     /**
-     * Implementors can override here to get a specific instance of a Job Runner.
-     *
-     **/
-    protected JobRunner getJobRunner() throws IllegalAccessException,
-                                              InstantiationException
+     * Create the new instance of a Job Runner.  Sub classes can override.
+     */
+    protected JobRunner getJobRunner() throws InstantiationException, IllegalAccessException
     {
+        log.debug("Creating " + jobRunnerClass.getName());
         return jobRunnerClass.newInstance();
     }
 
