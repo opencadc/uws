@@ -108,7 +108,7 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
 
     public MemoryJobPersistence()
     {
-        this(new RandomStringGenerator(16), new X500IdentityManager(), 30L);
+        this(new RandomStringGenerator(16), new X500IdentityManager(), 30000L);
     }
 
     public MemoryJobPersistence(StringIDGenerator idGenerator, IdentityManager identityManager, long JobCleanerCheckInterval)
@@ -148,6 +148,7 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
                 log.info("terminating JobCleaner...");
                 jobCleaner.interrupt();
                 jobCleaner.join();
+                log.info("terminating JobCleaner... [OK]");
             }
             catch(Throwable t)
             {
