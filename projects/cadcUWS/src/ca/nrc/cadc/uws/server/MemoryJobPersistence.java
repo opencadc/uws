@@ -108,13 +108,14 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
 
     public MemoryJobPersistence()
     {
-        this(new RandomStringGenerator(16), new X500IdentityManager());
+        this(new RandomStringGenerator(16), new X500IdentityManager(), 30L);
     }
 
-    public MemoryJobPersistence(StringIDGenerator idGenerator, IdentityManager identityManager)
+    public MemoryJobPersistence(StringIDGenerator idGenerator, IdentityManager identityManager, long JobCleanerCheckInterval)
     {
         this.idGenerator = idGenerator;
         this.identityManager = identityManager;
+        setJobCleaner(JobCleanerCheckInterval);
     }
 
     /**
@@ -127,7 +128,7 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
      * 
      * @param checkInterval time between checks (in milliseconds)
      */
-    public void setJobCleaner(long checkInterval)
+    public final void setJobCleaner(long checkInterval)
     {
         terminate();
         if (checkInterval > 0)
@@ -138,7 +139,7 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
         }
     }
 
-    public void terminate()
+    public final void terminate()
     {
         if (jobCleaner != null)
         {
