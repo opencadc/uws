@@ -72,7 +72,6 @@ package ca.nrc.cadc.uws;
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.util.Log4jInit;
-import ca.nrc.cadc.uws.server.JobPersistenceUtil;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -127,9 +126,8 @@ public class JobReaderWriterTest
     Job createPendingJob()
         throws Exception
     {
-        Job ret = new Job();
+        Job ret = new Job(JOB_ID);
         ret.setExecutionPhase(ExecutionPhase.PENDING);
-        JobPersistenceUtil.assignID(ret, JOB_ID);
         ret.setRunID(RUN_ID);
         ret.setQuote(new Date(baseDate.getTime() + 10000L));
         ret.setExecutionDuration(123L);
@@ -457,9 +455,8 @@ public class JobReaderWriterTest
         log.debug("testWithEmptyJobParameter");
         try
         {
-            Job job = new Job();
+            Job job = new Job(JOB_ID);
             job.setExecutionPhase(ExecutionPhase.PENDING);
-            JobPersistenceUtil.assignID(job, JOB_ID);
             job.setRunID(RUN_ID);
             job.setQuote(new Date(baseDate.getTime() + 10000L));
             job.setExecutionDuration(123L);
