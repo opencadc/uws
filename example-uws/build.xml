@@ -88,7 +88,7 @@
     <!-- developer convenience: place for extra targets and properties -->
     <import file="extras.xml" optional="true" />
     
-    <property name="project" value="cadcSampleUWS" />
+    <property name="project" value="example-uws" />
     <property name="warfile" value="${project}.war" />
 
 
@@ -96,6 +96,7 @@
     <property name="cadcUtil"           value="${lib}/cadcUtil.jar" />
     <property name="cadcLog"            value="${lib}/cadcLog.jar" />
     <property name="cadcUWS"            value="${lib}/cadcUWS.jar" />
+    <property name="cadcUWS-Server"     value="${lib}/cadcUWS-Server.jar" />
     <property name="commons-fileupload" value="${ext.lib}/commons-fileupload.jar" />
     <property name="jdom2"              value="${ext.lib}/jdom2.jar" />
     <property name="log4j"              value="${ext.lib}/log4j.jar" />
@@ -105,7 +106,7 @@
     <property name="xerces"             value="${ext.lib}/xerces.jar" />
     <property name="spring"             value="${ext.lib}/spring.jar" />
 
-    <property name="jars" value="${commons-fileupload}:${jdom2}:${log4j}:${servlet-api}:${cadcUtil}:${cadcUWS}" />
+    <property name="jars" value="${commons-fileupload}:${jdom2}:${log4j}:${servlet-api}:${cadcUtil}:${cadcUWS}:${cadcUWS-Server}" />
 
     <target name="build" depends="cadcSampleUWS-jar,webapp" />
 
@@ -128,6 +129,7 @@
             <lib file="${cadcLog}" />
             <lib file="${cadcUtil}" />
             <lib file="${cadcUWS}" />
+            <lib file="${cadcUWS-Server}" />
             <lib file="${commons-fileupload}" />
             <lib file="${jdom2}" />
             <lib file="${log4j}" />

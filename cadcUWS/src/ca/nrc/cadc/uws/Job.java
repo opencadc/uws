@@ -111,6 +111,11 @@ public class Job
     public Job() { }
 
     // package access for use by JobReader
+    Job(String jobID)
+    {
+        this.jobID = jobID;
+    }
+    // package access for use by JobReader
     Job(String jobID,
                 ExecutionPhase executionPhase,
                 Long executionDuration,

@@ -69,6 +69,8 @@
 
 package ca.nrc.cadc.uws;
 
+import ca.nrc.cadc.xml.ContentConverter;
+import ca.nrc.cadc.xml.IterableContent;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -80,9 +82,6 @@ import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
-
-import ca.nrc.cadc.uws.util.ContentConverter;
-import ca.nrc.cadc.uws.util.IterableContent;
 
 /**
  * Writes a JobList as XML.
