@@ -8,7 +8,7 @@
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -88,7 +88,7 @@ public interface JobPersistence
      */
     public void terminate()
         throws InterruptedException;
-    
+
     /**
      * Obtain a Job from the persistence layer. Normally the job has
      * only the top-level job fields and the caller needs to call getDetails
@@ -98,7 +98,7 @@ public interface JobPersistence
      * @return the job
      * @throws JobNotFoundException
      * @throws JobPersistenceException
-     * @throws TransientException 
+     * @throws TransientException
      */
     public Job get(String jobID)
         throws JobNotFoundException, JobPersistenceException, TransientException;
@@ -106,10 +106,10 @@ public interface JobPersistence
     /**
      * Get the details for the specified job. The details include all parameters
      * and results.
-     * 
+     *
      * @param job
      * @throws JobPersistenceException
-     * @throws TransientException 
+     * @throws TransientException
      */
     public void getDetails(Job job)
         throws JobPersistenceException, TransientException;
@@ -120,7 +120,7 @@ public interface JobPersistence
      * @param job
      * @return the persisted job
      * @throws JobPersistenceException
-     * @throws TransientException 
+     * @throws TransientException
      */
     public Job put(Job job)
         throws JobPersistenceException, TransientException;
@@ -130,7 +130,7 @@ public interface JobPersistence
      *
      * @param jobID
      * @throws JobPersistenceException
-     * @throws TransientException 
+     * @throws TransientException
      */
     public void delete(String jobID)
         throws JobPersistenceException, TransientException;
@@ -146,22 +146,52 @@ public interface JobPersistence
     /**
      * Obtain a listing of JobRef instances in the specified phase.
      *
-     * @param phase
+     * @param phases
      * @return iterator over visible jobs
      */
     public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases)
         throws JobPersistenceException, TransientException;
-    
+
+    /**
+     * Obtain a listing of JobRef instances with start dates after 'after'.
+     *
+     * @param after
+     * @return iterator over visible jobs
+     */
+    public Iterator<JobRef> iterator(String appname, String after)
+        throws JobPersistenceException, TransientException;
+
+    /**
+     * Obtain a listing of the last 'last' JobRef instances.
+     *
+     * @param last
+     * @return iterator over visible jobs
+     */
+    public Iterator<JobRef> iterator(String appname, Integer last)
+        throws JobPersistenceException, TransientException;
+
+    /**
+     * Obtain a listing of the last 'last' JobRef instances in the specified
+     * phase with a start date after 'after'.
+     *
+     * @param phases
+     * @param after
+     * @param last
+     * @return iterator over visible jobs
+     */
+    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases, String after, Integer last)
+        throws JobPersistenceException, TransientException;
+
     // optimised access methods
 
     /**
      * Add parameters to the specified job.
-     * 
+     *
      * @param jobID
      * @param params
      * @throws JobNotFoundException
      * @throws JobPersistenceException
-     * @throws TransientException 
+     * @throws TransientException
      */
     public void addParameters(String jobID, List<Parameter> params)
         throws JobNotFoundException, JobPersistenceException, TransientException;

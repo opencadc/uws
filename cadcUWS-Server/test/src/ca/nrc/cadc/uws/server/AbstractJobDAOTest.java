@@ -85,7 +85,6 @@ import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
 import javax.sql.DataSource;
 
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
@@ -94,7 +93,6 @@ import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.IdentityManager;
 import ca.nrc.cadc.auth.X500IdentityManager;
 import ca.nrc.cadc.date.DateUtil;
-import ca.nrc.cadc.util.Log4jInit;
 import ca.nrc.cadc.uws.ErrorSummary;
 import ca.nrc.cadc.uws.ErrorType;
 import ca.nrc.cadc.uws.ExecutionPhase;
@@ -106,12 +104,14 @@ import ca.nrc.cadc.uws.Result;
 
 /**
  * Subclasses must be created to setup the JOB_SCHEMA and dataSource.
- * 
+ *
  * @author pdowler
  */
 public abstract class AbstractJobDAOTest
 {
     private static Logger log = Logger.getLogger(AbstractJobDAOTest.class);
+
+    private DateFormat dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
 
     static DataSource dataSource;
     static JobDAO.JobSchema JOB_SCHEMA;
@@ -134,7 +134,6 @@ public abstract class AbstractJobDAOTest
 
     static
     {
-        Log4jInit.setLevel("ca.nrc.cadc.uws.server", Level.INFO);
         idGenerator = new RandomStringGenerator(16);
         identManager = new X500IdentityManager();
     }
@@ -153,11 +152,29 @@ public abstract class AbstractJobDAOTest
         return ret;
     }
 
+    private Job createJob(ExecutionPhase phase, Date startTime)
+    {
+        id++;
+        Job ret = new Job();
+        ret.setExecutionPhase(phase);
+        ret.setExecutionDuration(DURATION);
+        ret.setDestructionTime(DESTRUCTION);
+        ret.setQuote(QUOTE);
+        ret.setRequestPath(REQUEST_PATH);
+        ret.setRemoteIP(REMOTE_IP);
+        if (startTime != null)
+        {
+            ret.setStartTime(startTime);
+        }
+        log.debug("created test job: " + ret.getID());
+        return ret;
+    }
+
     private JobDAO getDAO()
     {
         return new JobDAO(dataSource, JOB_SCHEMA, identManager, idGenerator);
     }
-    
+
     @Test
     public void testPutGetMinimal()
     {
@@ -288,7 +305,7 @@ public abstract class AbstractJobDAOTest
             job.setParameterList(new ArrayList<Parameter>());
             job.getParameterList().add(new Parameter("FOO", "bar"));
             job.getParameterList().add(new Parameter("BAR", "baz"));
-            
+
             after = dao.put(job, null);
             compareJobs("returned", job, after);
             persisted = dao.get(job.getID());
@@ -336,7 +353,7 @@ public abstract class AbstractJobDAOTest
             List<Parameter> params = new ArrayList<Parameter>();
             params.add(new Parameter("FOO", "bar"));
             params.add(new Parameter("BAR", "baz"));
-            
+
             // add them to the job
             dao.addParameters(job.getID(), params);
             // now add to the job for comparison
@@ -483,7 +500,7 @@ public abstract class AbstractJobDAOTest
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
-    
+
     @Test
     public void testPutList()
     {
@@ -492,15 +509,15 @@ public abstract class AbstractJobDAOTest
             final Subject subject = new Subject();
             X500Principal principal = new X500Principal("cn=test user,ou=hia.nrc.ca,o=grid,c=ca");
             subject.getPrincipals().add(principal);
-            
+
             Subject.doAs(subject, new PrivilegedExceptionAction<Object>()
                 {
                     public Object run() throws Exception
                     {
-                        
+
                         Job ret, job1, job2, job3;
                         String id1, id2, id3;
-                        
+
                         job1 = createJob();
                         job2 = createJob();
                         job3 = createJob();
@@ -512,8 +529,8 @@ public abstract class AbstractJobDAOTest
                         id2 = ret.getID();
                         ret = dao.put(job3, subject);
                         id3 = ret.getID();
-                        
-                        Iterator<JobRef> it = dao.iterator("/foo", null);
+
+                        Iterator<JobRef> it = dao.iterator("/foo", null, null, null);
                         boolean found1 = false, found2 = false, found3 = false;
                         String next = null;
                         while (it.hasNext())
@@ -541,6 +558,232 @@ public abstract class AbstractJobDAOTest
     }
 
     @Test
+    public void testPutListFilterPhase()
+    {
+        try
+        {
+            final Subject subject = new Subject();
+            X500Principal principal = new X500Principal("cn=test user,ou=hia.nrc.ca,o=grid,c=ca");
+            subject.getPrincipals().add(principal);
+
+            Subject.doAs(subject, new PrivilegedExceptionAction<Object>()
+                {
+                    public Object run() throws Exception
+                    {
+
+                        Job ret, job1, job2, job3;
+                        String id1, id2, id3;
+
+                        job1 = createJob(ExecutionPhase.EXECUTING, null);
+                        job2 = createJob(ExecutionPhase.EXECUTING, null);
+                        job3 = createJob(ExecutionPhase.ABORTED, null);
+
+                        JobDAO dao = getDAO();
+                        ret = dao.put(job1, subject);
+                        id1 = ret.getID();
+                        ret = dao.put(job2, subject);
+                        id2 = ret.getID();
+                        ret = dao.put(job3, subject);
+                        id3 = ret.getID();
+
+                        List<ExecutionPhase> phases = new ArrayList<ExecutionPhase>(1);
+                        phases.add(ExecutionPhase.EXECUTING);
+                        Iterator<JobRef> it = dao.iterator("/foo", phases, null, null);
+                        boolean found1 = false, found2 = false, found3 = false;
+                        String next = null;
+                        while (it.hasNext())
+                        {
+                            next = it.next().getJobID();
+                            log.debug("Next jobID: " + next);
+                            if (next.equals(id1))
+                                found1 = true;
+                            if (next.equals(id2))
+                                found2 = true;
+                            if (next.equals(id3))
+                                found3 = true;
+                        }
+                        Assert.assertTrue("Job list incorrect", found1 && found2 && (!found3));
+                        return null;
+                    }
+                });
+
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+
+    @Test
+    public void testPutListFilterAfter()
+    {
+        try
+        {
+            final Subject subject = new Subject();
+            X500Principal principal = new X500Principal("cn=test user,ou=hia.nrc.ca,o=grid,c=ca");
+            subject.getPrincipals().add(principal);
+
+            Subject.doAs(subject, new PrivilegedExceptionAction<Object>()
+                {
+                    public Object run() throws Exception
+                    {
+
+                        Job ret, job1, job2, job3;
+                        String id1, id2, id3;
+
+                        Thread.sleep(3000);
+
+                        Date now = new Date();
+                        job1 = createJob(ExecutionPhase.EXECUTING, new Date(now.getTime() - 2000));
+                        job2 = createJob(ExecutionPhase.EXECUTING, now);
+                        job3 = createJob(ExecutionPhase.EXECUTING, now);
+
+                        JobDAO dao = getDAO();
+                        ret = dao.put(job1, subject);
+                        id1 = ret.getID();
+                        ret = dao.put(job2, subject);
+                        id2 = ret.getID();
+                        ret = dao.put(job3, subject);
+                        id3 = ret.getID();
+
+                        Iterator<JobRef> it = dao.iterator("/foo", null, dateFormat.format(new Date(now.getTime() - 1000)), null);
+                        log.debug("testPutListFilterAfter jobs start...");
+                        boolean found1 = false, found2 = false, found3 = false;
+                        String next = null;
+                        while (it.hasNext())
+                        {
+                            next = it.next().getJobID();
+                            log.debug("Next jobID: " + next);
+                            if (next.equals(id1))
+                                found1 = true;
+                            if (next.equals(id2))
+                                found2 = true;
+                            if (next.equals(id3))
+                                found3 = true;
+                        }
+                        log.debug("testPutListFilterAfter jobs end");
+                        Assert.assertTrue("Job list incorrect", (!found1) && found2 && found3);
+                        return null;
+                    }
+                });
+
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+
+    @Test
+    public void testPutListFilterLast()
+    {
+        try
+        {
+            final Subject subject = new Subject();
+            X500Principal principal = new X500Principal("cn=test user,ou=hia.nrc.ca,o=grid,c=ca");
+            subject.getPrincipals().add(principal);
+
+            Subject.doAs(subject, new PrivilegedExceptionAction<Object>()
+                {
+                    public Object run() throws Exception
+                    {
+
+                        Job ret, job1, job2, job3;
+                        String id1, id2, id3;
+
+                        Thread.sleep(3000);
+
+                        Date now = new Date();
+
+                        job1 = createJob(ExecutionPhase.EXECUTING, new Date(now.getTime() - 3000));
+                        job2 = createJob(ExecutionPhase.EXECUTING, new Date(now.getTime() - 1000));
+                        job3 = createJob(ExecutionPhase.EXECUTING, new Date(now.getTime() - 2000));
+
+                        JobDAO dao = getDAO();
+                        ret = dao.put(job1, subject);
+                        id1 = ret.getID();
+                        ret = dao.put(job2, subject);
+                        id2 = ret.getID();
+                        ret = dao.put(job3, subject);
+                        id3 = ret.getID();
+
+                        Iterator<JobRef> it = dao.iterator("/foo", null, null, 1);
+                        log.debug("testPutListFilterLast jobs start...");
+                        boolean found1 = false, found2 = false, found3 = false;
+                        String next = null;
+                        while (it.hasNext())
+                        {
+                            next = it.next().getJobID();
+                            log.debug("Next jobID: " + next);
+                            if (next.equals(id1))
+                                found1 = true;
+                            if (next.equals(id2))
+                                found2 = true;
+                            if (next.equals(id3))
+                                found3 = true;
+                            log.debug("end of next");
+                        }
+                        log.debug("testPutListFilterLast jobs end");
+                        Assert.assertTrue("Job list incorrect", (!found1) && found2 && (!found3));
+
+                        it = dao.iterator("/foo", null, null, 2);
+                        log.debug("testPutListFilterLast jobs start...");
+                        found1 = false;
+                        found2 = false;
+                        found3 = false;
+                        next = null;
+                        while (it.hasNext())
+                        {
+                            next = it.next().getJobID();
+                            log.debug("Next jobID: " + next);
+                            if (next.equals(id1))
+                                found1 = true;
+                            if (next.equals(id2))
+                                found2 = true;
+                            if (next.equals(id3))
+                                found3 = true;
+                            log.debug("end of next");
+                        }
+                        log.debug("testPutListFilterLast jobs end");
+                        Assert.assertTrue("Job list incorrect", !found1 && found2 && found3);
+
+                        it = dao.iterator("/foo", null, null, 3);
+                        log.debug("testPutListFilterLast jobs start...");
+                        found1 = false;
+                        found2 = false;
+                        found3 = false;
+                        next = null;
+                        while (it.hasNext())
+                        {
+                            next = it.next().getJobID();
+                            log.debug("Next jobID: " + next);
+                            if (next.equals(id1))
+                                found1 = true;
+                            if (next.equals(id2))
+                                found2 = true;
+                            if (next.equals(id3))
+                                found3 = true;
+                            log.debug("end of next");
+                        }
+                        log.debug("testPutListFilterLast jobs end");
+                        Assert.assertTrue("Job list incorrect", found1 && found2 && found3);
+
+                        return null;
+                    }
+
+                });
+
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+
+    @Test
     public void testPhaseTransitionAllowed()
     {
         log.debug("testPhaseTransitionAllowed");
@@ -550,7 +793,7 @@ public abstract class AbstractJobDAOTest
             // we will test some plausible transitions but the DAO does not enforce
             // UWS semantics
             JobDAO dao = getDAO();
-            
+
             job = createJob();
             after = dao.put(job, null);
             compareJobs("returned", job, after);
@@ -716,7 +959,7 @@ public abstract class AbstractJobDAOTest
             job.setExecutionPhase(ExecutionPhase.COMPLETED);
             job.setEndTime(endTime);
             compareJobs("completed, 2 results", job, persisted);
-            
+
         }
         catch(Exception unexpected)
         {
@@ -753,7 +996,7 @@ public abstract class AbstractJobDAOTest
             dao.getDetails(persisted);
 
             job.setErrorSummary(error);
-            job.setExecutionPhase(ExecutionPhase.ERROR); 
+            job.setExecutionPhase(ExecutionPhase.ERROR);
             job.setEndTime(endTime);
             compareJobs("error, w/ summary", job, persisted);
         }
@@ -823,7 +1066,7 @@ public abstract class AbstractJobDAOTest
         Assert.assertEquals(str+" request path", exp.getRequestPath(), act.getRequestPath());
         Assert.assertEquals(str+" remote ip", exp.getRemoteIP(), act.getRemoteIP());
         Assert.assertEquals(str+" runid", exp.getRunID(), act.getRunID());
-        
+
         if (exp.getErrorSummary() == null)
             Assert.assertNull(act.getErrorSummary());
         else

@@ -116,9 +116,9 @@ public abstract class DatabaseJobPersistence implements JobPersistence, JobUpdat
 
     /**
      * Constructor.
-     * 
+     *
      * @param idGenerator
-     * @param identityManager 
+     * @param identityManager
      */
     protected DatabaseJobPersistence(StringIDGenerator idGenerator, IdentityManager identityManager)
     {
@@ -146,7 +146,7 @@ public abstract class DatabaseJobPersistence implements JobPersistence, JobUpdat
             throw new JobPersistenceException("failed to find/create DataSource", ex);
         }
         finally { }
-        
+
     }
 
     /**
@@ -158,7 +158,7 @@ public abstract class DatabaseJobPersistence implements JobPersistence, JobUpdat
 
     /**
      * Get a DataSource to use to persist jobs to a RDBMS.
-     * 
+     *
      * @return
      */
     protected abstract DataSource getDataSource()
@@ -181,13 +181,28 @@ public abstract class DatabaseJobPersistence implements JobPersistence, JobUpdat
     public Iterator<JobRef> iterator(String appname)
         throws JobPersistenceException, TransientException
     {
-        return iterator(appname, null);
+        return iterator(appname, null, null, null);
     }
     public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases)
         throws JobPersistenceException, TransientException
     {
+        return iterator(appname, phases, null, null);
+    }
+    public Iterator<JobRef> iterator(String appname, String after)
+            throws JobPersistenceException, TransientException
+    {
+        return iterator(appname, null, after, null);
+    }
+    public Iterator<JobRef> iterator(String appname, Integer last)
+            throws JobPersistenceException, TransientException
+    {
+        return iterator(appname, null, null, last);
+    }
+    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases, String after, Integer last)
+            throws JobPersistenceException, TransientException
+    {
         JobDAO dao = getDAO();
-        return dao.iterator(appname, phases);
+        return dao.iterator(appname, phases, after, last);
     }
 
     public Job put(Job job)
@@ -199,7 +214,7 @@ public abstract class DatabaseJobPersistence implements JobPersistence, JobUpdat
         return dao.put(job, caller);
     }
 
-    public void addParameters(String jobID, List<Parameter> params) 
+    public void addParameters(String jobID, List<Parameter> params)
         throws JobNotFoundException, JobPersistenceException, TransientException
     {
         log.debug("addParameters: " + jobID + "," + toString(params));
@@ -233,7 +248,7 @@ public abstract class DatabaseJobPersistence implements JobPersistence, JobUpdat
      * @param ep
      * @throws JobNotFoundException
      * @throws JobPersistenceException
-     * @throws TransientException 
+     * @throws TransientException
      */
     public void setPhase(String jobID, ExecutionPhase ep)
         throws JobNotFoundException, JobPersistenceException, TransientException
@@ -243,13 +258,13 @@ public abstract class DatabaseJobPersistence implements JobPersistence, JobUpdat
 
     /**
      * Conditionally change phase from start to end.
-     * 
+     *
      * @param jobID
      * @param start
      * @param end
      * @return the final phase (end) or null if not successful
      * @throws JobNotFoundException
-     * @throws TransientException 
+     * @throws TransientException
      */
     public ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end)
         throws JobNotFoundException, JobPersistenceException, TransientException
@@ -268,14 +283,14 @@ public abstract class DatabaseJobPersistence implements JobPersistence, JobUpdat
     /**
      * Conditionally change phase from start to end and, if successful, add the specified results to the
      * job.
-     * 
+     *
      * @param jobID
      * @param start
      * @param end
      * @param results
      * @return the final phase (end) or null if not successful
      * @throws JobNotFoundException
-     * @throws TransientException 
+     * @throws TransientException
      */
     public ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end, List<Result> results, Date date)
         throws JobNotFoundException, JobPersistenceException, TransientException

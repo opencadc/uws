@@ -71,12 +71,16 @@ package ca.nrc.cadc.uws.server;
 
 import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import javax.security.auth.Subject;
 
@@ -84,13 +88,13 @@ import org.apache.log4j.Logger;
 
 import ca.nrc.cadc.auth.IdentityManager;
 import ca.nrc.cadc.auth.X500IdentityManager;
+import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.uws.ErrorSummary;
 import ca.nrc.cadc.uws.ExecutionPhase;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobRef;
 import ca.nrc.cadc.uws.Parameter;
 import ca.nrc.cadc.uws.Result;
-import java.util.ArrayList;
 
 /**
  *
@@ -103,6 +107,7 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
     protected StringIDGenerator idGenerator;
     protected IdentityManager identityManager;
     private Thread jobCleaner;
+    private DateFormat dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
 
     protected final Map<String,Job> jobs = new HashMap<String,Job>();
 
@@ -125,7 +130,7 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
      * destruction date in the past are deleted. If checkInterval is less than or
      * equal to 0, the current job cleaner thread is terminated and a new one is not
      * started (e.g. job cleaner is disabled).
-     * 
+     *
      * @param checkInterval time between checks (in milliseconds)
      */
     public final void setJobCleaner(long checkInterval)
@@ -252,26 +257,45 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
     /**
      * Iterator over the jobs. Note that this could fail if the underlying job list
      * is modified while iterating.
-     * 
+     *
      * @return
      */
     public Iterator<JobRef> iterator(String appname)
     {
         return iterator(appname);
     }
-    
+
+    public Iterator<JobRef> iterator(String appName, List<ExecutionPhase> phases)
+    {
+        return iterator(appName, phases, null, null);
+    }
+
+    public Iterator<JobRef> iterator(String appName, String after)
+    {
+        return iterator(appName, null, after, null);
+    }
+
+    public Iterator<JobRef> iterator(String appName, Integer last)
+    {
+        return iterator(appName, null, null, last);
+    }
+
     /**
      * Iterator over the jobs. Note that this could fail if the underlying job list
      * is modified while iterating.
-     * 
+     *
      * @return
      */
-    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases)
+    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases, String after, Integer last)
     {
-        List<JobRef> tmp = new ArrayList<JobRef>();
+        //List<JobRef> tmp = new ArrayList<JobRef>();
+
+        Map<Date,JobRef> tmp = new TreeMap<Date,JobRef>();
         boolean skipArchived = (phases == null || phases.isEmpty());
-        boolean filter = (phases != null && !phases.isEmpty());
-        
+        boolean filterOnPhase = (phases != null && !phases.isEmpty());
+        Date nullStartTime = new Date(0);
+        Date startDate = null;
+
         synchronized(jobs)
         {
             for (Job j : jobs.values())
@@ -279,12 +303,44 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
                 if (appname == null || j.getRequestPath().startsWith(appname))
                 {
                     if ( (skipArchived && !ExecutionPhase.ARCHIVED.equals(j.getExecutionPhase()))
-                        || (filter && phases.contains(j.getExecutionPhase())) )
-                        tmp.add(new JobRef(j.getID(), j.getExecutionPhase()));
+                        || (filterOnPhase && phases.contains(j.getExecutionPhase())) )
+                    {
+                        startDate = j.getStartTime();
+                        if (startDate == null)
+                            startDate = nullStartTime;
+
+                        if (after != null && j.getStartTime() != null)
+                        {
+                            Date afterDate = null;
+                            try
+                            {
+                                afterDate = dateFormat.parse(after);
+                            }
+                            catch (ParseException e)
+                            {
+                                throw new IllegalArgumentException("Illegal date format: " + after);
+                            }
+                            if (afterDate.before(j.getStartTime()))
+                            {
+                                tmp.put(startDate, new JobRef(j.getID(), j.getExecutionPhase()));
+                            }
+                        }
+                        else
+                        {
+                            tmp.put(startDate, new JobRef(j.getID(), j.getExecutionPhase()));
+                        }
+                    }
                 }
             }
         }
-        return tmp.iterator();
+
+        if (last != null && last >= 0)
+        {
+            List<JobRef> all = new ArrayList<JobRef>(tmp.values());
+            List<JobRef> lastN = all.subList(0, last);
+            return lastN.iterator();
+        }
+        return tmp.values().iterator();
     }
 
     public Job put(Job job)

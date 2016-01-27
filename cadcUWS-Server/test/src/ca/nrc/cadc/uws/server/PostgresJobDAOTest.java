@@ -1,12 +1,13 @@
 
 package ca.nrc.cadc.uws.server;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 import ca.nrc.cadc.db.ConnectionConfig;
 import ca.nrc.cadc.db.DBConfig;
 import ca.nrc.cadc.db.DBUtil;
 import ca.nrc.cadc.util.Log4jInit;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 
 /**
  *
@@ -18,7 +19,7 @@ public class PostgresJobDAOTest extends AbstractJobDAOTest
 
     static
     {
-        Log4jInit.setLevel("ca.nrc.cadc.uws.server", Level.INFO);
+        Log4jInit.setLevel("ca.nrc.cadc.uws.server", Level.DEBUG);
         try
         {
             DBConfig conf = new DBConfig();
