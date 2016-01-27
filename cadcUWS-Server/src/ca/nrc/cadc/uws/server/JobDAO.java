@@ -1837,7 +1837,6 @@ public class JobDAO
         public JobRef next()
         {
             JobRef next = this.jobRefIterator.next();
-            log.debug("Next JobRef: " + next);
             count++;
             return next;
         }
