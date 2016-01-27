@@ -19,7 +19,7 @@ public class PostgresJobDAOTest extends AbstractJobDAOTest
 
     static
     {
-        Log4jInit.setLevel("ca.nrc.cadc.uws.server", Level.DEBUG);
+        Log4jInit.setLevel("ca.nrc.cadc.uws.server", Level.INFO);
         try
         {
             DBConfig conf = new DBConfig();
