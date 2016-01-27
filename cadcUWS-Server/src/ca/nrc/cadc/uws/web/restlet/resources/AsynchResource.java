@@ -8,7 +8,7 @@
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -69,24 +69,27 @@
 
 package ca.nrc.cadc.uws.web.restlet.resources;
 
-import ca.nrc.cadc.auth.AuthMethod;
-import ca.nrc.cadc.auth.AuthenticationUtil;
 import java.io.IOException;
 import java.security.AccessControlException;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.Element;
+import org.restlet.data.Form;
 import org.restlet.data.Status;
 import org.restlet.representation.Representation;
 import org.restlet.resource.Post;
 
+import ca.nrc.cadc.auth.AuthMethod;
+import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.io.ByteLimitExceededException;
 import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.uws.ExecutionPhase;
@@ -95,9 +98,6 @@ import ca.nrc.cadc.uws.JobListWriter;
 import ca.nrc.cadc.uws.JobRef;
 import ca.nrc.cadc.uws.server.JobPersistenceException;
 import ca.nrc.cadc.uws.web.restlet.RestletJobCreator;
-import java.util.ArrayList;
-import java.util.List;
-import org.restlet.data.Form;
 
 
 /**
@@ -172,9 +172,9 @@ public class AsynchResource extends UWSResource
      * @param document The Document to build up.
      * @throws java.io.IOException If something went wrong or the XML cannot be
      *                             built.
-     * @throws PrivilegedActionException 
+     * @throws PrivilegedActionException
      */
-    
+
     @Override
     protected void buildXML(final Document document) throws IOException
     {
@@ -201,12 +201,13 @@ public class AsynchResource extends UWSResource
             throw new IOException(e.getCause());
         }
     }
-    
+
     private void doBuildXML(final Document document) throws IOException
     {
         Form query = getQuery();
         String[] phases = query.getValuesArray("PHASE", true);
-        String phaseStr = null;
+        String after = query.getFirstValue("AFTER");
+        String last = query.getFirstValue("LAST");
         try
         {
             Subject caller = AuthenticationUtil.getCurrentSubject();
@@ -215,26 +216,46 @@ public class AsynchResource extends UWSResource
             {
                 generateErrorRepresentation(Status.CLIENT_ERROR_FORBIDDEN, "anonymous job listing not permitted");
             }
-            
+
             List<ExecutionPhase> phaseList = new ArrayList<ExecutionPhase>();
             for (String es : phases)
             {
-                phaseStr = es; // see error handling below
-                phaseList.add(ExecutionPhase.toValue(phaseStr));
+                try
+                {
+                    phaseList.add(ExecutionPhase.toValue(es));
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new IllegalArgumentException("invalid parameter: PHASE=" + es);
+                }
             }
-            
+
             String path = getRequestPath();
             int i = path.indexOf('/', 2); // the second /
             String appname = path.substring(0, i+1); // include second /
-            
-            Iterator<JobRef> jobs = getJobManager().iterator(appname, phaseList);
+
+            // parse 'last' parameter
+            Integer lastInt = null;
+            if (last != null)
+            {
+                try
+                {
+                    lastInt = Integer.parseInt(last);
+                }
+                catch (NumberFormatException e)
+                {
+                    throw new IllegalArgumentException("invalid parameter: LAST=" + last);
+                }
+            }
+
+            Iterator<JobRef> jobs = getJobManager().iterator(appname, phaseList, after, lastInt);
             JobListWriter jobListWriter = new JobListWriter();
             Element root = jobListWriter.getRootElement(jobs);
             document.setRootElement(root);
         }
         catch(IllegalArgumentException ex)
         {
-            String msg = "invalid parameter: phase=" + phaseStr;
+            String msg = ex.getMessage();
             LOGGER.debug(msg);
             generateErrorRepresentation(Status.CLIENT_ERROR_BAD_REQUEST, msg);
         }

@@ -84,7 +84,7 @@ import ca.nrc.cadc.uws.Parameter;
  * library components. Each application must provide an implementation that is fully
  * configured with a JobExecutor and JobPersistence. The provided
  * <code>ca.nrc.cadc.uws.server.SimpleJobManager</code> should suffice for most purposes.
- * 
+ *
  * @author pdowler
  */
 public interface JobManager
@@ -106,7 +106,7 @@ public interface JobManager
      * @param job
      * @return the created job
      * @throws JobPersistenceException
-     * @throws TransientException 
+     * @throws TransientException
      */
     public Job create(Job job)
         throws JobPersistenceException, TransientException;
@@ -118,14 +118,14 @@ public interface JobManager
      * @return
      * @throws JobNotFoundException
      * @throws JobPersistenceException
-     * @throws TransientException 
+     * @throws TransientException
      */
     public Job get(String jobID)
         throws JobNotFoundException, JobPersistenceException, TransientException;
 
     /**
      * Get an iterator over the current jobs.
-     * 
+     *
      * @param appname
      * @return
      * @throws ca.nrc.cadc.uws.server.JobPersistenceException
@@ -133,10 +133,10 @@ public interface JobManager
      */
     public Iterator<JobRef> iterator(String appname)
         throws JobPersistenceException, TransientException;
-    
+
     /**
      * Get an iterator over the current jobs in the specified phase.
-     * 
+     *
      * @param appname
      * @param phases
      * @return
@@ -147,12 +147,26 @@ public interface JobManager
         throws JobPersistenceException, TransientException;
 
     /**
+     * Get an iterator over the current jobs in the specified phase.
+     *
+     * @param appname
+     * @param phases
+     * @param after
+     * @param last
+     * @return
+     * @throws ca.nrc.cadc.uws.server.JobPersistenceException
+     * @throws ca.nrc.cadc.net.TransientException
+     */
+    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases, String after, Integer last)
+        throws JobPersistenceException, TransientException;
+
+    /**
      * Delete the specified job.
      *
      * @param jobID
      * @throws JobNotFoundException
      * @throws JobPersistenceException
-     * @throws TransientException 
+     * @throws TransientException
      */
     public void delete(String jobID)
         throws JobNotFoundException, JobPersistenceException, TransientException;
@@ -169,7 +183,7 @@ public interface JobManager
      * @throws JobNotFoundException
      * @throws JobPersistenceException
      * @throws JobPhaseException
-     * @throws TransientException 
+     * @throws TransientException
      */
     public void update(String jobID, Date destruction, Long duration, Date quote)
         throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException;
@@ -182,7 +196,7 @@ public interface JobManager
      * @throws JobNotFoundException
      * @throws JobPersistenceException
      * @throws JobPhaseException
-     * @throws TransientException 
+     * @throws TransientException
      */
     public void update(String jobID, List<Parameter> params)
         throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException;
@@ -198,11 +212,11 @@ public interface JobManager
      * @throws JobNotFoundException
      * @throws JobPersistenceException
      * @throws JobPhaseException
-     * @throws TransientException 
+     * @throws TransientException
      */
     public void execute(String jobID)
         throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException;
-    
+
     public void execute(Job job)
         throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException;
 
@@ -219,7 +233,7 @@ public interface JobManager
      * @throws JobNotFoundException
      * @throws JobPersistenceException
      * @throws JobPhaseException
-     * @throws TransientException 
+     * @throws TransientException
      * @throws IllegalStateException if the job is not in a state from which it can be aborted
      */
     public void abort(String jobID)

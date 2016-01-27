@@ -8,7 +8,7 @@
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -91,13 +91,13 @@ import ca.nrc.cadc.uws.Parameter;
 
 /**
  * Simple implementation of the JobManager interface.
- * 
+ *
  * @author pdowler
  */
 public class SimpleJobManager implements JobManager
 {
     private static final Logger log = Logger.getLogger(SimpleJobManager.class);
-    
+
     protected JobPersistence jobPersistence;
     protected JobExecutor jobExecutor;
     protected Long maxExecDuration = 3600L;
@@ -120,7 +120,7 @@ public class SimpleJobManager implements JobManager
         if (jobExecutor != null)
             jobExecutor.terminate();
     }
-    
+
     public void setJobExecutor(JobExecutor je)
     {
         this.jobExecutor = je;
@@ -133,7 +133,7 @@ public class SimpleJobManager implements JobManager
 
     /**
      * Max elapsed time a job will be allowed to execute.
-     * 
+     *
      * @param maxExecDuration
      */
     public void setMaxExecDuration(Long maxExecDuration)
@@ -143,7 +143,7 @@ public class SimpleJobManager implements JobManager
 
     /**
      * Max elapsed time from job creation to destruction.
-     * 
+     *
      * @param maxDestruction
      */
     public void setMaxDestruction(Long maxDestruction)
@@ -153,7 +153,7 @@ public class SimpleJobManager implements JobManager
 
     /**
      * Max elapsed time until job should be finished.
-     * 
+     *
      * @param maxQuote
      */
     public void setMaxQuote(Long maxQuote)
@@ -162,7 +162,7 @@ public class SimpleJobManager implements JobManager
     }
 
 
-    public void abort(String jobID) 
+    public void abort(String jobID)
         throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException
     {
         Job job = jobPersistence.get(jobID);
@@ -188,8 +188,8 @@ public class SimpleJobManager implements JobManager
         doAuthorizationCheck(job);
         jobPersistence.delete(jobID);
     }
-    
-    public void execute(String jobID) 
+
+    public void execute(String jobID)
         throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException
     {
         Job job = jobPersistence.get(jobID);
@@ -197,14 +197,14 @@ public class SimpleJobManager implements JobManager
         execute(job);
     }
 
-    public void execute(Job job) 
+    public void execute(Job job)
         throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException
     {
         // assume they used get which does auth check and getDetails
         jobExecutor.execute(job);
     }
 
-    public void execute(String jobID, SyncOutput output) 
+    public void execute(String jobID, SyncOutput output)
         throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException
     {
         Job job = jobPersistence.get(jobID);
@@ -216,11 +216,11 @@ public class SimpleJobManager implements JobManager
     public void execute(Job job, SyncOutput output)
         throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException
     {
-        
+
         jobExecutor.execute(job, output);
     }
 
-    public Job get(String jobID) 
+    public Job get(String jobID)
         throws JobNotFoundException, JobPersistenceException, TransientException
     {
         Job job = jobPersistence.get(jobID);
@@ -228,17 +228,23 @@ public class SimpleJobManager implements JobManager
         jobPersistence.getDetails(job);
         return job;
     }
-    
+
     public Iterator<JobRef> iterator(String appname)
         throws JobPersistenceException, TransientException
     {
         return jobPersistence.iterator(appname);
     }
-    
+
     public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases)
         throws JobPersistenceException, TransientException
     {
         return jobPersistence.iterator(appname, phases);
+    }
+
+    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases, String after, Integer last)
+            throws JobPersistenceException, TransientException
+    {
+        return jobPersistence.iterator(appname, phases, after, last);
     }
 
     public void update(String jobID, Date destruction, Long duration, Date quote)
@@ -264,7 +270,7 @@ public class SimpleJobManager implements JobManager
         jobPersistence.put(job);
     }
 
-    public void update(String jobID, List<Parameter> params) 
+    public void update(String jobID, List<Parameter> params)
         throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException
     {
         log.debug("update: " + jobID + "," + toString(params));
@@ -285,7 +291,7 @@ public class SimpleJobManager implements JobManager
 
     /**
      * Checks that the current caller is equivalent to the job owner.
-     * 
+     *
      * @param job                       The Job to check authorization to.
      * @throws AccessControlException   If the current subject is not
      *                                  authorized.
@@ -315,5 +321,5 @@ public class SimpleJobManager implements JobManager
         throw new AccessControlException("permission denied");
     }
 
-   
+
 }
