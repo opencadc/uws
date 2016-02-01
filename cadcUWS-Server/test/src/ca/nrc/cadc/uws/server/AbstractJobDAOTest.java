@@ -693,7 +693,7 @@ public abstract class AbstractJobDAOTest
                         Job ret, job1, job2, job3;
                         String id1, id2, id3;
 
-                        Thread.sleep(3000);
+                        Thread.sleep(4500);
 
                         Date now = new Date();
 
