@@ -212,8 +212,8 @@ public class AsynchResource extends UWSResource
     {
         Form query = getQuery();
         String[] phases = query.getValuesArray("PHASE", true);
-        String after = query.getFirstValue("AFTER");
-        String last = query.getFirstValue("LAST");
+        String after = query.getFirstValue("AFTER", true);
+        String last = query.getFirstValue("LAST", true);
         try
         {
             Subject caller = AuthenticationUtil.getCurrentSubject();
