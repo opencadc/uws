@@ -87,7 +87,9 @@ import javax.sql.DataSource;
 
 import org.apache.log4j.Logger;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.IdentityManager;
@@ -110,8 +112,6 @@ import ca.nrc.cadc.uws.Result;
 public abstract class AbstractJobDAOTest
 {
     private static Logger log = Logger.getLogger(AbstractJobDAOTest.class);
-
-    private DateFormat dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
 
     static DataSource dataSource;
     static JobDAO.JobSchema JOB_SCHEMA;
@@ -136,6 +136,15 @@ public abstract class AbstractJobDAOTest
     {
         idGenerator = new RandomStringGenerator(16);
         identManager = new X500IdentityManager();
+    }
+
+    @Before
+    public void deleteJobs()
+    {
+        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+        jdbc.execute("delete from " + JOB_SCHEMA.detailTable);
+        jdbc.execute("delete from " + JOB_SCHEMA.jobTable);
+        log.debug("deleted jobs");
     }
 
     private Job createJob()
