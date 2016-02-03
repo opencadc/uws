@@ -157,7 +157,7 @@ public interface JobManager
      * @throws ca.nrc.cadc.uws.server.JobPersistenceException
      * @throws ca.nrc.cadc.net.TransientException
      */
-    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases, String after, Integer last)
+    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases, Date after, Integer last)
         throws JobPersistenceException, TransientException;
 
     /**

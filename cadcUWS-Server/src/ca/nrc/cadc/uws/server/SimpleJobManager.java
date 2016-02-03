@@ -241,7 +241,7 @@ public class SimpleJobManager implements JobManager
         return jobPersistence.iterator(appname, phases);
     }
 
-    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases, String after, Integer last)
+    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases, Date after, Integer last)
             throws JobPersistenceException, TransientException
     {
         return jobPersistence.iterator(appname, phases, after, last);

@@ -74,7 +74,10 @@ import java.security.AccessControlException;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -90,6 +93,7 @@ import org.restlet.resource.Post;
 
 import ca.nrc.cadc.auth.AuthMethod;
 import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.io.ByteLimitExceededException;
 import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.uws.ExecutionPhase;
@@ -106,6 +110,8 @@ import ca.nrc.cadc.uws.web.restlet.RestletJobCreator;
 public class AsynchResource extends UWSResource
 {
     private final static Logger LOGGER = Logger.getLogger(AsynchResource.class);
+
+    private DateFormat dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
 
 
     /**
@@ -248,7 +254,21 @@ public class AsynchResource extends UWSResource
                 }
             }
 
-            Iterator<JobRef> jobs = getJobManager().iterator(appname, phaseList, after, lastInt);
+            // parse 'after' parameter
+            Date afterDate = null;
+            if (after != null)
+            {
+                try
+                {
+                    afterDate = dateFormat.parse(after);
+                }
+                catch (ParseException e)
+                {
+                    throw new IllegalArgumentException("invalid parameter: AFTER=" + after);
+                }
+            }
+
+            Iterator<JobRef> jobs = getJobManager().iterator(appname, phaseList, afterDate, lastInt);
             JobListWriter jobListWriter = new JobListWriter();
             Element root = jobListWriter.getRootElement(jobs);
             document.setRootElement(root);

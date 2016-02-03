@@ -647,7 +647,7 @@ public abstract class AbstractJobDAOTest
                         ret = dao.put(job3, subject);
                         id3 = ret.getID();
 
-                        Iterator<JobRef> it = dao.iterator("/foo", null, dateFormat.format(new Date(now.getTime() - 1000)), null);
+                        Iterator<JobRef> it = dao.iterator("/foo", null, new Date(now.getTime() - 1000), null);
                         log.debug("testPutListFilterAfter jobs start...");
                         boolean found1 = false, found2 = false, found3 = false;
                         String next = null;

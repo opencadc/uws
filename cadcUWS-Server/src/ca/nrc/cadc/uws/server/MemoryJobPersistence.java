@@ -72,7 +72,6 @@ package ca.nrc.cadc.uws.server;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.Date;
@@ -270,23 +269,13 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
         return iterator(appName, phases, null, null);
     }
 
-    public Iterator<JobRef> iterator(String appName, String after)
-    {
-        return iterator(appName, null, after, null);
-    }
-
-    public Iterator<JobRef> iterator(String appName, Integer last)
-    {
-        return iterator(appName, null, null, last);
-    }
-
     /**
      * Iterator over the jobs. Note that this could fail if the underlying job list
      * is modified while iterating.
      *
      * @return
      */
-    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases, String after, Integer last)
+    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases, Date after, Integer last)
     {
         //List<JobRef> tmp = new ArrayList<JobRef>();
 
@@ -311,16 +300,7 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
 
                         if (after != null && j.getStartTime() != null)
                         {
-                            Date afterDate = null;
-                            try
-                            {
-                                afterDate = dateFormat.parse(after);
-                            }
-                            catch (ParseException e)
-                            {
-                                throw new IllegalArgumentException("Illegal date format: " + after);
-                            }
-                            if (afterDate.before(j.getStartTime()))
+                            if (after.before(j.getStartTime()))
                             {
                                 tmp.put(startDate, new JobRef(j.getID(), j.getExecutionPhase()));
                             }

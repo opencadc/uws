@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.uws.server;
 
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -153,24 +154,6 @@ public interface JobPersistence
         throws JobPersistenceException, TransientException;
 
     /**
-     * Obtain a listing of JobRef instances with start dates after 'after'.
-     *
-     * @param after
-     * @return iterator over visible jobs
-     */
-    public Iterator<JobRef> iterator(String appname, String after)
-        throws JobPersistenceException, TransientException;
-
-    /**
-     * Obtain a listing of the last 'last' JobRef instances.
-     *
-     * @param last
-     * @return iterator over visible jobs
-     */
-    public Iterator<JobRef> iterator(String appname, Integer last)
-        throws JobPersistenceException, TransientException;
-
-    /**
      * Obtain a listing of the last 'last' JobRef instances in the specified
      * phase with a start date after 'after'.
      *
@@ -179,7 +162,7 @@ public interface JobPersistence
      * @param last
      * @return iterator over visible jobs
      */
-    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases, String after, Integer last)
+    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases, Date after, Integer last)
         throws JobPersistenceException, TransientException;
 
     // optimised access methods

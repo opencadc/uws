@@ -83,7 +83,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -627,7 +626,7 @@ public class JobDAO
      * @throws JobPersistenceException
      * @throws TransientException
      */
-    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases, String after, Integer last)
+    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases, Date after, Integer last)
         throws TransientException, JobPersistenceException
     {
         AccessControlContext acContext = AccessController.getContext();
@@ -644,28 +643,15 @@ public class JobDAO
      * @param last Show the last <i>last</i> jobs, ordererd by startTime ascending
      * @return job iterator
      */
-    public Iterator<JobRef> iterator(Subject subject, String appname, List<ExecutionPhase> phases, String after, Integer last)
+    public Iterator<JobRef> iterator(Subject subject, String appname, List<ExecutionPhase> phases, Date after, Integer last)
         throws TransientException, JobPersistenceException
     {
         Object owner = identManager.toOwner(subject);
         log.debug("iterator(" + owner + ")");
 
-        Date afterDate = null;
-        if (after != null)
-        {
-            try
-            {
-                afterDate = dateFormat.parse(after);
-            }
-            catch (ParseException p)
-            {
-                throw new IllegalArgumentException("Invalid date format: " + after);
-            }
-        }
-
         try
         {
-            JobListIterator jobListIterator = new JobListIterator(jdbc, owner, appname, phases, afterDate, last);
+            JobListIterator jobListIterator = new JobListIterator(jdbc, owner, appname, phases, after, last);
             prof.checkpoint("JobListStatementCreator");
             return jobListIterator;
         }
@@ -1219,10 +1205,12 @@ public class JobDAO
         private Date after;
         private Integer last;
         private String lastJobID;
+        private Date lastStartTime;
 
-        public JobListStatementCreator(String lastJobID, Object owner, String appname, List<ExecutionPhase> phases, Date after, Integer last)
+        public JobListStatementCreator(String lastJobID, Date lastStartTime, Object owner, String appname, List<ExecutionPhase> phases, Date after, Integer last)
         {
             this.lastJobID = lastJobID;
+            this.lastStartTime = lastStartTime;
             this.appname = appname;
             this.owner = owner;
             this.phases = phases;
@@ -1287,7 +1275,7 @@ public class JobDAO
             if (jobSchema.limitWithTop)
                 sb.append("TOP ").append(rowLimit);
 
-            sb.append(" jobID, executionPhase FROM ");
+            sb.append(" jobID, executionPhase, startTime FROM ");
             sb.append(jobSchema.jobTable);
             sb.append(" WHERE deletedByUser = 0");
             if (owner != null)
@@ -1309,6 +1297,14 @@ public class JobDAO
                 sb.append(" AND executionPhase != ?");
             if (lastJobID != null)
                 sb.append(" AND jobID > ?");
+            if (lastStartTime != null)
+            {
+                // need to set the value here in quotes
+                // for precise date comparison in iso format
+                String lastStartStr = isoDateFormat.format(lastStartTime);
+                log.debug("lastStartTime: " + lastStartStr);
+                sb.append(" AND startTime < '" + lastStartStr + "'");
+            }
             if (appname != null)
                 sb.append(" AND requestPath LIKE ?");
             if (after != null)
@@ -1316,7 +1312,7 @@ public class JobDAO
                 // need to set the value here in quotes
                 // for precise date comparison in iso format
                 String afterStr = isoDateFormat.format(after);
-                log.debug(after + " : " + afterStr);
+                log.debug("after: " + afterStr);
                 sb.append(" AND startTime > '" + afterStr + "'");
             }
 
@@ -1803,6 +1799,7 @@ public class JobDAO
         private JdbcTemplate jdbcTemplate;
         private Iterator<JobRef> jobRefIterator;
         private String lastJobID = null;
+        private Date lastStartTime = null;
         private Object owner;
         private String appname;
         private List<ExecutionPhase> phases;
@@ -1844,20 +1841,24 @@ public class JobDAO
         @SuppressWarnings("unchecked")
         private Iterator<JobRef> getNextBatchIterator()
         {
-            JobListStatementCreator sc = new JobListStatementCreator(lastJobID, owner, appname, phases, after, last);
+            JobListStatementCreator sc = new JobListStatementCreator(lastJobID, lastStartTime, owner, appname, phases, after, last);
             List<JobRef> jobs = this.jdbcTemplate.query(sc, new RowMapper()
                 {
             	    // mapRow is required to preserve the order of the ResultSet
                     public Object mapRow(ResultSet rs, int rowNum) throws SQLException
                     {
                         ExecutionPhase executionPhase = ExecutionPhase.valueOf(rs.getString("executionPhase").toUpperCase());
-                        return new JobRef(rs.getString("jobID"), executionPhase);
+                        Date startTime = rs.getTimestamp("startTime", Calendar.getInstance(DateUtil.UTC));
+                        return new JobRef(rs.getString("jobID"), executionPhase, startTime);
                     }
                 });
 
             if (!jobs.isEmpty())
             {
-            	this.lastJobID = jobs.get(jobs.size() - 1).getJobID();
+                JobRef lastEntry = jobs.get(jobs.size() - 1);
+            	this.lastJobID = lastEntry.getJobID();
+            	if (last != null)
+            	    this.lastStartTime = lastEntry.getStartTime();
             }
 
             return jobs.iterator();
