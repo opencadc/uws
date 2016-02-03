@@ -641,8 +641,6 @@ public abstract class AbstractJobDAOTest
                         Job ret, job1, job2, job3;
                         String id1, id2, id3;
 
-                        Thread.sleep(3000);
-
                         Date now = new Date();
                         job1 = createJob(ExecutionPhase.EXECUTING, new Date(now.getTime() - 2000));
                         job2 = createJob(ExecutionPhase.EXECUTING, now);
@@ -701,8 +699,6 @@ public abstract class AbstractJobDAOTest
 
                         Job ret, job1, job2, job3;
                         String id1, id2, id3;
-
-                        Thread.sleep(4500);
 
                         Date now = new Date();
 
