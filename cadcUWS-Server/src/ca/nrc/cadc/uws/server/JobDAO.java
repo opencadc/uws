@@ -1244,7 +1244,7 @@ public class JobDAO
                 ret.setString(arg++, ExecutionPhase.ARCHIVED.getValue());
             }
 
-            if (lastJobID != null)
+            if (lastJobID != null && lastStartTime == null)
             {
                 log.debug(arg + " : " + lastJobID);
                 ret.setString(arg++, lastJobID);
@@ -1295,7 +1295,7 @@ public class JobDAO
             }
             else
                 sb.append(" AND executionPhase != ?");
-            if (lastJobID != null)
+            if (lastJobID != null && lastStartTime == null)
                 sb.append(" AND jobID > ?");
             if (lastStartTime != null)
             {
