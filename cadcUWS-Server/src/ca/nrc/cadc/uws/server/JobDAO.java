@@ -1861,6 +1861,45 @@ public class JobDAO
             	    this.lastStartTime = lastEntry.getStartTime();
             }
 
+            // for startTime ordered queries, account for equal startDates
+            // by throwing away entries until a jobID greater than the last
+            // of the last batch is reached
+            if (lastStartTime != null && jobs.size() > 0)
+            {
+                int startIndex = 0;
+                while (jobs.size() > startIndex &&
+                       jobs.get(startIndex).equals(lastStartTime) &&
+                       jobs.get(startIndex).getJobID().compareTo(lastJobID) <= 0)
+                {
+                    startIndex++;
+                }
+
+                if (jobs.size() <= startIndex)
+                {
+                    // ran out of rows
+                    throw new IllegalStateException("loop detected");
+                }
+
+                if (startIndex > 0)
+                {
+                    // disregard the initial duplicates
+                    log.debug("throwing away " + startIndex + " duplicate(s) in batch");
+                    jobs = jobs.subList(startIndex, jobs.size() - 1);
+                }
+            }
+
+            // for startTime ordered queries, ensure the first and
+            // last record don't have the same startTime--this would
+            // cause an infinite loop because the same query results
+            // would be returned over and over.
+            if (lastStartTime != null && jobs.size() > 1 && (count + jobs.size() < last))
+            {
+                JobRef firstEntry = jobs.get(0);
+                JobRef lastEntry = jobs.get(jobs.size() - 1);
+                if (firstEntry.getStartTime().equals(lastEntry.getStartTime()))
+                    throw new IllegalStateException("loop detected");
+            }
+
             return jobs.iterator();
         }
 
