@@ -85,6 +85,7 @@ create table uws_Job
 
     executionPhase          varchar(16)     not null,
     executionDuration       bigint          not null,
+    creationTime            datatime        not null,
     destructionTime         datetime        null,
     quote                   datetime        null,
     startTime               datetime        null,
@@ -106,8 +107,7 @@ create table uws_Job
     jobInfo_valid           tinyint         null,
 
     deletedByUser           tinyint         default 0,
-    lastModified            datetime        not null,
-    creationTime            datetime        null
+    lastModified            datetime        not null
 )
 lock datarows
 go

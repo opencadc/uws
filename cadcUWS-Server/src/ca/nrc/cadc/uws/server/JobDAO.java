@@ -143,12 +143,12 @@ public class JobDAO
         // jobID must be first
         // creationTime must be last
 
-        "jobID","executionPhase","executionDuration","destructionTime",
+        "jobID","creationTime", "executionPhase","executionDuration","destructionTime",
         "quote", "startTime", "endTime",
         "error_summaryMessage", "error_type", "error_documentURL",
         "ownerID", "runID", "requestPath", "remoteIP",
         "jobInfo_content", "jobInfo_contentType", "jobInfo_valid",
-        "lastModified", "creationTime"
+        "lastModified"
     };
     private static String[] DETAIL_COLUMNS =
     {
@@ -1007,6 +1007,11 @@ public class JobDAO
                 ps.setString(col++, job.getID());
                 sb.append(job.getID());
                 sb.append(",");
+
+                Timestamp ctTs = new Timestamp(job.getCreationTime().getTime());
+                ps.setTimestamp(col++, ctTs, cal);
+                sb.append(dateFormat.format(job.getCreationTime()));
+                sb.append(",");
             }
 
             ps.setString(col++, job.getExecutionPhase().name());
@@ -1162,14 +1167,6 @@ public class JobDAO
                 sb.append(",");
                 sb.append(job.getID());
             }
-            else
-            {
-                log.debug("insert - creationTime: " + col);
-                ts = new Timestamp(job.getCreationTime().getTime());
-                ps.setTimestamp(col++, ts, cal);
-                sb.append(dateFormat.format(job.getCreationTime()));
-                sb.append(",");
-            }
 
             log.debug(sb);
         }
@@ -1202,9 +1199,9 @@ public class JobDAO
             // don't include jobID (index 0) or creation time (index size-1)
 
             sb.append(" SET ");
-            for (int i=1; i<jobSchema.jobColumns.size() - 1; i++)
+            for (int i=2; i<jobSchema.jobColumns.size(); i++)
             {
-                if (i > 1)
+                if (i > 2)
                     sb.append(",");
                 sb.append(jobSchema.jobColumns.get(i));
                 sb.append(" = ?");
