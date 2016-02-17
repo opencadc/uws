@@ -97,6 +97,7 @@ create table Job
 
     deletedByUser           smallint        default 0,
     lastModified            timestamp       not null,
+    creationTime            timestamp,
 
     primary key (jobID)
 -- can append this to previous line: using index tablespace <name of tablespace>

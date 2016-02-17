@@ -12,11 +12,18 @@
       header Revision 1.5 2008/09/25 00:22:35 pah change termination
       time to execution duration
    -->
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-   targetNamespace="http://www.ivoa.net/xml/UWS/v1.0" xmlns:uws="http://www.ivoa.net/xml/UWS/v1.0"
-   xmlns:xlink="http://www.w3.org/1999/xlink" elementFormDefault="qualified"
+<xs:schema targetNamespace="http://www.ivoa.net/xml/UWS/v1.0" 
+   xmlns:xs="http://www.w3.org/2001/XMLSchema"
+   xmlns:uws="http://www.ivoa.net/xml/UWS/v1.0"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   elementFormDefault="qualified"
    attributeFormDefault="unqualified"
+   version="1.1"
 >
+
+<!--  UWS 1.1 (as noted with the "version" tag) - targetNamespace remains 1.0
+      for backwards compatibility --> 
+
 <!--
    <xs:import namespace="http://www.w3.org/1999/xlink"
       schemaLocation="../../../stc/STC/v1.30/XLINK.xsd" />
@@ -25,6 +32,7 @@
       schemaLocation="http://www.ivoa.net/xml/Xlink/xlink.xsd"/>
    
    <xs:complexType name="ShortJobDescription">
+   
       <xs:sequence>
          <xs:element name="phase" type="uws:ExecutionPhase">
             <xs:annotation>
@@ -32,9 +40,14 @@
                   /(jobs)/(jobid)/phase</xs:documentation>
             </xs:annotation>
          </xs:element>
+	     <xs:element name="creationTime" type="xs:dateTime" nillable="true" maxOccurs="1" minOccurs="0"></xs:element>
+	     <xs:element name="runId" type="xs:string" maxOccurs="1" minOccurs="0"></xs:element>
+	     <xs:element name="ownerId" type="xs:string" maxOccurs="1" minOccurs="0"></xs:element>
       </xs:sequence>
+
       <xs:attribute name="id" type="uws:JobIdentifier" use="required"></xs:attribute>
       <xs:attributeGroup ref="uws:reference"></xs:attributeGroup>
+      
    </xs:complexType>
    <xs:attributeGroup name="reference">
       <xs:annotation>
@@ -159,6 +172,11 @@
             nillable="true" >
             <xs:annotation>
                <xs:documentation>The instant at which the job finished execution</xs:documentation>
+            </xs:annotation></xs:element>
+         <xs:element name="creationTime" type="xs:dateTime"
+            nillable="true" maxOccurs="1" minOccurs="0">
+            <xs:annotation>
+               <xs:documentation>The instant at which the job was created.</xs:documentation>
             </xs:annotation></xs:element>
          <xs:element name="executionDuration" type="xs:int"
             nillable="false"

@@ -8,7 +8,7 @@
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -87,7 +87,8 @@ public class Job
     private Date destructionTime;
     private Date quote;
     private Date startTime;
-    private Date endTime;    
+    private Date endTime;
+    private Date creationTime;
     private ErrorSummary errorSummary;
     private String ownerID;
     private String runID;
@@ -104,7 +105,7 @@ public class Job
 
     // usable for hooking app-specific value here temporarily
     public transient Object appData;
-    
+
     // so that protocols are not switched in the result
     public transient String protocol;
 
@@ -123,6 +124,7 @@ public class Job
                 Date quote,
                 Date startTime,
                 Date endTime,
+                Date creationTime,
                 ErrorSummary errorSummary,
                 String ownerID,
                 String runID,
@@ -133,14 +135,14 @@ public class Job
                 List<Result> results)
     {
         this(executionPhase, executionDuration, destructionTime, quote,
-                startTime, endTime, errorSummary, ownerID, runID,
+                startTime, endTime, creationTime, errorSummary, ownerID, runID,
                 requestPath, remoteIP, jobInfo, params, results);
         this.jobID = jobID;
     }
-    
+
     /**
      * Complete constructor for a new job.
-     * 
+     *
      * @param executionPhase
      * @param executionDuration
      * @param destructionTime
@@ -162,6 +164,7 @@ public class Job
                 Date quote,
                 Date startTime,
                 Date endTime,
+                Date creationTime,
                 ErrorSummary errorSummary,
                 String ownerID,
                 String runID,
@@ -177,6 +180,7 @@ public class Job
         this.quote = quote;
         this.startTime = startTime;
         this.endTime = endTime;
+        this.creationTime = creationTime;
         this.errorSummary = errorSummary;
         this.ownerID = ownerID;
         this.runID = runID;
@@ -188,10 +192,10 @@ public class Job
     }
 
     /**
-     * Copy constructor. This makes a deep copy so that any changes to the created 
+     * Copy constructor. This makes a deep copy so that any changes to the created
      * job will not effect the original job. The constructed job is a new job with
      * no jobID (until assigned by a JobPersistence implementation).
-     * 
+     *
      * @param job
      */
     public Job(Job job)
@@ -202,6 +206,7 @@ public class Job
         this.quote = job.getQuote();
         this.startTime = job.getStartTime();
         this.endTime = job.getEndTime();
+        this.creationTime = job.getCreationTime();
 
         this.errorSummary = job.getErrorSummary();
         this.ownerID = job.getOwnerID();
@@ -234,11 +239,11 @@ public class Job
     @Override
     public String toString()
     {
-        return "Job [jobInfo=" + jobInfo + " destructionTime=" + destructionTime + ", endTime=" + endTime + ", errorSummary="
-                + errorSummary + ", executionDuration=" + executionDuration + ", executionPhase=" + executionPhase + ", jobID="
-                + jobID + ", ownerID=" + ownerID + ", parameterList=" + parameterList + ", quote=" + quote + ", requestPath="
-                + requestPath + ", remoteIP="
-                + remoteIP + ", resultsList=" + resultsList + ", runID=" + runID + ", startTime=" + startTime + "]";
+        return "Job [jobInfo=" + jobInfo + " destructionTime=" + destructionTime + ", endTime=" + endTime + ", creationTime="
+                + creationTime + ", errorSummary=" + errorSummary + ", executionDuration=" + executionDuration + ", executionPhase="
+                + executionPhase + ", jobID=" + jobID + ", ownerID=" + ownerID + ", parameterList=" + parameterList + ", quote="
+                + quote + ", requestPath=" + requestPath + ", remoteIP=" + remoteIP + ", resultsList=" + resultsList + ", runID="
+                + runID + ", startTime=" + startTime + "]";
     }
 
     public Date getLastModified()
@@ -275,20 +280,20 @@ public class Job
     {
         this.ownerID = ownerID;
     }
-    
+
     /**
      * Get the protocol.
-     * 
+     *
      * @return
      */
     public String getProtocol()
     {
         return protocol;
     }
-    
+
     /**
      * Set the protocol.
-     * 
+     *
      * @param protocol
      */
     public void setProtocol(String protocol)
@@ -413,6 +418,11 @@ public class Job
         this.endTime = endTime;
     }
 
+    public void setCreationTime(Date creationTime)
+    {
+        this.creationTime = creationTime;
+    }
+
     public void setRunID(String runID)
     {
         this.runID = runID;
@@ -436,6 +446,16 @@ public class Job
     public Date getEndTime()
     {
         return endTime;
+    }
+
+    /**
+     * The date at which the job was created.
+     *
+     * @return Date when the job was created.
+     */
+    public Date getCreationTime()
+    {
+        return creationTime;
     }
 
     /**
@@ -480,7 +500,7 @@ public class Job
      * The Results List object is a container for formal results of the job.
      * Its children may be any objects resulting from the computation that may
      * be fetched from the service when the job has completed.
-     * 
+     *
      * @return list of results
      */
     public List<Result> getResultsList()
@@ -540,7 +560,7 @@ public class Job
 
     /**
      * Path of the Request that created the Job.
-     * 
+     *
      * @return The Request Path.
      */
     public String getRequestPath()
@@ -585,5 +605,5 @@ public class Job
         this.jobInfo = jobInfo;
     }
 
-    
+
 }

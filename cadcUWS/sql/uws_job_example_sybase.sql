@@ -106,7 +106,8 @@ create table uws_Job
     jobInfo_valid           tinyint         null,
 
     deletedByUser           tinyint         default 0,
-    lastModified            datetime        not null
+    lastModified            datetime        not null,
+    creationTime            datetime        null
 )
 lock datarows
 go

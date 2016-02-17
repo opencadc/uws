@@ -8,7 +8,7 @@
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -108,19 +108,19 @@ public class JobReader
 {
     @SuppressWarnings("unused")
     private static Logger log = Logger.getLogger(JobReader.class);
-    
+
     private static final String UWS_SCHEMA_URL = "http://www.ivoa.net/xml/UWS/v1.0";
     private static final String UWS_SCHEMA_RESOURCE = "UWS-v1.0.xsd";
     private static final String XLINK_SCHEMA_URL = "http://www.w3.org/1999/xlink";
     private static final String XLINK_SCHEMA_RESOURCE = "XLINK.xsd";
-    
+
     private static final String uwsSchemaUrl;
     private static final String xlinkSchemaUrl;
     static
-    {        
+    {
         uwsSchemaUrl = XmlUtil.getResourceUrlString(UWS_SCHEMA_RESOURCE, JobReader.class);
         log.debug("uwsSchemaUrl: " + uwsSchemaUrl);
-        
+
         xlinkSchemaUrl = XmlUtil.getResourceUrlString(XLINK_SCHEMA_RESOURCE, JobReader.class);
         log.debug("xlinkSchemaUrl: " + xlinkSchemaUrl);
     }
@@ -192,7 +192,7 @@ public class JobReader
         this.dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
     }
 
-    public Job read(InputStream in) 
+    public Job read(InputStream in)
         throws JDOMException, IOException, ParseException
     {
         try
@@ -205,7 +205,7 @@ public class JobReader
         }
     }
 
-    public Job read(Reader reader) 
+    public Job read(Reader reader)
         throws JDOMException, IOException, ParseException
     {
         Document doc = docBuilder.build(reader);
@@ -225,6 +225,7 @@ public class JobReader
         Date quote = parseDate(parseStringContent(root.getChild(JobAttribute.QUOTE.getAttributeName(), UWS.NS)));
         Date startTime = parseDate(parseStringContent(root.getChild(JobAttribute.START_TIME.getAttributeName(), UWS.NS)));
         Date endTime = parseDate(parseStringContent(root.getChild(JobAttribute.END_TIME.getAttributeName(), UWS.NS)));
+        Date creationTime = parseDate(parseStringContent(root.getChild(JobAttribute.CREATION_TIME.getAttributeName(), UWS.NS)));
         Date destructionTime = parseDate(parseStringContent(root.getChild(JobAttribute.DESTRUCTION_TIME.getAttributeName(), UWS.NS)));
         Long executionDuration = new Long(parseStringContent(root.getChild(JobAttribute.EXECUTION_DURATION.getAttributeName(), UWS.NS)));
 
@@ -240,9 +241,9 @@ public class JobReader
         JobInfo jobInfo = parseJobInfo(doc);
 
         Job job = new Job(jobID, executionPhase, executionDuration, destructionTime, quote,
-                startTime, endTime, errorSummary, ownerID, runID,
+                startTime, endTime, creationTime, errorSummary, ownerID, runID,
                 null, null, jobInfo, parameterList, resultsList);
-        
+
         return job;
     }
 
@@ -366,13 +367,13 @@ public class JobReader
             String strDetail = e.getAttributeValue("hasDetail");
             if (strDetail.equalsIgnoreCase("true"))
                 hasDetail = true;
-            
+
             String summaryMessage = e.getChildText(JobAttribute.ERROR_SUMMARY_MESSAGE.getAttributeName(), UWS.NS);
             rtn = new ErrorSummary(summaryMessage, errorType, hasDetail);
         }
         return rtn;
     }
-    
+
     private JobInfo parseJobInfo(Document doc)
     {
         JobInfo rtn = null;
@@ -402,7 +403,7 @@ public class JobReader
                         outputter.output(jiDoc, sw);
                         sw.close();
                         rtn = new JobInfo(sw.toString(), null, null);
-                        
+
                     }
                     catch(IOException ex)
                     {

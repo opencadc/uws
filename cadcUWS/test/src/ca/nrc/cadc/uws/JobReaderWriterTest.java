@@ -69,9 +69,6 @@
 
 package ca.nrc.cadc.uws;
 
-import ca.nrc.cadc.auth.AuthenticationUtil;
-import ca.nrc.cadc.date.DateUtil;
-import ca.nrc.cadc.util.Log4jInit;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -85,13 +82,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import javax.security.auth.Subject;
+
 import junit.framework.Assert;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.date.DateUtil;
+import ca.nrc.cadc.util.Log4jInit;
 
 /**
  * @author zhangsa
@@ -199,6 +203,7 @@ public class JobReaderWriterTest
         Assert.assertEquals("destruction", exp.getDestructionTime(), act.getDestructionTime());
         Assert.assertEquals("start", exp.getStartTime(), act.getStartTime());
         Assert.assertEquals("end", exp.getEndTime(), act.getEndTime());
+        Assert.assertEquals("creation", exp.getCreationTime(), act.getCreationTime());
 
         Assert.assertEquals("ownerID", exp.getOwnerID(), act.getOwnerID());
 

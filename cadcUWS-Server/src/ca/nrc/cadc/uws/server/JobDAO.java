@@ -140,12 +140,15 @@ public class JobDAO
 
     private static String[] JOB_COLUMNS =
     {
+        // jobID must be first
+        // creationTime must be last
+
         "jobID","executionPhase","executionDuration","destructionTime",
         "quote", "startTime", "endTime",
         "error_summaryMessage", "error_type", "error_documentURL",
         "ownerID", "runID", "requestPath", "remoteIP",
         "jobInfo_content", "jobInfo_contentType", "jobInfo_valid",
-        "lastModified"
+        "lastModified", "creationTime"
     };
     private static String[] DETAIL_COLUMNS =
     {
@@ -680,7 +683,10 @@ public class JobDAO
         {
             boolean update = (job.getID() != null);
             if (!update) // insert
+            {
                 JobPersistenceUtil.assignID(job, idGenerator.getID());
+                job.setCreationTime(new Date());
+            }
             log.debug("put: " + job.getID());
 
             // call IdentityManager outside the resource lock to avoid deadlock
@@ -1156,6 +1162,14 @@ public class JobDAO
                 sb.append(",");
                 sb.append(job.getID());
             }
+            else
+            {
+                log.debug("insert - creationTime: " + col);
+                ts = new Timestamp(job.getCreationTime().getTime());
+                ps.setTimestamp(col++, ts, cal);
+                sb.append(dateFormat.format(job.getCreationTime()));
+                sb.append(",");
+            }
 
             log.debug(sb);
         }
@@ -1184,8 +1198,11 @@ public class JobDAO
             //sb.append(") = (");
             //appendStatementParams(sb, jobSchema.jobColumns.size());
             //sb.append(")");
+
+            // don't include jobID (index 0) or creation time (index size-1)
+
             sb.append(" SET ");
-            for (int i=1; i<jobSchema.jobColumns.size(); i++)
+            for (int i=1; i<jobSchema.jobColumns.size() - 1; i++)
             {
                 if (i > 1)
                     sb.append(",");
@@ -1715,6 +1732,9 @@ public class JobDAO
                 // endTime
                 Date endTime = rs.getTimestamp("endTime", Calendar.getInstance(DateUtil.UTC));
 
+                // creationTime
+                Date creationTime = rs.getTimestamp("creationTime", Calendar.getInstance(DateUtil.UTC));
+
                 // errorSummary
                 ErrorSummary errorSummary = null;
                 String eMsg = getString(rs, jobSchema.jobTable, "error_summaryMessage");
@@ -1771,7 +1791,7 @@ public class JobDAO
                 Date lastModified = rs.getTimestamp("lastModified", cal);
 
                 Job job = new Job(executionPhase, executionDuration, destructionTime,
-                                  quote, startTime, endTime, errorSummary, null, runID,
+                                  quote, startTime, endTime, creationTime, errorSummary, null, runID,
                                   requestPath, remoteIP, jobInfo, null, null);
                 JobPersistenceUtil.assignID(job, jobID);
                 assignLastModified(job, lastModified);

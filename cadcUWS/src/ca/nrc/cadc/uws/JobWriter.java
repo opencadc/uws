@@ -8,7 +8,7 @@
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -87,7 +87,7 @@ import ca.nrc.cadc.xml.XmlUtil;
 
 /**
  * Writes a Job as XML to an output.
- * 
+ *
  * @author Sailor Zhang
  */
 public class JobWriter
@@ -96,11 +96,11 @@ public class JobWriter
 
     private DateFormat dateFormat;
 
-    public JobWriter() 
+    public JobWriter()
     {
         this.dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
     }
-    
+
     /**
      * Write to root Element to a writer.
      *
@@ -179,6 +179,7 @@ public class JobWriter
         root.addContent(getQuote(job));
         root.addContent(getStartTime(job));
         root.addContent(getEndTime(job));
+        root.addContent(getCreationTime(job));
         root.addContent(getExecutionDuration(job));
         root.addContent(getDestruction(job));
         root.addContent(getParameters(job));
@@ -308,6 +309,22 @@ public class JobWriter
     }
 
     /**
+     * Get an Element representing the Job creationTime.
+     *
+     * @return The Job creationTime Element.
+     */
+    public Element getCreationTime(Job job)
+    {
+        Element element = new Element(JobAttribute.CREATION_TIME.getAttributeName(), UWS.NS);
+        Date date = job.getEndTime();
+        if (date == null)
+            element.setAttribute("nil", "true", UWS.XSI_NS);
+        else
+            element.addContent(dateFormat.format(date));
+        return element;
+    }
+
+    /**
      * Get an Element representing the Job executionDuration.
      *
      * @return The Job executionDuration Element.
@@ -392,7 +409,7 @@ public class JobWriter
         }
         return eleErrorSummary;
     }
-    
+
     /**
      * Get an Element representing the Job jobInfo.
      *
@@ -404,7 +421,7 @@ public class JobWriter
         JobInfo jobInfo = job.getJobInfo();
         if (jobInfo != null)
         {
-            
+
             if (jobInfo.getContent() != null && jobInfo.getValid() != null && jobInfo.getValid())
             {
                 element = new Element(JobAttribute.JOB_INFO.getAttributeName(), UWS.NS);
@@ -413,15 +430,14 @@ public class JobWriter
                     // The JobInfo content can't be validated since the schema(s) aren't known
                     // but we still need to parse and extract the root/document element
                     Document doc = XmlUtil.buildDocument(jobInfo.getContent());
-                    element.addContent(doc.getRootElement().detach()); 
+                    element.addContent(doc.getRootElement().detach());
                 }
                 catch (Exception e)
                 {
                     element = null;
-                }                               
-            }                                   
+                }
+            }
         }
         return element;
     }
 }
-    

@@ -1067,6 +1067,7 @@ public abstract class AbstractJobDAOTest
         compareDates(str+" quote", exp.getQuote(), act.getQuote());
         compareDates(str+" startTime", exp.getStartTime(), act.getStartTime());
         compareDates(str+" endTime", exp.getEndTime(), act.getEndTime());
+        compareDates(str+" creationTime", exp.getCreationTime(), act.getCreationTime());
 
         Assert.assertEquals(str+" request path", exp.getRequestPath(), act.getRequestPath());
         Assert.assertEquals(str+" remote ip", exp.getRemoteIP(), act.getRemoteIP());
