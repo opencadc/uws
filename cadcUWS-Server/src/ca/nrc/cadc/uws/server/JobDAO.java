@@ -1618,7 +1618,7 @@ public class JobDAO
                 {
                     sb.append(",");
                     sb.append(alt);
-                    sb.append("= ?,");
+                    sb.append("= ?");
                 }
                 sb.append(", error_type = ?");
                 alt = jobSchema.getAlternateColumn(jobSchema.jobTable, "error_type");
@@ -1626,7 +1626,7 @@ public class JobDAO
                 {
                     sb.append(",");
                     sb.append(alt);
-                    sb.append("= ?,");
+                    sb.append("= ?");
                 }
                 sb.append(", error_documentURL = ?");
                 alt = jobSchema.getAlternateColumn(jobSchema.jobTable, "error_documentURL");
@@ -1657,7 +1657,7 @@ public class JobDAO
     /**
      * Get the string value from the specified column. The default implementation
      * simply calls rs.getString(columnName) which should work in most cases.
-     * Applications could override this method to check addtional alternate
+     * Applications could override this method to check additional alternate
      * columns, for example if the value of some strings might be stored in a
      * TEXT type column instead of a VARCHAR column.
      *
