@@ -85,12 +85,15 @@ import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
 import javax.sql.DataSource;
 
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import ca.nrc.cadc.util.Log4jInit;
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.IdentityManager;
 import ca.nrc.cadc.auth.X500IdentityManager;
@@ -134,6 +137,7 @@ public abstract class AbstractJobDAOTest
 
     static
     {
+	Log4jInit.setLevel("ca.nrc.cadc.uws.server", Level.INFO);
         idGenerator = new RandomStringGenerator(16);
         identManager = new X500IdentityManager();
     }
