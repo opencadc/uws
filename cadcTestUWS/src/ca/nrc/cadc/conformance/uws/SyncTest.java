@@ -81,6 +81,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import junit.framework.Assert;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Before;
@@ -148,6 +150,33 @@ public class SyncTest extends AbstractUWSTest
         throw new UnsupportedOperationException("This method is to be implemented by a subclass.");
     }
     
+    private boolean isAnErrorTest(final String filename, final Integer responseCode)
+    {
+        // allow file name to contain 'ERROR' for backwards compatibility
+        return filename.contains("ERROR") || (responseCode != null);
+    }
+
+    private void checkResponse(final WebConversation conversation, 
+            final WebRequest request, final Integer responseCode) 
+            throws IOException, SAXException
+    {
+        try
+        {
+            conversation.getResponse(request);
+            fail("expected HttpException ");
+        }
+        catch (HttpException ex)
+        {
+            // if response code is expected, verify it
+            if (responseCode != null)
+            {                
+                assertEquals(responseCode.intValue(), ex.getResponseCode());
+            }
+            
+            log.debug("caught expected: " + ex);
+        }
+    }
+    
     protected void doTest()
     {
         if (testPropertiesList.propertiesList.isEmpty())
@@ -190,16 +219,6 @@ public class SyncTest extends AbstractUWSTest
                         password = properties.preconditions.get("Password").get(0);
                     }
                 }
-                
-                // see if there is are expectations
-                String contentType = null;
-                if (properties.expectations != null)
-                {
-                    if (properties.expectations.containsKey("Content-Type"))
-                    {
-                        contentType = properties.expectations.get("Content-Type").get(0);
-                    }
-                }
 
                 // GET request to the sync resource.
                 WebRequest request = this.buildRequest(properties);
@@ -210,21 +229,30 @@ public class SyncTest extends AbstractUWSTest
                     conversation.setAuthentication(realm, userid, password);
                 }                
                 
-                if (properties.filename.contains("ERROR"))
+                // see if there are expectations
+                String contentType = null;
+                Integer responseCode = null; 
+                if (properties.expectations != null)
                 {
-                    try
+                    if (properties.expectations.containsKey("Content-Type"))
                     {
-                        process(conversation, request, contentType);
-                        // not all services require 4xx aka failure
-                        //fail("expected HttpException for " + properties.filename);
+                        contentType = properties.expectations.get("Content-Type").get(0);
                     }
-                    catch(HttpException ex)
+                    
+                    if (properties.expectations.containsKey("Response-Code"))
                     {
-                        log.debug("caught expected: " + ex);
+                        responseCode = Integer.valueOf(properties.expectations.get("Response-Code").get(0));
                     }
                 }
+
+                if (isAnErrorTest(properties.filename, responseCode))
+                {
+                    checkResponse(conversation, request, responseCode);
+                }
                 else
+                {
                     process(conversation, request, contentType);
+                }
             }
             
             printPropertiesFiles = false;
@@ -235,8 +263,8 @@ public class SyncTest extends AbstractUWSTest
             fail("unexpected exception: " + unexpected);
         }
     }
-
-    protected void process(WebConversation conversation, WebRequest request,String expectedContentType)
+    
+    protected void process(WebConversation conversation, WebRequest request, String expectedContentType)
         throws IOException, SAXException
     {
         WebResponse response = conversation.getResponse(request);
