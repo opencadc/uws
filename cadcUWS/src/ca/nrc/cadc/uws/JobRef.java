@@ -82,23 +82,25 @@ public class JobRef
 {
     private String jobID;
     private ExecutionPhase executionPhase;
-    Date startTime;
+    private Date creationTime;
+    private String runID;
+    private String ownerID;
 
     public JobRef() { }
 
     public JobRef(String jobID,
                 ExecutionPhase executionPhase)
     {
-        this(jobID, executionPhase, null);
+        this(jobID, executionPhase, null, null, null);
     }
 
-    public JobRef(String jobID,
-            ExecutionPhase executionPhase,
-            Date startTime)
+    public JobRef(String jobID, ExecutionPhase executionPhase, Date creationTime, String runID, String ownerID)
     {
         this.jobID = jobID;
         this.executionPhase = executionPhase;
-        this.startTime = startTime;
+        this.creationTime = creationTime;
+        this.runID = runID;
+        this.ownerID = ownerID;
     }
 
     public ExecutionPhase getExecutionPhase()
@@ -116,14 +118,34 @@ public class JobRef
         return jobID;
     }
 
-    public Date getStartTime()
+    public Date getCreationTime()
     {
-        return startTime;
+        return creationTime;
     }
 
-    public void setStartTime(Date startTime)
+    public void setCreationTime(Date creationTime)
     {
-        this.startTime = startTime;
+        this.creationTime = creationTime;
+    }
+
+    public String getRunID()
+    {
+        return runID;
+    }
+
+    public void setRunID(String runID)
+    {
+        this.runID = runID;
+    }
+
+    public String getOwnerID()
+    {
+        return ownerID;
+    }
+
+    public void setOwnerID(String ownerID)
+    {
+        this.ownerID = ownerID;
     }
 
     public String toString()

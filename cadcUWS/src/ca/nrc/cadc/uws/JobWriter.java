@@ -316,7 +316,7 @@ public class JobWriter
     public Element getCreationTime(Job job)
     {
         Element element = new Element(JobAttribute.CREATION_TIME.getAttributeName(), UWS.NS);
-        Date date = job.getEndTime();
+        Date date = job.getCreationTime();
         if (date == null)
             element.setAttribute("nil", "true", UWS.XSI_NS);
         else

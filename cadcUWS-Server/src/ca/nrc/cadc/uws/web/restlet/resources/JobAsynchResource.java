@@ -8,7 +8,7 @@
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -83,6 +83,7 @@ import org.apache.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.restlet.data.Form;
+import org.restlet.data.Status;
 import org.restlet.representation.Representation;
 import org.restlet.representation.StringRepresentation;
 import org.restlet.resource.Delete;
@@ -101,7 +102,6 @@ import ca.nrc.cadc.uws.server.JobPersistenceException;
 import ca.nrc.cadc.uws.server.JobPhaseException;
 import ca.nrc.cadc.uws.web.restlet.InvalidActionException;
 import ca.nrc.cadc.uws.web.restlet.RestletJobCreator;
-import org.restlet.data.Status;
 
 
 /**
@@ -113,7 +113,7 @@ public class JobAsynchResource extends BaseJobResource
 
     private static final long MAX_WAIT = 60L;
     private static final long POLL_INTERVAL[] = { 1L, 2L, 4L, 8L };
-    
+
     private static final String RUN = "RUN";
     private static final String ABORT = "ABORT";
     private static final String SHUTDOWN = "SHUTDOWN";
@@ -127,7 +127,7 @@ public class JobAsynchResource extends BaseJobResource
     }
 
     /**
-     * 
+     *
      * @author zhangsa
      */
     @Get
@@ -186,6 +186,8 @@ public class JobAsynchResource extends BaseJobResource
                         if (waitStr != null)
                             wait = new Long(waitStr);
                         if (wait > MAX_WAIT)
+                            wait = MAX_WAIT;
+                        if (wait < 0)
                             wait = MAX_WAIT;
                         LOGGER.debug("wait: " + wait);
                         ExecutionPhase ep = job.getExecutionPhase();
@@ -262,7 +264,7 @@ public class JobAsynchResource extends BaseJobResource
     {
         LOGGER.debug("delete() called. for job: " + jobID);
         try
-        {   
+        {
             getJobManager().delete(jobID);
             redirectToJobList();
         }
@@ -279,7 +281,7 @@ public class JobAsynchResource extends BaseJobResource
             throw new RuntimeException(ex);
         }
     }
-    
+
     /**
      * Accept POST requests.
      *
@@ -328,7 +330,7 @@ public class JobAsynchResource extends BaseJobResource
                 }
                 else if (ABORT.equalsIgnoreCase(phase))
                     getJobManager().abort(jobID);
-                // Permit the command PHASE=SHUTDOWN without 
+                // Permit the command PHASE=SHUTDOWN without
                 // defining a SHUTDOWN ExecutionPhase.
                 else if (SHUTDOWN.equalsIgnoreCase(phase))
                     getJobManager().abort(jobID);

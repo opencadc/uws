@@ -69,10 +69,12 @@
 
 package ca.nrc.cadc.uws.server;
 
+import java.io.FileNotFoundException;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.security.AccessControlException;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
@@ -276,55 +278,71 @@ public class SyncServlet extends HttpServlet
     private void doit(final boolean execOnCreate, final HttpServletRequest request, final HttpServletResponse response)
         throws ServletException, IOException
     {
-        log.debug("doit: execOnCreate=" + execOnCreate);
-        if (jobManager == null)
+        try
         {
-            // config error
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            response.setContentType("text/plain");
-            PrintWriter w = response.getWriter();
-            w.println("servlet is not configured to accept jobs");
-            w.close();
-            return;
-        }
+            log.debug("doit: execOnCreate=" + execOnCreate);
+            if (jobManager == null)
+            {
+                // config error
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                response.setContentType("text/plain");
+                PrintWriter w = response.getWriter();
+                w.println("servlet is not configured to accept jobs");
+                w.close();
+                return;
+            }
 
-        Subject subject = AuthenticationUtil.getSubject(request);
-        if (subject == null)
-        {
-            processRequest(execOnCreate, request, response);
-        }
-        else
-        {
-            try
+            Subject subject = AuthenticationUtil.getSubject(request);
+            if (subject == null)
+            {
+                processRequest(execOnCreate, request, response);
+            }
+            else
             {
                 Subject.doAs(subject, new PrivilegedExceptionAction<Object>()
                 {
                     @Override
-                    public Object run()
-                        throws PrivilegedActionException
+                    public Object run() throws Exception
                     {
-                        try
-                        {
-                            processRequest(execOnCreate, request, response);
-                            return null;
-                        }
-                        catch(Exception ex)
-                        {
-                            throw new PrivilegedActionException(ex);
-                        }
+                        processRequest(execOnCreate, request, response);
+                        return null;
                     }
                 } );
             }
-            catch(PrivilegedActionException pex)
+        }
+        catch (Throwable t)
+        {
+            try
             {
-                if (pex.getCause() instanceof ServletException)
-                    throw (ServletException) pex.getCause();
-                else if (pex.getCause() instanceof IOException)
-                    throw (IOException) pex.getCause();
-                else if (pex.getCause() instanceof RuntimeException)
-                    throw (RuntimeException) pex.getCause();
-                else
-                    throw new RuntimeException(pex.getCause());
+                response.setContentType("text/plain");
+                if (t instanceof PrivilegedActionException)
+                {
+                    if (((PrivilegedActionException)t).getException() != null)
+                        throw ((PrivilegedActionException)t).getException();
+                }
+                throw t;
+            }
+            catch (AccessControlException e)
+            {
+                response.sendError(403, "Permission denied: " + e.getMessage());
+            }
+            catch (IllegalArgumentException e)
+            {
+                response.sendError(400, "Illegal use: " + e.getMessage());
+            }
+            catch (FileNotFoundException e)
+            {
+                response.sendError(404, "Not found: " + e.getMessage());
+            }
+            catch (TransientException e)
+            {
+                if (e.getRetryDelay() > 0)
+                    response.setHeader("Retry-After", Integer.toString(e.getRetryDelay()));
+                response.sendError(503, "Transient error: " + e.getMessage());
+            }
+            catch (Throwable t2)
+            {
+                response.sendError(500, "Internal server error: " + t2.getMessage());
             }
         }
     }

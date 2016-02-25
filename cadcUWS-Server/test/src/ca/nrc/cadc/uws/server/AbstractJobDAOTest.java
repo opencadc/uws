@@ -89,7 +89,6 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.IdentityManager;
@@ -141,10 +140,10 @@ public abstract class AbstractJobDAOTest
     @Before
     public void deleteJobs()
     {
-        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
-        jdbc.execute("delete from " + JOB_SCHEMA.detailTable);
-        jdbc.execute("delete from " + JOB_SCHEMA.jobTable);
-        log.debug("deleted jobs");
+//        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+//        jdbc.execute("delete from " + JOB_SCHEMA.detailTable);
+//        jdbc.execute("delete from " + JOB_SCHEMA.jobTable);
+//        log.debug("deleted jobs");
     }
 
     private Job createJob()
@@ -161,7 +160,7 @@ public abstract class AbstractJobDAOTest
         return ret;
     }
 
-    private Job createJob(ExecutionPhase phase, Date startTime)
+    private Job createJob(ExecutionPhase phase)
     {
         id++;
         Job ret = new Job();
@@ -171,10 +170,6 @@ public abstract class AbstractJobDAOTest
         ret.setQuote(QUOTE);
         ret.setRequestPath(REQUEST_PATH);
         ret.setRemoteIP(REMOTE_IP);
-        if (startTime != null)
-        {
-            ret.setStartTime(startTime);
-        }
         log.debug("created test job: " + ret.getID());
         return ret;
     }
@@ -583,9 +578,9 @@ public abstract class AbstractJobDAOTest
                         Job ret, job1, job2, job3;
                         String id1, id2, id3;
 
-                        job1 = createJob(ExecutionPhase.EXECUTING, null);
-                        job2 = createJob(ExecutionPhase.EXECUTING, null);
-                        job3 = createJob(ExecutionPhase.ABORTED, null);
+                        job1 = createJob(ExecutionPhase.EXECUTING);
+                        job2 = createJob(ExecutionPhase.EXECUTING);
+                        job3 = createJob(ExecutionPhase.ABORTED);
 
                         JobDAO dao = getDAO();
                         ret = dao.put(job1, subject);
@@ -641,18 +636,20 @@ public abstract class AbstractJobDAOTest
                         Job ret, job1, job2, job3;
                         String id1, id2, id3;
 
-                        Date now = new Date();
-                        job1 = createJob(ExecutionPhase.EXECUTING, new Date(now.getTime() - 2000));
-                        job2 = createJob(ExecutionPhase.EXECUTING, now);
-                        job3 = createJob(ExecutionPhase.EXECUTING, now);
+                        job1 = createJob(ExecutionPhase.EXECUTING);
+                        job2 = createJob(ExecutionPhase.EXECUTING);
+                        job3 = createJob(ExecutionPhase.EXECUTING);
 
                         JobDAO dao = getDAO();
                         ret = dao.put(job1, subject);
                         id1 = ret.getID();
                         ret = dao.put(job2, subject);
                         id2 = ret.getID();
+                        Thread.sleep(2000);
                         ret = dao.put(job3, subject);
                         id3 = ret.getID();
+
+                        Date now = new Date();
 
                         Iterator<JobRef> it = dao.iterator("/foo", null, new Date(now.getTime() - 1000), null);
                         log.debug("testPutListFilterAfter jobs start...");
@@ -669,8 +666,9 @@ public abstract class AbstractJobDAOTest
                             if (next.equals(id3))
                                 found3 = true;
                         }
-                        log.debug("testPutListFilterAfter jobs end");
-                        Assert.assertTrue("Job list incorrect", (!found1) && found2 && found3);
+                        log.debug("testPutListFilterAfter jobs end: found1, found2, found3: "
+                                + found1 + ", " + found2 + ", " + found3);
+                        Assert.assertTrue("Job list incorrect", (!found1) && (!found2) && found3);
                         return null;
                     }
                 });
@@ -700,21 +698,21 @@ public abstract class AbstractJobDAOTest
                         Job ret, job1, job2, job3;
                         String id1, id2, id3;
 
-                        Date now = new Date();
-
-                        job1 = createJob(ExecutionPhase.EXECUTING, new Date(now.getTime() - 3000));
-                        job2 = createJob(ExecutionPhase.EXECUTING, new Date(now.getTime() - 1000));
-                        job3 = createJob(ExecutionPhase.EXECUTING, new Date(now.getTime() - 2000));
+                        job1 = createJob(ExecutionPhase.EXECUTING);
+                        job2 = createJob(ExecutionPhase.EXECUTING);
+                        job3 = createJob(ExecutionPhase.EXECUTING);
 
                         JobDAO dao = getDAO();
                         ret = dao.put(job1, subject);
                         id1 = ret.getID();
+                        Thread.sleep(1000);
                         ret = dao.put(job2, subject);
                         id2 = ret.getID();
+                        Thread.sleep(1000);
                         ret = dao.put(job3, subject);
                         id3 = ret.getID();
 
-                        Iterator<JobRef> it = dao.iterator("/foo", null, null, 1);
+                        Iterator<JobRef> it = dao.iterator("/foo", null, null, 2);
                         log.debug("testPutListFilterLast jobs start...");
                         boolean found1 = false, found2 = false, found3 = false;
                         String next = null;
@@ -731,7 +729,9 @@ public abstract class AbstractJobDAOTest
                             log.debug("end of next");
                         }
                         log.debug("testPutListFilterLast jobs end");
-                        Assert.assertTrue("Job list incorrect", (!found1) && found2 && (!found3));
+                        log.debug("testPutListFilterLast jobs end: found1, found2, found3: "
+                                + found1 + ", " + found2 + ", " + found3);
+                        Assert.assertTrue("Job list incorrect", (!found1) && found2 && found3);
 
                         it = dao.iterator("/foo", null, null, 2);
                         log.debug("testPutListFilterLast jobs start...");

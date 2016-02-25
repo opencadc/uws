@@ -252,6 +252,9 @@ public class AsynchResource extends UWSResource
                 {
                     throw new IllegalArgumentException("invalid parameter: LAST=" + last);
                 }
+
+                if (lastInt < 1)
+                    throw new IllegalArgumentException("invalid parameter: LAST=" + last);
             }
 
             // parse 'after' parameter
