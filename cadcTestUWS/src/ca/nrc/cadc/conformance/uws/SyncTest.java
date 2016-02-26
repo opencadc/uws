@@ -144,16 +144,10 @@ public class SyncTest extends AbstractUWSTest
 
     /* Since the SyncTest class is already being used by existing tests, 
      * for backwards compatibility, an abstract method is not used to define 
-     * buildRequest() and execute().
+     * buildRequest().
      */
     protected WebRequest buildRequest(final TestProperties properties) 
         throws Exception
-    {
-        throw new UnsupportedOperationException("This method is to be implemented by a subclass.");
-    }
-    
-    protected WebResponse execute(WebConversation conversation, final WebRequest request) 
-        throws IOException, SAXException
     {
         throw new UnsupportedOperationException("This method is to be implemented by a subclass.");
     }
@@ -213,6 +207,55 @@ public class SyncTest extends AbstractUWSTest
         }
         
         return responseCode;
+    }
+    
+    protected WebResponse getRedirectResponse(WebConversation conversation,
+        WebRequest request, WebResponse response) 
+        throws IOException, SAXException
+    {
+        int count = 0;
+        while ((response.getResponseCode() == RC_RESULTS_REDIRECT) && 
+               (count < REDIRECT_LIMIT))
+        {
+            // Get the redirect.
+            String location = response.getHeaderField("Location");
+            log.debug("Location: " + location);
+            assertNotNull("GET response to " + request.getURL().toString() + " location header not set", location);
+    
+            // Follow the redirect.
+            log.debug("**************************************************");
+            log.debug("HTTP GET: " + location);
+            WebRequest getRequest = new GetMethodWebRequest(location);
+            conversation.clearContents();
+            response = conversation.getResponse(getRequest);
+            assertNotNull("GET response to " + location + " is null", response);
+    
+            log.debug(Util.getResponseHeaders(response));
+            log.debug("Response code: " + response.getResponseCode());
+            
+            count++;
+        }
+        
+        if (count >= REDIRECT_LIMIT)
+        {
+            throw new RuntimeException("Too many redirects");
+        }
+        
+        return response;
+    }
+    
+    protected WebResponse execute(WebConversation conversation, final WebRequest request) 
+        throws IOException, SAXException
+    {
+        // execute the operation
+        WebResponse response = conversation.getResponse(request);
+        assertNotNull("POST response to " + request.getURL().toString() + " is null", response);
+        log.debug(Util.getResponseHeaders(response));
+        log.debug("Response code: " + response.getResponseCode());
+
+        // handle potential redirects
+        response = getRedirectResponse(conversation, request, response);
+        return response;
     }
     
     protected void process(WebConversation conversation, final WebRequest request, 
@@ -353,18 +396,6 @@ public class SyncTest extends AbstractUWSTest
             log.debug("HTTP GET: " + request.getURL().toString());
             return request;
         }
-        
-        protected WebResponse execute(WebConversation conversation, final WebRequest request) 
-            throws IOException, SAXException
-        {
-            // execute a GET operation, no redirect
-            WebResponse response = conversation.getResponse(request);
-            assertNotNull("POST response to " + request.getURL().toString() + " is null", response);
-    
-            log.debug(Util.getResponseHeaders(response));
-            log.debug("Response code: " + response.getResponseCode());
-            return response;
-        }
     }
 
     private class SyncPostTest extends SyncTest
@@ -401,54 +432,6 @@ public class SyncTest extends AbstractUWSTest
             log.debug("HTTP POST: " + request.getURL().toString());
             log.debug(Util.getRequestParameters(request));
             return request;
-        }
-        
-        protected WebResponse getRedirectResponse(WebConversation conversation,
-            WebRequest request, WebResponse response) 
-            throws IOException, SAXException
-        {
-            int count = 0;
-            while ((response.getResponseCode() == RC_RESULTS_REDIRECT) && 
-                   (count < REDIRECT_LIMIT))
-            {
-                // Get the redirect.
-                String location = response.getHeaderField("Location");
-                log.debug("Location: " + location);
-                assertNotNull("GET response to " + request.getURL().toString() + " location header not set", location);
-        
-                // Follow the redirect.
-                log.debug("**************************************************");
-                log.debug("HTTP GET: " + location);
-                WebRequest getRequest = new GetMethodWebRequest(location);
-                conversation.clearContents();
-                response = conversation.getResponse(getRequest);
-                assertNotNull("GET response to " + location + " is null", response);
-        
-                log.debug(Util.getResponseHeaders(response));
-                log.debug("Response code: " + response.getResponseCode());
-                
-                count++;
-            }
-            
-            if (count >= REDIRECT_LIMIT)
-            {
-                throw new RuntimeException("Too many redirects");
-            }
-            
-            return response;
-        }
-        
-        protected WebResponse execute(WebConversation conversation, final WebRequest request) 
-            throws IOException, SAXException
-        {
-            // execute a GET operation, handle potential redirects
-            WebResponse response = conversation.getResponse(request);
-            assertNotNull("POST response to " + request.getURL().toString() + " is null", response);
-    
-            log.debug(Util.getResponseHeaders(response));
-            log.debug("Response code: " + response.getResponseCode());
-            response = getRedirectResponse(conversation, request, response);
-            return response;
         }
     }
 }
