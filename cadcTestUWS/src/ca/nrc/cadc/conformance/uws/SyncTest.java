@@ -150,33 +150,6 @@ public class SyncTest extends AbstractUWSTest
         throw new UnsupportedOperationException("This method is to be implemented by a subclass.");
     }
     
-    private boolean isAnErrorTest(final String filename, final Integer responseCode)
-    {
-        // allow file name to contain 'ERROR' for backwards compatibility
-        return filename.contains("ERROR") || (responseCode != null);
-    }
-
-    private void checkResponse(final WebConversation conversation, 
-            final WebRequest request, final Integer responseCode) 
-            throws IOException, SAXException
-    {
-        try
-        {
-            conversation.getResponse(request);
-            fail("expected HttpException ");
-        }
-        catch (HttpException ex)
-        {
-            // if response code is expected, verify it
-            if (responseCode != null)
-            {                
-                assertEquals(responseCode.intValue(), ex.getResponseCode());
-            }
-            
-            log.debug("caught expected: " + ex);
-        }
-    }
-    
     protected void doTest()
     {
         if (testPropertiesList.propertiesList.isEmpty())
@@ -245,14 +218,7 @@ public class SyncTest extends AbstractUWSTest
                     }
                 }
 
-                if (isAnErrorTest(properties.filename, responseCode))
-                {
-                    checkResponse(conversation, request, responseCode);
-                }
-                else
-                {
-                    process(conversation, request, contentType);
-                }
+                process(conversation, request, contentType, responseCode, properties.filename);
             }
             
             printPropertiesFiles = false;
@@ -264,29 +230,17 @@ public class SyncTest extends AbstractUWSTest
         }
     }
     
-    protected void process(WebConversation conversation, WebRequest request, String expectedContentType)
-        throws IOException, SAXException
+    protected WebResponse getRedirectResponse(WebConversation conversation,
+            WebRequest request, WebResponse response) 
+            throws IOException, SAXException
     {
-        WebResponse response = conversation.getResponse(request);
-        assertNotNull("POST response to " + request.getURL().toString() + " is null", response);
-
-        log.debug(Util.getResponseHeaders(response));
-
-        // Check the response code.
-        // 200 - results streamed
-        // 303 - redirected to results
-        log.debug("Response code: " + response.getResponseCode());
-        if (response.getResponseCode() == 200)
-        {
-            // do nothing.
-        }
-        else if (response.getResponseCode() == 303)
+        while (response.getResponseCode() == 303)
         {
             // Get the redirect.
             String location = response.getHeaderField("Location");
             log.debug("Location: " + location);
             assertNotNull("GET response to " + request.getURL().toString() + " location header not set", location);
-
+    
             // Follow the redirect.
             log.debug("**************************************************");
             log.debug("HTTP GET: " + location);
@@ -294,49 +248,64 @@ public class SyncTest extends AbstractUWSTest
             conversation.clearContents();
             response = conversation.getResponse(getRequest);
             assertNotNull("GET response to " + location + " is null", response);
-
+    
             log.debug(Util.getResponseHeaders(response));
-
             log.debug("Response code: " + response.getResponseCode());
-            if (response.getResponseCode() == 200)
+        }
+        
+        return response;
+    }
+    
+    protected void process(WebConversation conversation, WebRequest request, 
+            String expectedContentType, Integer responseCode, String filename)
+        throws IOException, SAXException
+    {
+        try
+        {
+            WebResponse response = conversation.getResponse(request);
+            assertNotNull("POST response to " + request.getURL().toString() + " is null", response);
+    
+            log.debug(Util.getResponseHeaders(response));
+    
+            // Check the response code.
+            // 200 - results streamed
+            // 303 - redirected to results
+            log.debug("Response code: " + response.getResponseCode());
+            response = getRedirectResponse(conversation, request, response);
+            
+            if (response.getResponseCode() != 200)
             {
-                // do nothing.
+                fail("Non-200 POST response code to " + serviceUrl);
             }
-            else if (response.getResponseCode() == 303)
+            
+            if (response != null)
             {
-                // Get the redirect.
-                location = response.getHeaderField("Location");
-                log.debug("Location: " + location);
-                assertNotNull("GET response to " + request.getURL().toString() + " location header not set", location);
-
-                // Follow the redirect.
-                log.debug("**************************************************");
-                log.debug("HTTP GET: " + location);
-                getRequest = new GetMethodWebRequest(location);
-                conversation.clearContents();
-                response = conversation.getResponse(getRequest);
-                assertNotNull("GET response to " + location + " is null", response);
-
-                log.debug(Util.getResponseHeaders(response));
-
-                log.debug("Response code: " + response.getResponseCode());
-                assertEquals("GET response code to " + location + " should be 200", 200, response.getResponseCode());
+                // Get the response text.
+                log.debug("Response text:\r\n" + response.getText());
+    
+                String contentType = response.getHeaderField("Content-Type");
+                assertEquals("Content-Type", expectedContentType, contentType);
+            }
+        }
+        catch (HttpException ex)
+        {
+            if (filename.contains("ERROR") || (responseCode != null))
+            {              
+                if (responseCode != null)
+                {
+                    // if response code is expected, verify it
+                    assertEquals(responseCode.intValue(), ex.getResponseCode());
+                }
+                
+                // old test files do not provide response codes
+                log.debug("caught expected: " + ex);
             }
             else
             {
-                fail("Non-200 or 303 POST response code to " + location);
+                // unexpected exception
+                throw ex;
             }
         }
-        else
-        {
-            fail("Non-200 or 303 POST response code to " + serviceUrl);
-        }
-        
-        // Get the response text.
-        log.debug("Response text:\r\n" + response.getText());
-
-        String contentType = response.getHeaderField("Content-Type");
-        assertEquals("Content-Type", expectedContentType, contentType);
     }
     
     @Test
