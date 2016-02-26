@@ -8,7 +8,7 @@
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -73,6 +73,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.log4j.Level;
@@ -85,54 +86,69 @@ import ca.nrc.cadc.util.Log4jInit;
 
 /**
  * Unit tests for JobListRead and JobListWriter
- * 
+ *
  * @author majorb
  *
  */
 public class JobListReaderWriterTest
 {
-    
+
     static Logger log = Logger.getLogger(JobListReaderWriterTest.class);
-    
+
     @BeforeClass
-    public static void setUpBeforeClass() 
+    public static void setUpBeforeClass()
         throws Exception
     {
         Log4jInit.setLevel("ca.nrc.cadc", Level.INFO);
     }
-    
+
     @Test
     public void testRoundTrip() throws Exception
     {
-        
+
         List<JobRef> startJobs = new ArrayList<JobRef>();
         ExecutionPhase phase = ExecutionPhase.QUEUED;
+        Date creationTime = new Date();
+        String runID = "TEST";
+        String ownerID = "owner";
+        JobRef job = null;
         for (int i=0; i<5; i++)
         {
-            JobRef job = new JobRef("jobID-" + i, phase);
+            if (i == 4)
+                job = new JobRef("jobID-" + i, phase, creationTime, null, ownerID);
+            else
+                job = new JobRef("jobID-" + i, phase, creationTime, runID, ownerID);
             startJobs.add(job);
         }
-        
+
         OutputStream out = new ByteArrayOutputStream();
-        
+
         JobListWriter writer = new JobListWriter();
-        
+
         writer.write(startJobs.iterator(), out);
         String xml = out.toString();
         log.debug("testRoundTrip: xml on write: \n\n" + xml + "\n\n");
-        
+
         ByteArrayInputStream in = new ByteArrayInputStream(xml.getBytes());
-        
+
         JobListReader reader = new JobListReader();
         List<JobRef> endJobs = reader.read(in);
-        
+
         Assert.assertEquals("wrong number of jobs", startJobs.size(), endJobs.size());
+        int i = 0;
         for (JobRef next : startJobs)
         {
             assertListContainsJob(endJobs, next);
+            Assert.assertEquals(creationTime, next.getCreationTime());
+            if (i == 4)
+                Assert.assertNull(next.getRunID());
+            else
+                Assert.assertEquals(runID, next.getRunID());
+            Assert.assertEquals(ownerID, next.getOwnerID());
+            i++;
         }
     }
-    
+
     private void assertListContainsJob(List<JobRef> list, JobRef job)
     {
         String jobID = job.getJobID();

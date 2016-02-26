@@ -8,7 +8,7 @@
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -69,12 +69,11 @@
 
 package ca.nrc.cadc.uws;
 
-import ca.nrc.cadc.xml.ContentConverter;
-import ca.nrc.cadc.xml.IterableContent;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.text.DateFormat;
 import java.util.Iterator;
 
 import org.apache.log4j.Logger;
@@ -83,19 +82,26 @@ import org.jdom2.Element;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 
+import ca.nrc.cadc.date.DateUtil;
+import ca.nrc.cadc.xml.ContentConverter;
+import ca.nrc.cadc.xml.IterableContent;
+
 /**
  * Writes a JobList as XML.
- * 
+ *
  * @author majorb
  */
 public class JobListWriter
 {
     private static Logger log = Logger.getLogger(JobListWriter.class);
 
-    public JobListWriter() 
+    private DateFormat dateFormat;
+
+    public JobListWriter()
     {
+        this.dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
     }
-    
+
     /**
      * Write to root Element to a writer.
      *
@@ -141,7 +147,7 @@ public class JobListWriter
         Document document = new Document(root);
         outputter.output(document, writer);
     }
-    
+
     public Element getRootElement(Iterator<JobRef> jobs)
     {
         ContentConverter<Element, JobRef> contentConverter =
@@ -153,7 +159,7 @@ public class JobListWriter
                     return getShortJobDescription(jobRef);
                 }
             };
-        
+
         Element root = new IterableContent<Element, JobRef>(JobAttribute.JOBS.getAttributeName(), UWS.NS, jobs, contentConverter);
         root.addNamespaceDeclaration(UWS.NS);
         root.addNamespaceDeclaration(UWS.XLINK_NS);
@@ -170,6 +176,9 @@ public class JobListWriter
         Element shortJobDescription = new Element(JobAttribute.JOB_REF.getAttributeName(), UWS.NS);
         shortJobDescription.setAttribute("id", jobRef.getJobID());
         shortJobDescription.addContent(getPhase(jobRef));
+        shortJobDescription.addContent(getCreationTime(jobRef));
+        shortJobDescription.addContent(getRunID(jobRef));
+        shortJobDescription.addContent(getOwnerID(jobRef));
         return shortJobDescription;
     }
 
@@ -184,7 +193,48 @@ public class JobListWriter
         element.addContent(jobRef.getExecutionPhase().toString());
         return element;
     }
-    
+
+    /**
+     * Get an Element representing the runID.
+     *
+     * @return The runID element.
+     */
+    private Element getRunID(JobRef jobRef)
+    {
+        Element element = new Element(JobAttribute.RUN_ID.getAttributeName(), UWS.NS);
+        String runID = jobRef.getRunID();
+        if (runID == null)
+            element.setAttribute("nil", "true", UWS.XSI_NS);
+        else
+            element.addContent(runID);
+        return element;
+    }
+
+    /**
+     * Get an Element representing the creation time.
+     *
+     * @return The creation time element.
+     */
+    private Element getCreationTime(JobRef jobRef)
+    {
+        Element element = new Element(JobAttribute.CREATION_TIME.getAttributeName(), UWS.NS);
+        element.addContent(dateFormat.format(jobRef.getCreationTime()));
+        return element;
+    }
+
+    /**
+     * Get an Element representing the owner ID.
+     *
+     * @return The owner ID Element.
+     */
+    private Element getOwnerID(JobRef jobRef)
+    {
+        Element element = new Element(JobAttribute.OWNER_ID.getAttributeName(), UWS.NS);
+        element.addContent(jobRef.getOwnerID());
+        return element;
+    }
+
+
 
 }
-    
+

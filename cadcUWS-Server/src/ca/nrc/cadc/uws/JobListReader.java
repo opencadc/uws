@@ -8,7 +8,7 @@
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -74,8 +74,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -84,19 +86,21 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
+import org.jdom2.Attribute;
 import org.jdom2.DataConversionException;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 
+import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.xml.XmlUtil;
 
 /**
  * Constructs a Job List from an XML source. This class is not thread safe but it is
  * re-usable  so it can safely be used to sequentially parse multiple XML transfer
  * documents.
- * 
+ *
  * The Job objects returned are only sparcely populated:  the jobID and phase are
  * the only two attributes set, as per the definition of 'ShortJobDescription' in the XSD.
  */
@@ -104,25 +108,26 @@ public class JobListReader
 {
 
     private static Logger log = Logger.getLogger(JobListReader.class);
-    
+
     private static final String UWS_SCHEMA_URL = "http://www.ivoa.net/xml/UWS/v1.0";
     private static final String UWS_SCHEMA_RESOURCE = "UWS-v1.0.xsd";
     private static final String XLINK_SCHEMA_URL = "http://www.w3.org/1999/xlink";
     private static final String XLINK_SCHEMA_RESOURCE = "XLINK.xsd";
-    
+
     private static final String uwsSchemaUrl;
     private static final String xlinkSchemaUrl;
     static
-    {        
+    {
         uwsSchemaUrl = XmlUtil.getResourceUrlString(UWS_SCHEMA_RESOURCE, JobListReader.class);
         log.debug("uwsSchemaUrl: " + uwsSchemaUrl);
-        
+
         xlinkSchemaUrl = XmlUtil.getResourceUrlString(XLINK_SCHEMA_RESOURCE, JobListReader.class);
         log.debug("xlinkSchemaUrl: " + xlinkSchemaUrl);
     }
 
     private Map<String, String> schemaMap;
     private SAXBuilder docBuilder;
+    private DateFormat dateFormat;
 
     /**
      * Constructor. XML Schema validation is enabled by default.
@@ -151,6 +156,7 @@ public class JobListReader
         }
 
         this.docBuilder = XmlUtil.createBuilder(schemaMap);
+        this.dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
     }
 
     /**
@@ -185,7 +191,7 @@ public class JobListReader
         this.docBuilder = XmlUtil.createBuilder(schemaMap);
     }
 
-    public List<JobRef> read(InputStream in) 
+    public List<JobRef> read(InputStream in)
         throws JDOMException, IOException, ParseException
     {
         try
@@ -198,7 +204,7 @@ public class JobListReader
         }
     }
 
-    public List<JobRef> read(Reader reader) 
+    public List<JobRef> read(Reader reader)
         throws JDOMException, IOException, ParseException
     {
         Document doc = docBuilder.build(reader);
@@ -215,17 +221,37 @@ public class JobListReader
         Element next = null;
         JobRef jobRef = null;
         ExecutionPhase executionPhase = null;
+        Date creationTime = null;
+        Attribute nil = null;
+        String runID = null;
+        String ownerID = null;
         while (childIterator.hasNext())
         {
             next = childIterator.next();
             String jobID = next.getAttributeValue("id");
+
             Element phaseElement = next.getChild(JobAttribute.EXECUTION_PHASE.getAttributeName(), UWS.NS);
             String phase = phaseElement.getValue();
             executionPhase = ExecutionPhase.valueOf(phase);
-            jobRef = new JobRef(jobID, executionPhase);
+
+            Element creationTimeElement = next.getChild(JobAttribute.CREATION_TIME.getAttributeName(), UWS.NS);
+            String time = creationTimeElement.getValue();
+            creationTime = dateFormat.parse(time);
+
+            Element runIDElement = next.getChild(JobAttribute.RUN_ID.getAttributeName(), UWS.NS);
+            nil = runIDElement.getAttribute("nil", UWS.XSI_NS);
+            if (nil != null && nil.getBooleanValue())
+                runID = null;
+            else
+                runID = runIDElement.getTextTrim();
+
+            Element ownerIDElement = next.getChild(JobAttribute.OWNER_ID.getAttributeName(), UWS.NS);
+            ownerID = ownerIDElement.getTextTrim();
+
+            jobRef = new JobRef(jobID, executionPhase, creationTime, runID, ownerID);
             jobs.add(jobRef);
         }
-        
+
         return jobs;
     }
 
