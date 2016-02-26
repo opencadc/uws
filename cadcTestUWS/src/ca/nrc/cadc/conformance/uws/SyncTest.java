@@ -81,8 +81,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import junit.framework.Assert;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Before;
@@ -150,84 +148,33 @@ public class SyncTest extends AbstractUWSTest
         throw new UnsupportedOperationException("This method is to be implemented by a subclass.");
     }
     
-    protected void doTest()
+    protected void setAuthentication(WebConversation conversation, final TestProperties properties)
     {
-        if (testPropertiesList.propertiesList.isEmpty())
+        String realm = null;
+        String userid = null;
+        String password = null;
+        if (properties.preconditions != null)
         {
-            log.warn("no properties files for " + this.getClass().getSimpleName());
-            return;
-        }
-        String fname = null;
-        try
-        {
-            // For each properties file.
-            for (TestProperties properties : testPropertiesList.propertiesList)
+            if (properties.preconditions.containsKey("Realm"))
             {
-                if (printPropertiesFiles)
-                {
-                    log.info("testing properties file: " + properties.filename);
-                    log.debug("\r\n" + properties);
-                }
-                
-                fname = properties.filename;
-                
-                // see if there are realm/userid/password preconditions
-                String realm = null;
-                String userid = null;
-                String password = null;
-                if (properties.preconditions != null)
-                {
-                    if (properties.preconditions.containsKey("Realm"))
-                    {
-                        realm = properties.preconditions.get("Realm").get(0);
-                    }
-                    
-                    if (properties.preconditions.containsKey("Userid"))
-                    {
-                        userid = properties.preconditions.get("Userid").get(0);
-                    }
-                    
-                    if (properties.preconditions.containsKey("Password"))
-                    {
-                        password = properties.preconditions.get("Password").get(0);
-                    }
-                }
-
-                // GET request to the sync resource.
-                WebRequest request = this.buildRequest(properties);
-                
-                WebConversation conversation = new WebConversation();
-                if (userid != null && password != null && realm != null)
-                {
-                    conversation.setAuthentication(realm, userid, password);
-                }                
-                
-                // see if there are expectations
-                String contentType = null;
-                Integer responseCode = null; 
-                if (properties.expectations != null)
-                {
-                    if (properties.expectations.containsKey("Content-Type"))
-                    {
-                        contentType = properties.expectations.get("Content-Type").get(0);
-                    }
-                    
-                    if (properties.expectations.containsKey("Response-Code"))
-                    {
-                        responseCode = Integer.valueOf(properties.expectations.get("Response-Code").get(0));
-                    }
-                }
-
-                process(conversation, request, contentType, responseCode, properties.filename);
+                realm = properties.preconditions.get("Realm").get(0);
             }
             
-            printPropertiesFiles = false;
+            if (properties.preconditions.containsKey("Userid"))
+            {
+                userid = properties.preconditions.get("Userid").get(0);
+            }
+            
+            if (properties.preconditions.containsKey("Password"))
+            {
+                password = properties.preconditions.get("Password").get(0);
+            }
         }
-        catch (Exception unexpected)
+        
+        if (userid != null && password != null && realm != null)
         {
-            log.error("unexpected exception for " + fname, unexpected);
-            fail("unexpected exception: " + unexpected);
-        }
+            conversation.setAuthentication(realm, userid, password);
+        }                
     }
     
     protected WebResponse getRedirectResponse(WebConversation conversation,
@@ -256,8 +203,36 @@ public class SyncTest extends AbstractUWSTest
         return response;
     }
     
-    protected void process(WebConversation conversation, WebRequest request, 
-            String expectedContentType, Integer responseCode, String filename)
+    protected String getContentType(final TestProperties properties)
+    {
+        String contentType = null;
+        if (properties.expectations != null)
+        {
+            if (properties.expectations.containsKey("Content-Type"))
+            {
+                contentType = properties.expectations.get("Content-Type").get(0);
+            }            
+        }
+        
+        return contentType;
+    }
+    
+    protected Integer getResponseCode(final TestProperties properties)
+    {
+        Integer responseCode = null; 
+        if (properties.expectations != null)
+        {
+            if (properties.expectations.containsKey("Response-Code"))
+            {
+                responseCode = Integer.valueOf(properties.expectations.get("Response-Code").get(0));
+            }
+        }
+        
+        return responseCode;
+    }
+    
+    protected void process(WebConversation conversation, final WebRequest request, 
+            final TestProperties properties)
         throws IOException, SAXException
     {
         try
@@ -284,12 +259,13 @@ public class SyncTest extends AbstractUWSTest
                 log.debug("Response text:\r\n" + response.getText());
     
                 String contentType = response.getHeaderField("Content-Type");
-                assertEquals("Content-Type", expectedContentType, contentType);
+                assertEquals("Content-Type", this.getContentType(properties), contentType);
             }
         }
         catch (HttpException ex)
         {
-            if (filename.contains("ERROR") || (responseCode != null))
+            Integer responseCode = this.getResponseCode(properties);
+            if (properties.filename.contains("ERROR") || (responseCode != null))
             {              
                 if (responseCode != null)
                 {
@@ -305,6 +281,46 @@ public class SyncTest extends AbstractUWSTest
                 // unexpected exception
                 throw ex;
             }
+        }
+    }
+    
+    protected void doTest()
+    {
+        if (testPropertiesList.propertiesList.isEmpty())
+        {
+            log.warn("no properties files for " + this.getClass().getSimpleName());
+            return;
+        }
+        String fname = null;
+        try
+        {
+            // For each properties file.
+            for (TestProperties properties : testPropertiesList.propertiesList)
+            {
+                if (printPropertiesFiles)
+                {
+                    log.info("testing properties file: " + properties.filename);
+                    log.debug("\r\n" + properties);
+                }
+                
+                fname = properties.filename;
+                
+                // GET request to the sync resource.
+                WebRequest request = this.buildRequest(properties);
+                
+                // see if there are realm/userid/password preconditions
+                WebConversation conversation = new WebConversation();
+                this.setAuthentication(conversation, properties);                
+                
+                process(conversation, request, properties);
+            }
+            
+            printPropertiesFiles = false;
+        }
+        catch (Exception unexpected)
+        {
+            log.error("unexpected exception for " + fname, unexpected);
+            fail("unexpected exception: " + unexpected);
         }
     }
     
