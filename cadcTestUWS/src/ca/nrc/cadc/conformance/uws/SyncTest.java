@@ -112,6 +112,9 @@ public class SyncTest extends AbstractUWSTest
 
     private static Logger log = Logger.getLogger(SyncTest.class);
 
+    private static final Integer RC_RESULTS_STREAMED = 200;
+    private static final Integer RC_RESULTS_REDIRECT = 303;
+    private static final Integer REDIRECT_LIMIT = 10;
     private static final String CLASS_NAME = SyncTest.class.getSimpleName();
 
     public SyncTest()
@@ -140,10 +143,17 @@ public class SyncTest extends AbstractUWSTest
     }
 
     /* Since the SyncTest class is already being used by existing tests, 
-     * for backwards compatibility, an abstract method is not used to define buildRequest().
+     * for backwards compatibility, an abstract method is not used to define 
+     * buildRequest() and execute().
      */
     protected WebRequest buildRequest(final TestProperties properties) 
         throws Exception
+    {
+        throw new UnsupportedOperationException("This method is to be implemented by a subclass.");
+    }
+    
+    protected WebResponse execute(WebConversation conversation, final WebRequest request) 
+        throws IOException, SAXException
     {
         throw new UnsupportedOperationException("This method is to be implemented by a subclass.");
     }
@@ -177,32 +187,6 @@ public class SyncTest extends AbstractUWSTest
         }                
     }
     
-    protected WebResponse getRedirectResponse(WebConversation conversation,
-            WebRequest request, WebResponse response) 
-            throws IOException, SAXException
-    {
-        while (response.getResponseCode() == 303)
-        {
-            // Get the redirect.
-            String location = response.getHeaderField("Location");
-            log.debug("Location: " + location);
-            assertNotNull("GET response to " + request.getURL().toString() + " location header not set", location);
-    
-            // Follow the redirect.
-            log.debug("**************************************************");
-            log.debug("HTTP GET: " + location);
-            WebRequest getRequest = new GetMethodWebRequest(location);
-            conversation.clearContents();
-            response = conversation.getResponse(getRequest);
-            assertNotNull("GET response to " + location + " is null", response);
-    
-            log.debug(Util.getResponseHeaders(response));
-            log.debug("Response code: " + response.getResponseCode());
-        }
-        
-        return response;
-    }
-    
     protected String getContentType(final TestProperties properties)
     {
         String contentType = null;
@@ -232,23 +216,14 @@ public class SyncTest extends AbstractUWSTest
     }
     
     protected void process(WebConversation conversation, final WebRequest request, 
-            final TestProperties properties)
+        final TestProperties properties)
         throws IOException, SAXException
     {
         try
         {
-            WebResponse response = conversation.getResponse(request);
-            assertNotNull("POST response to " + request.getURL().toString() + " is null", response);
-    
-            log.debug(Util.getResponseHeaders(response));
-    
-            // Check the response code.
-            // 200 - results streamed
-            // 303 - redirected to results
-            log.debug("Response code: " + response.getResponseCode());
-            response = getRedirectResponse(conversation, request, response);
-            
-            if (response.getResponseCode() != 200)
+            // execute the operation
+            WebResponse response = this.execute(conversation, request);         
+            if (response.getResponseCode() != RC_RESULTS_STREAMED)
             {
                 fail("Non-200 POST response code to " + serviceUrl);
             }
@@ -349,7 +324,7 @@ public class SyncTest extends AbstractUWSTest
         }
         
         protected WebRequest buildRequest(final TestProperties properties) 
-                throws UnsupportedEncodingException, MalformedURLException
+            throws UnsupportedEncodingException, MalformedURLException
         {
             // Build the request.
             StringBuilder sb = new StringBuilder();
@@ -378,6 +353,18 @@ public class SyncTest extends AbstractUWSTest
             log.debug("HTTP GET: " + request.getURL().toString());
             return request;
         }
+        
+        protected WebResponse execute(WebConversation conversation, final WebRequest request) 
+            throws IOException, SAXException
+        {
+            // execute a GET operation, no redirect
+            WebResponse response = conversation.getResponse(request);
+            assertNotNull("POST response to " + request.getURL().toString() + " is null", response);
+    
+            log.debug(Util.getResponseHeaders(response));
+            log.debug("Response code: " + response.getResponseCode());
+            return response;
+        }
     }
 
     private class SyncPostTest extends SyncTest
@@ -393,7 +380,7 @@ public class SyncTest extends AbstractUWSTest
         }
         
         protected WebRequest buildRequest(final TestProperties properties) 
-                throws UnsupportedEncodingException, MalformedURLException
+            throws UnsupportedEncodingException, MalformedURLException
         {
             // Build the request.            
             WebRequest request = new PostMethodWebRequest(serviceUrl);
@@ -414,6 +401,54 @@ public class SyncTest extends AbstractUWSTest
             log.debug("HTTP POST: " + request.getURL().toString());
             log.debug(Util.getRequestParameters(request));
             return request;
+        }
+        
+        protected WebResponse getRedirectResponse(WebConversation conversation,
+            WebRequest request, WebResponse response) 
+            throws IOException, SAXException
+        {
+            int count = 0;
+            while ((response.getResponseCode() == RC_RESULTS_REDIRECT) && 
+                   (count < REDIRECT_LIMIT))
+            {
+                // Get the redirect.
+                String location = response.getHeaderField("Location");
+                log.debug("Location: " + location);
+                assertNotNull("GET response to " + request.getURL().toString() + " location header not set", location);
+        
+                // Follow the redirect.
+                log.debug("**************************************************");
+                log.debug("HTTP GET: " + location);
+                WebRequest getRequest = new GetMethodWebRequest(location);
+                conversation.clearContents();
+                response = conversation.getResponse(getRequest);
+                assertNotNull("GET response to " + location + " is null", response);
+        
+                log.debug(Util.getResponseHeaders(response));
+                log.debug("Response code: " + response.getResponseCode());
+                
+                count++;
+            }
+            
+            if (count >= REDIRECT_LIMIT)
+            {
+                throw new RuntimeException("Too many redirects");
+            }
+            
+            return response;
+        }
+        
+        protected WebResponse execute(WebConversation conversation, final WebRequest request) 
+            throws IOException, SAXException
+        {
+            // execute a GET operation, handle potential redirects
+            WebResponse response = conversation.getResponse(request);
+            assertNotNull("POST response to " + request.getURL().toString() + " is null", response);
+    
+            log.debug(Util.getResponseHeaders(response));
+            log.debug("Response code: " + response.getResponseCode());
+            response = getRedirectResponse(conversation, request, response);
+            return response;
         }
     }
 }
