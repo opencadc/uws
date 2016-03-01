@@ -74,6 +74,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
@@ -101,6 +103,7 @@ import com.meterware.httpunit.WebResponse;
 public class SyncTest extends AbstractUWSTest
 {
     protected static TestPropertiesList testPropertiesList;
+    protected static boolean printPropertiesFiles = true;
 
     static
     {
@@ -109,6 +112,9 @@ public class SyncTest extends AbstractUWSTest
 
     private static Logger log = Logger.getLogger(SyncTest.class);
 
+    private static final Integer RC_RESULTS_STREAMED = 200;
+    private static final Integer RC_RESULTS_REDIRECT = 303;
+    private static final Integer REDIRECT_LIMIT = 10;
     private static final String CLASS_NAME = SyncTest.class.getSimpleName();
 
     public SyncTest()
@@ -121,7 +127,10 @@ public class SyncTest extends AbstractUWSTest
     {
         String propertiesDirectory = System.getProperty("properties.directory");
         if (propertiesDirectory == null)
+        {
             fail("properties.directory System property not set");
+        }
+        
         try
         {
             testPropertiesList = new TestPropertiesList(propertiesDirectory, CLASS_NAME);
@@ -133,213 +142,86 @@ public class SyncTest extends AbstractUWSTest
         }
     }
 
-    @Test
-    public void testGET()
+    /* Since the SyncTest class is already being used by existing tests, 
+     * for backwards compatibility, an abstract method is not used to define 
+     * buildRequest().
+     */
+    protected WebRequest buildRequest(final TestProperties properties) 
+        throws Exception
     {
-        if (testPropertiesList.propertiesList.isEmpty())
+        throw new UnsupportedOperationException("This method is to be implemented by a subclass.");
+    }
+    
+    protected void setAuthentication(WebConversation conversation, final TestProperties properties)
+    {
+        String realm = null;
+        String userid = null;
+        String password = null;
+        if (properties.preconditions != null)
         {
-            log.warn("no properties files for " + this.getClass().getSimpleName());
-            return;
-        }
-        String fname = null;
-        try
-        {
-            // For each properties file.
-            for (TestProperties properties : testPropertiesList.propertiesList)
+            if (properties.preconditions.containsKey("Realm"))
             {
-                log.debug("**************************************************");
-                log.debug("processing properties file: " + properties.filename);
-                log.debug("\r\n" + properties);
-                log.debug("**************************************************");
-                fname = properties.filename;
-                
-                // Build the POST request.
-                StringBuilder sb = new StringBuilder();
-
-                // Add parameters if available.
-                if (properties.parameters != null)
-                {
-                    Map<String, List<String>> parameters = properties.parameters;
-                    List<String> valueList;
-                    List<String> keyList = new ArrayList<String>(parameters.keySet());
-                    for (String key : keyList)
-                    {
-                        valueList = parameters.get(key);
-                        for (String value : valueList)
-                        {
-                            sb.append(key);
-                            sb.append("=");
-                            sb.append(URLEncoder.encode(value, "UTF-8"));
-                            sb.append("&");
-                        }
-                    }
-                }
-                
-                // see if there is a Content-Type expectation
-                String contentType = null;
-                if (properties.expectations != null)
-                    if (properties.expectations.containsKey("Content-Type"))
-                        contentType = properties.expectations.get("Content-Type").get(0);
-                
-                // see if there are realm/userid/password preconditions
-                String realm = null;
-                String userid = null;
-                String password = null;
-                if (properties.preconditions != null)
-                {
-                    if (properties.preconditions.containsKey("Realm"))
-                        realm = properties.preconditions.get("Realm").get(0);
-                    if (properties.preconditions.containsKey("Userid"))
-                        userid = properties.preconditions.get("Userid").get(0);
-                    if (properties.preconditions.containsKey("Password"))
-                        password = properties.preconditions.get("Password").get(0);
-                }
-                
-                String getUrl = serviceUrl + "?" + sb.substring(0, sb.length()-1); // strip trailing &
-                WebConversation conversation = new WebConversation();
-                if (userid != null && password != null && realm != null)
-                    conversation.setAuthentication(realm, userid, password);
-                WebRequest request = new GetMethodWebRequest(getUrl);
-
-                // GET request to the sync resource.
-                log.debug("**************************************************");
-                log.debug("HTTP GET: " + request.getURL().toString());
-
-                if (properties.filename.contains("ERROR"))
-                {
-                    try
-                    {
-                        process(conversation, request, contentType);
-                        // not all services require 4xx aka failure
-                        //fail("expected HttpException for " + properties.filename);
-                    }
-                    catch(HttpException ex)
-                    {
-                        log.debug("caught expected: " + ex);
-                    }
-                }
-                else
-                    process(conversation, request, contentType);
+                realm = properties.preconditions.get("Realm").get(0);
+            }
+            
+            if (properties.preconditions.containsKey("Userid"))
+            {
+                userid = properties.preconditions.get("Userid").get(0);
+            }
+            
+            if (properties.preconditions.containsKey("Password"))
+            {
+                password = properties.preconditions.get("Password").get(0);
             }
         }
-        catch (Exception unexpected)
+        
+        if (userid != null && password != null && realm != null)
         {
-            log.error("unexpected exception for " + fname, unexpected);
-            fail("unexpected exception: " + unexpected);
-        }
+            conversation.setAuthentication(realm, userid, password);
+        }                
     }
-
-    @Test
-    public void testPOST()
+    
+    protected String getContentType(final TestProperties properties)
     {
-        if (testPropertiesList.propertiesList.isEmpty())
+        String contentType = null;
+        if (properties.expectations != null)
         {
-            log.warn("no properties files for " + this.getClass().getSimpleName());
-            return;
-        }
-        String fname = null;
-        try
-        {
-            // For each properties file.
-            for (TestProperties properties : testPropertiesList.propertiesList)
+            if (properties.expectations.containsKey("Content-Type"))
             {
-                log.debug("**************************************************");
-                log.debug("processing properties file: " + properties.filename);
-                log.debug("\r\n" + properties);
-                log.debug("**************************************************");
-                fname = properties.filename;
-                
-                // see if there are realm/userid/password preconditions
-                String realm = null;
-                String userid = null;
-                String password = null;
-                if (properties.preconditions != null)
-                {
-                    if (properties.preconditions.containsKey("Realm"))
-                        realm = properties.preconditions.get("Realm").get(0);
-                    if (properties.preconditions.containsKey("Userid"))
-                        userid = properties.preconditions.get("Userid").get(0);
-                    if (properties.preconditions.containsKey("Password"))
-                        password = properties.preconditions.get("Password").get(0);
-                }
-
-                // Build the POST request.
-                WebConversation conversation = new WebConversation();
-                if (userid != null && password != null && realm != null)
-                    conversation.setAuthentication(realm, userid, password);
-                WebRequest request = new PostMethodWebRequest(serviceUrl);
-
-                // Add parameters if available.
-                if (properties.parameters != null)
-                {
-                    Map<String, List<String>> parameters = properties.parameters;
-                    List<String> valueList;
-                    List<String> keyList = new ArrayList<String>(parameters.keySet());
-                    for (String key : keyList)
-                    {
-                        valueList = parameters.get(key);
-                        request.setParameter(key, valueList.toArray(new String[0]));
-                    }
-                }
-                
-                // see if there is a Content-Type expectation
-                String contentType = null;
-                if (properties.expectations != null)
-                    if (properties.expectations.containsKey("Content-Type"))
-                        contentType = properties.expectations.get("Content-Type").get(0);
-
-                // POST request to the sync resource.
-                log.debug("**************************************************");
-                log.debug("HTTP POST: " + request.getURL().toString());
-                log.debug(Util.getRequestParameters(request));
-
-                if (properties.filename.contains("ERROR"))
-                {
-                    try
-                    {
-                        process(conversation, request, contentType);
-                        // not all services require 4xx aka failure
-                        //fail("expected HttpException for " + properties.filename);
-                    }
-                    catch(HttpException ex)
-                    {
-                        log.debug("caught expected: " + ex);
-                    }
-                }
-                else
-                    process(conversation, request, contentType);
+                contentType = properties.expectations.get("Content-Type").get(0);
+            }            
+        }
+        
+        return contentType;
+    }
+    
+    protected Integer getResponseCode(final TestProperties properties)
+    {
+        Integer responseCode = null; 
+        if (properties.expectations != null)
+        {
+            if (properties.expectations.containsKey("Response-Code"))
+            {
+                responseCode = Integer.valueOf(properties.expectations.get("Response-Code").get(0));
             }
         }
-        catch (Exception unexpected)
-        {
-            log.error("unexpected exception for " + fname, unexpected);
-            fail("unexpected exception: " + unexpected);
-        }
+        
+        return responseCode;
     }
-
-    protected void process(WebConversation conversation, WebRequest request,String expectedContentType)
+    
+    protected WebResponse getRedirectResponse(WebConversation conversation,
+        WebRequest request, WebResponse response) 
         throws IOException, SAXException
     {
-        WebResponse response = conversation.getResponse(request);
-        assertNotNull("POST response to " + request.getURL().toString() + " is null", response);
-
-        log.debug(Util.getResponseHeaders(response));
-
-        // Check the response code.
-        // 200 - results streamed
-        // 303 - redirected to results
-        log.debug("Response code: " + response.getResponseCode());
-        if (response.getResponseCode() == 200)
-        {
-            // do nothing.
-        }
-        else if (response.getResponseCode() == 303)
+        int count = 0;
+        while ((response.getResponseCode() == RC_RESULTS_REDIRECT) && 
+               (count < REDIRECT_LIMIT))
         {
             // Get the redirect.
             String location = response.getHeaderField("Location");
             log.debug("Location: " + location);
             assertNotNull("GET response to " + request.getURL().toString() + " location header not set", location);
-
+    
             // Follow the redirect.
             log.debug("**************************************************");
             log.debug("HTTP GET: " + location);
@@ -347,51 +229,209 @@ public class SyncTest extends AbstractUWSTest
             conversation.clearContents();
             response = conversation.getResponse(getRequest);
             assertNotNull("GET response to " + location + " is null", response);
-
+    
             log.debug(Util.getResponseHeaders(response));
-
             log.debug("Response code: " + response.getResponseCode());
-            if (response.getResponseCode() == 200)
+            
+            count++;
+        }
+        
+        if (count >= REDIRECT_LIMIT)
+        {
+            throw new RuntimeException("Too many redirects");
+        }
+        
+        return response;
+    }
+    
+    protected WebResponse execute(WebConversation conversation, final WebRequest request) 
+        throws IOException, SAXException
+    {
+        // execute the operation
+        WebResponse response = conversation.getResponse(request);
+        assertNotNull("POST response to " + request.getURL().toString() + " is null", response);
+        log.debug(Util.getResponseHeaders(response));
+        log.debug("Response code: " + response.getResponseCode());
+
+        // handle potential redirects
+        response = getRedirectResponse(conversation, request, response);
+        return response;
+    }
+    
+    protected void process(WebConversation conversation, final WebRequest request, 
+        final TestProperties properties)
+        throws IOException, SAXException
+    {
+        try
+        {
+            // execute the operation
+            WebResponse response = this.execute(conversation, request);         
+            if (response.getResponseCode() != RC_RESULTS_STREAMED)
             {
-                // do nothing.
+                fail("Non-200 POST response code to " + serviceUrl);
             }
-            else if (response.getResponseCode() == 303)
+            
+            if (response != null)
             {
-                // Get the redirect.
-                location = response.getHeaderField("Location");
-                log.debug("Location: " + location);
-                assertNotNull("GET response to " + request.getURL().toString() + " location header not set", location);
-
-                // Follow the redirect.
-                log.debug("**************************************************");
-                log.debug("HTTP GET: " + location);
-                getRequest = new GetMethodWebRequest(location);
-                conversation.clearContents();
-                response = conversation.getResponse(getRequest);
-                assertNotNull("GET response to " + location + " is null", response);
-
-                log.debug(Util.getResponseHeaders(response));
-
-                log.debug("Response code: " + response.getResponseCode());
-                assertEquals("GET response code to " + location + " should be 200", 200, response.getResponseCode());
+                // Get the response text.
+                log.debug("Response text:\r\n" + response.getText());
+    
+                String contentType = response.getHeaderField("Content-Type");
+                assertEquals("Content-Type", this.getContentType(properties), contentType);
+            }
+        }
+        catch (HttpException ex)
+        {
+            Integer responseCode = this.getResponseCode(properties);
+            if (properties.filename.contains("ERROR") || (responseCode != null))
+            {              
+                if (responseCode != null)
+                {
+                    // if response code is expected, verify it
+                    assertEquals(responseCode.intValue(), ex.getResponseCode());
+                }
+                
+                // old test files do not provide response codes
+                log.debug("caught expected: " + ex);
             }
             else
             {
-                fail("Non-200 or 303 POST response code to " + location);
+                // unexpected exception
+                throw ex;
             }
         }
-        else
+    }
+    
+    protected void doTest()
+    {
+        if (testPropertiesList.propertiesList.isEmpty())
         {
-            fail("Non-200 or 303 POST response code to " + serviceUrl);
+            log.warn("no properties files for " + this.getClass().getSimpleName());
+            return;
         }
-        
-        // Get the response text.
-        log.debug("Response text:\r\n" + response.getText());
-
-        String contentType = response.getHeaderField("Content-Type");
-        assertEquals("Content-Type", expectedContentType, contentType);
-        
-
+        String fname = null;
+        try
+        {
+            // For each properties file.
+            for (TestProperties properties : testPropertiesList.propertiesList)
+            {
+                if (printPropertiesFiles)
+                {
+                    log.info("testing properties file: " + properties.filename);
+                    log.debug("\r\n" + properties);
+                }
+                
+                fname = properties.filename;
+                
+                // GET request to the sync resource.
+                WebRequest request = this.buildRequest(properties);
+                
+                // see if there are realm/userid/password preconditions
+                WebConversation conversation = new WebConversation();
+                this.setAuthentication(conversation, properties);                
+                
+                process(conversation, request, properties);
+            }
+            
+            printPropertiesFiles = false;
+        }
+        catch (Exception unexpected)
+        {
+            log.error("unexpected exception for " + fname, unexpected);
+            fail("unexpected exception: " + unexpected);
+        }
+    }
+    
+    @Test
+    public void testGET()
+    {
+        new SyncGetTest().testGet();
     }
 
+    @Test
+    public void testPOST()
+    {
+        new SyncPostTest().testPost();
+    }
+
+    private class SyncGetTest extends SyncTest
+    {
+        public SyncGetTest()
+        {
+            super();
+        }
+        
+        public void testGet()
+        {
+            super.doTest();
+        }
+        
+        protected WebRequest buildRequest(final TestProperties properties) 
+            throws UnsupportedEncodingException, MalformedURLException
+        {
+            // Build the request.
+            StringBuilder sb = new StringBuilder();
+
+            // Add parameters if available.
+            if (properties.parameters != null)
+            {
+                Map<String, List<String>> parameters = properties.parameters;
+                List<String> valueList;
+                List<String> keyList = new ArrayList<String>(parameters.keySet());
+                for (String key : keyList)
+                {
+                    valueList = parameters.get(key);
+                    for (String value : valueList)
+                    {
+                        sb.append(key);
+                        sb.append("=");
+                        sb.append(URLEncoder.encode(value, "UTF-8"));
+                        sb.append("&");
+                    }
+                }
+            }
+            
+            String getUrl = serviceUrl + "?" + sb.substring(0, sb.length()-1); // strip trailing &
+            WebRequest request = new GetMethodWebRequest(getUrl);
+            log.debug("HTTP GET: " + request.getURL().toString());
+            return request;
+        }
+    }
+
+    private class SyncPostTest extends SyncTest
+    {
+        public SyncPostTest()
+        {
+            super();
+        }
+        
+        public void testPost()
+        {
+            super.doTest();
+        }
+        
+        protected WebRequest buildRequest(final TestProperties properties) 
+            throws UnsupportedEncodingException, MalformedURLException
+        {
+            // Build the request.            
+            WebRequest request = new PostMethodWebRequest(serviceUrl);
+
+            // Add parameters if available.
+            if (properties.parameters != null)
+            {
+                Map<String, List<String>> parameters = properties.parameters;
+                List<String> valueList;
+                List<String> keyList = new ArrayList<String>(parameters.keySet());
+                for (String key : keyList)
+                {
+                    valueList = parameters.get(key);
+                    request.setParameter(key, valueList.toArray(new String[0]));
+                }
+            }
+            
+            log.debug("HTTP POST: " + request.getURL().toString());
+            log.debug(Util.getRequestParameters(request));
+            return request;
+        }
+    }
 }

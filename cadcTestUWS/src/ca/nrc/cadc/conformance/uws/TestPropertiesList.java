@@ -106,7 +106,10 @@ public class TestPropertiesList
     {
         File directory = new File(propertiesDirectory);
         if (!directory.canRead())
+        {
             throw new IOException("Error reading " + propertiesDirectory);
+        }
+        
         PropertiesFilenameFilter filter = new PropertiesFilenameFilter(className, invalidPrefix);
         return directory.listFiles(filter);
     }

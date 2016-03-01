@@ -166,7 +166,7 @@ public class DestructionTest extends AbstractUWSTest
             long dt = rtnDestr.getTime() - destroy.getTime();
             if (dt < 0)
                 dt *= -1L;
-            Assert.assertTrue("result destruction is approx requested value", (dt < 2L));
+            Assert.assertTrue("result destruction is approx requested value", (dt < 3L));
             
             // Delete the job.
             deleteJob(conversation, jobId);
