@@ -171,6 +171,7 @@ public class JobWriter
         Element root = new Element(JobAttribute.JOB.getAttributeName(), UWS.NS);
         root.addNamespaceDeclaration(UWS.NS);
         root.addNamespaceDeclaration(UWS.XLINK_NS);
+        root.setAttribute(JobAttribute.VERSION.getAttributeName(), UWS.XSD_VERSION);
 
         root.addContent(getJobId(job));
         root.addContent(getRunId(job));

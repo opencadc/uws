@@ -227,6 +227,11 @@
             </xs:complexType>
          </xs:element>
       </xs:sequence>
+      <xs:attribute name="version" type="uws:UWSVersion" use="optional">
+         <xs:annotation>
+            <xs:documentation>note that this attribute is actually required by the 1.1 specification - however remains optional in the schema for backwards compatibility. It will be formally required in the next major revision.</xs:documentation>
+         </xs:annotation>
+      </xs:attribute>
    </xs:complexType>
    <xs:simpleType name="JobIdentifier">
       <xs:annotation>
@@ -242,6 +247,12 @@
             /(jobs)/(jobid)</xs:documentation>
       </xs:annotation>
    </xs:element>
+   <xs:simpleType name="UWSVersion">
+      <xs:annotation>
+	     <xs:documentation>The version of the UWS standard that the server complies with. </xs:documentation>
+	  </xs:annotation>
+      <xs:restriction base="xs:string"/>
+   </xs:simpleType>
    <xs:element name="jobs">
       <xs:annotation>
          <xs:documentation> The list of job references returned at
@@ -256,9 +267,14 @@
          </xs:annotation>
          <xs:sequence>
             <xs:element name="jobref" type="uws:ShortJobDescription"
-               maxOccurs="unbounded" minOccurs="0"
-            ></xs:element>
+               maxOccurs="unbounded" minOccurs="0">
+            </xs:element>
          </xs:sequence>
+         <xs:attribute name="version" type="uws:UWSVersion" use="optional">
+            <xs:annotation>
+               <xs:documentation>note that this attribute is actually required by the 1.1 specification - however remains optional in the schema for backwards compatibility. It will be formally required in the next major revision.</xs:documentation>
+            </xs:annotation>
+         </xs:attribute>
       </xs:complexType>
    </xs:element>
    <xs:complexType name="ResultReference">

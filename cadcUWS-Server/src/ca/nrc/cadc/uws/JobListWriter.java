@@ -74,6 +74,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.text.DateFormat;
+import java.util.Date;
 import java.util.Iterator;
 
 import org.apache.log4j.Logger;
@@ -163,6 +164,7 @@ public class JobListWriter
         Element root = new IterableContent<Element, JobRef>(JobAttribute.JOBS.getAttributeName(), UWS.NS, jobs, contentConverter);
         root.addNamespaceDeclaration(UWS.NS);
         root.addNamespaceDeclaration(UWS.XLINK_NS);
+        root.setAttribute(JobAttribute.VERSION.getAttributeName(), UWS.XSD_VERSION);
         return root;
     }
 
@@ -218,7 +220,11 @@ public class JobListWriter
     private Element getCreationTime(JobRef jobRef)
     {
         Element element = new Element(JobAttribute.CREATION_TIME.getAttributeName(), UWS.NS);
-        element.addContent(dateFormat.format(jobRef.getCreationTime()));
+        Date creationTime = jobRef.getCreationTime();
+        if (creationTime == null)
+            element.setAttribute("nil", "true", UWS.XSI_NS);
+        else
+            element.addContent(dateFormat.format(jobRef.getCreationTime()));
         return element;
     }
 

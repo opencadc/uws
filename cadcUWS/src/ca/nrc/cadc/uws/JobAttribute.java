@@ -99,7 +99,8 @@ public enum JobAttribute
     ERROR_SUMMARY_TYPE("type"),
     MESSAGE("message"),
     DETAIL("detail"),
-    JOB_INFO("jobInfo");
+    JOB_INFO("jobInfo"),
+    VERSION("version");
 
 
     private String attributeName;

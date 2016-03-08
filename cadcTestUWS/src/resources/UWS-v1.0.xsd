@@ -40,9 +40,9 @@
                   /(jobs)/(jobid)/phase</xs:documentation>
             </xs:annotation>
          </xs:element>
-         <xs:element name="creationTime" type="xs:dateTime" maxOccurs="1" minOccurs="0"></xs:element>
-         <xs:element name="runId" type="xs:string" maxOccurs="1" minOccurs="0" nillable="true"></xs:element>
-         <xs:element name="ownerId" type="xs:string" maxOccurs="1" minOccurs="0"></xs:element>
+	     <xs:element name="creationTime" type="xs:dateTime" maxOccurs="1" minOccurs="0"></xs:element>
+	     <xs:element name="runId" type="xs:string" maxOccurs="1" minOccurs="0" nillable="true"></xs:element>
+	     <xs:element name="ownerId" type="xs:string" maxOccurs="1" minOccurs="0"></xs:element>
       </xs:sequence>
 
       <xs:attribute name="id" type="uws:JobIdentifier" use="required"></xs:attribute>
@@ -202,8 +202,7 @@
             minOccurs="0"
          >
                 <xs:annotation>
-                   <xs:documentation>The parameters to the job (where appropriate)
-can also be retrieved at /(jobs)/(jobid)/parameters</xs:documentation>
+                   <xs:documentation>The parameters to the job (where appropriate)can also be retrieved at /(jobs)/(jobid)/parameters</xs:documentation>
                 </xs:annotation>
          </xs:element>
          <xs:element ref="uws:results">
@@ -228,6 +227,11 @@ can also be retrieved at /(jobs)/(jobid)/parameters</xs:documentation>
             </xs:complexType>
          </xs:element>
       </xs:sequence>
+      <xs:attribute name="version" type="uws:UWSVersion" use="optional">
+         <xs:annotation>
+            <xs:documentation>note that this attribute is actually required by the 1.1 specification - however remains optional in the schema for backwards compatibility. It will be formally required in the next major revision.</xs:documentation>
+         </xs:annotation>
+      </xs:attribute>
    </xs:complexType>
    <xs:simpleType name="JobIdentifier">
       <xs:annotation>
@@ -243,6 +247,12 @@ can also be retrieved at /(jobs)/(jobid)/parameters</xs:documentation>
             /(jobs)/(jobid)</xs:documentation>
       </xs:annotation>
    </xs:element>
+   <xs:simpleType name="UWSVersion">
+      <xs:annotation>
+	     <xs:documentation>The version of the UWS standard that the server complies with. </xs:documentation>
+	  </xs:annotation>
+      <xs:restriction base="xs:string"/>
+   </xs:simpleType>
    <xs:element name="jobs">
       <xs:annotation>
          <xs:documentation> The list of job references returned at
@@ -257,9 +267,14 @@ can also be retrieved at /(jobs)/(jobid)/parameters</xs:documentation>
          </xs:annotation>
          <xs:sequence>
             <xs:element name="jobref" type="uws:ShortJobDescription"
-               maxOccurs="unbounded" minOccurs="0"
-            ></xs:element>
+               maxOccurs="unbounded" minOccurs="0">
+            </xs:element>
          </xs:sequence>
+         <xs:attribute name="version" type="uws:UWSVersion" use="optional">
+            <xs:annotation>
+               <xs:documentation>note that this attribute is actually required by the 1.1 specification - however remains optional in the schema for backwards compatibility. It will be formally required in the next major revision.</xs:documentation>
+            </xs:annotation>
+         </xs:attribute>
       </xs:complexType>
    </xs:element>
    <xs:complexType name="ResultReference">
