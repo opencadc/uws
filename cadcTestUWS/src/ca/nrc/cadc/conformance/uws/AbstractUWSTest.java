@@ -69,6 +69,8 @@
 
 package ca.nrc.cadc.conformance.uws;
 
+import ca.nrc.cadc.auth.AuthMethod;
+import ca.nrc.cadc.reg.client.RegistryClient;
 import ca.nrc.cadc.xml.XmlUtil;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -80,6 +82,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -91,7 +95,6 @@ import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.Namespace;
-import org.jdom2.input.sax.XMLReaderSAX2Factory;
 import org.jdom2.input.SAXBuilder;
 import org.junit.Assert;
 import org.xml.sax.SAXException;
@@ -125,15 +128,84 @@ public abstract class AbstractUWSTest
     
     protected Map<String, String> schemaMap = new TreeMap<String,String>();
 
+    static
+    {
+    	setServiceURL();
+    }
+
+    private static URI convertToURI(final String value, final String msg)
+    {
+    	URI uri = null;
+    	
+    	try
+    	{
+            uri = new URI(value);	
+    	}
+    	catch (URISyntaxException ex)
+    	{
+            throw new RuntimeException(msg, ex);
+    	}
+    	
+    	return uri;
+    }
+    
+    private static void setServiceURL()
+    {
+    	// get standardID from system property
+        String standardIDName = AbstractUWSTest.class.getName() + ".standardID";
+        String standardIDValue = System.getProperty(standardIDName);
+        log.debug(standardIDName + "=" + standardIDValue);
+        
+    	// get resourceIdentifier from system property
+        String resourceIdentifierName = AbstractUWSTest.class.getName() + ".resourceIdentifier";
+        String resourceIdentifierValue = System.getProperty(resourceIdentifierName);
+        log.debug(resourceIdentifierName + "=" + resourceIdentifierValue);
+        
+        // if neither is set
+        if (standardIDValue == null && resourceIdentifierValue == null)
+        {
+            // service to be tested is defined in system property
+            serviceUrl = System.getProperty("service.url");
+            if (serviceUrl == null)
+            {
+                throw new RuntimeException("service.url System property not set");
+            }
+            
+            log.debug("serviceUrl: " + serviceUrl);
+        }
+        else
+        {
+        	// else both standardID and resourceIdentifier must be defined in system property
+        	if (standardIDValue == null)
+        	{
+                throw new RuntimeException("system property " + standardIDName + " not set");
+        	}
+        	else if (resourceIdentifierValue == null)
+        	{
+                throw new RuntimeException("system property " + resourceIdentifierName + " not set");
+        	}
+        	else
+        	{
+        		// both are set, convert them to URI
+        		String msg = "system property " + standardIDName + " not set to valid standardID URI";
+        		URI standardID = convertToURI(standardIDValue, msg);        		
+        		msg = "system property " + resourceIdentifierName + " not set to valid UWS resourceIdentifier URI";
+        		URI resourceIdentifier = convertToURI(resourceIdentifierValue, msg);
+        		
+        		// get the service URL
+		    	RegistryClient rc = new RegistryClient();
+		    	serviceUrl = rc.getServiceURL(resourceIdentifier, standardID, AuthMethod.ANON).toExternalForm();
+		    	if (serviceUrl == null)
+		    	{
+                    throw new RuntimeException("No service URL found for resourceIdentifier=" + 
+                            resourceIdentifier + ", standardID=" + standardID + ", AuthMethod=" + AuthMethod.ANON);
+		    	}
+        	}
+        }
+    }
+    
     public AbstractUWSTest()
     {
-                
-        // Base URL of the service to be tested.
-        serviceUrl = System.getProperty("service.url");
-        if (serviceUrl == null)
-            throw new RuntimeException("service.url System property not set");
-        log.debug("serviceUrl: " + serviceUrl);
-        
         String uwsSchemaUrl = XmlUtil.getResourceUrlString(UWS_SCHEMA_RESOURCE, AbstractUWSTest.class);
         log.debug("uwsSchemaUrl: " + uwsSchemaUrl);
         
@@ -161,7 +233,7 @@ public abstract class AbstractUWSTest
                 "http://www.ivoa.net/xml/UWS/v1.0 " + serviceSchema + );
         */
     }
-
+    
     protected Document buildDocument(String xml, boolean validate)
         throws IOException, JDOMException
     {
