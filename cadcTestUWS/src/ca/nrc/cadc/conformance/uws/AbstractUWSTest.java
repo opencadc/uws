@@ -71,6 +71,7 @@ package ca.nrc.cadc.conformance.uws;
 
 import ca.nrc.cadc.auth.AuthMethod;
 import ca.nrc.cadc.reg.client.RegistryClient;
+import ca.nrc.cadc.util.Log4jInit;
 import ca.nrc.cadc.xml.XmlUtil;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -83,7 +84,6 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -130,21 +130,26 @@ public abstract class AbstractUWSTest
 
     static
     {
+        Log4jInit.setLevel("ca.nrc.cadc", Level.INFO);
     	setServiceURL();
     }
 
     private static URI convertToURI(final String value, final String msg)
     {
     	URI uri = null;
-    	
-    	try
-    	{
-            uri = new URI(value);	
-    	}
-    	catch (URISyntaxException ex)
-    	{
-            throw new RuntimeException(msg, ex);
-    	}
+
+    	try 
+        {
+        	uri = URI.create(value);
+        } 
+        catch(IllegalArgumentException bug)
+        {
+            throw new RuntimeException("BUG: invalid URI string", bug);
+        }
+        catch(NullPointerException bug)
+        {
+            throw new RuntimeException("BUG: null URI string", bug);
+        }
     	
     	return uri;
     }
@@ -194,11 +199,15 @@ public abstract class AbstractUWSTest
         		
         		// get the service URL
 		    	RegistryClient rc = new RegistryClient();
-		    	serviceUrl = rc.getServiceURL(resourceIdentifier, standardID, AuthMethod.ANON).toExternalForm();
-		    	if (serviceUrl == null)
+		    	URL tempUrl = rc.getServiceURL(resourceIdentifier, standardID, AuthMethod.ANON);
+		    	if (tempUrl == null)
 		    	{
                     throw new RuntimeException("No service URL found for resourceIdentifier=" + 
                             resourceIdentifier + ", standardID=" + standardID + ", AuthMethod=" + AuthMethod.ANON);
+		    	}
+		    	else
+		    	{
+		    		serviceUrl = tempUrl.toExternalForm();
 		    	}
         	}
         }
