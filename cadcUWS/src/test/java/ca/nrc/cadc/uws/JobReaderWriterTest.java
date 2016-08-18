@@ -501,7 +501,7 @@ public class JobReaderWriterTest
 
             // Create a vaidating JobReader, without a schema for the JobInfo content.
             Map<String, String> map = new HashMap<String, String>();
-            map.put("http://localhost/bar", "file:test/src/resources/bar.xsd");
+            map.put("http://localhost/bar", "file:src/test/resources/bar.xsd");
             JobReader jobReader = new JobReader(map);
             try
             {
