@@ -3,7 +3,7 @@ The cadcUWS library provides the code necessary to implement a Universal Worker 
 asynchronous job execution resource. It also provides a simple way to re-use the class that
 implements the "job" via a synchronous resource.
 
-** Steps to implement a UWS service
+**Steps to implement a UWS service**
 
 1. Implement a JobRunner that performs the application logic: the job execution.
 
@@ -18,7 +18,7 @@ Servlet --> JobManager --> JobPersistence
                        --> JobExecutor --> JobUpdater
                                        --> JobRunner --> JobUpdater
 
-** Primary Interfaces
+**Primary Interfaces**
 
 1. JobManager - the main entry-point for the library
 
@@ -62,7 +62,7 @@ the cadcSampleUWS (HelloWorld) or cadcTAP (QueryRunner) modules for working JobR
 In general, the provided implementations have constructors and setter methods for any components they depend on; the
 plan is to make these suitable for other configuration mehcanisms (e.g. dependency injection).
 
-* The HTTP layer *
+**The HTTP layer**
 
 The HTTP layer intracts with the rest of the library through the JobManager interface. Each 
 UWS resource (async and sync) must be configured with the name of the class that implements 
@@ -70,7 +70,7 @@ this interface (currently: support for alternate configuration mechanisms is TBD
 
 The async part of the library is implemented as a restlet (www.restlet.org) application. This
 is deployed using a standard servlet provided by the restlet library. In the web.xml:
-
+```
     <servlet>
         <load-on-startup>2</load-on-startup>
         <servlet-name>AsyncServlet</servlet-name>
@@ -89,9 +89,9 @@ is deployed using a standard servlet provided by the restlet library. In the web
             <servlet-name>AsyncServlet</servlet-name>
             <url-pattern>/async/*</url-pattern>
     </servlet-mapping>
-
+```
 The sync resource is implemented as a plain old Java servlet:
-
+```
     <servlet>
         <load-on-startup>2</load-on-startup>
       <servlet-name>SyncServlet</servlet-name>
@@ -114,7 +114,7 @@ The sync resource is implemented as a plain old Java servlet:
             <servlet-name>SyncServlet</servlet-name>
             <url-pattern>/sync/*</url-pattern>
     </servlet-mapping>
-
+```
     Note: these above example web.xml deployments are from the cadcSampleUWS/src/web.xml and refer to
     JobManager class in that project.
 
