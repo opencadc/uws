@@ -15,8 +15,10 @@ repositories {
     }
 }
 
-group = 'opencadc'
 sourceCompatibility = 1.7
+
+group = 'org.opencadc'
+
 version = '1.0'
 
 dependencies {
@@ -28,9 +30,9 @@ dependencies {
     compile 'org.restlet.jee:org.restlet.ext.fileupload:2.+'
     compile 'org.springframework:spring-beans:4.2.7.RELEASE'
 
-    compile 'opencadc:cadcLog:1.+'
-    compile 'opencadc:cadcUtil:1.+'
-    compile 'opencadc:cadcUWS:1.+'
+    compile 'org.opencadc:cadc-log:1.+'
+    compile 'org.opencadc:cadc-util:1.+'
+    compile 'org.opencadc:cadc-uws:1.+'
 
     testCompile 'commons-logging:commons-logging:1.+'
     testCompile 'junit:junit:4.+'

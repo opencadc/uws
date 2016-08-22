@@ -15,17 +15,18 @@ repositories {
     }
 }
 
-group = 'opencadc'
 sourceCompatibility = 1.7
+
+group = 'org.opencadc'
+
 version = '1.0'
 
 dependencies {
-    compile 'httpunit:httpunit:1.+'
-    compile 'junit:junit:4.+'
     compile 'log4j:log4j:1.2.+'
     compile 'org.jdom:jdom2:2.+'
-    compile 'xmlunit:xmlunit:1.+'
 
-    compile 'opencadc:cadcRegistry:1.+'
-    compile 'opencadc:cadcUtil:1.+'
+    compile 'org.opencadc:cadc-util:1.+'
+
+    testCompile 'junit:junit:4.+'
+    compile 'xerces:xercesImpl:2.+'
 }

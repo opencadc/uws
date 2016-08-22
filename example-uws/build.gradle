@@ -1,8 +1,6 @@
 plugins {
-    id 'java'
+    id 'war'
     id 'maven'
-    id 'maven-publish'
-    id 'com.jfrog.bintray' version '1.7.1'
 }
 
 repositories {
@@ -15,8 +13,10 @@ repositories {
     }
 }
 
-group = 'opencadc'
 sourceCompatibility = 1.7
+
+group = 'org.opencadc'
+
 version = '1.0'
 
 dependencies {
@@ -29,16 +29,15 @@ dependencies {
     compile 'org.springframework:spring-beans:4.2.7.RELEASE'
     compile 'xerces:xercesImpl:2.+'
 
-    compile 'opencadc:cadcLog:1.+'
-    compile 'opencadc:cadcUtil:1.+'
-    compile 'opencadc:cadcUWS:1.+'
-    compile 'opencadc:cadcUWS-Server:1.+'
+    compile 'org.opencadc:cadc-log:1.+'
+    compile 'org.opencadc:cadc-util:1.+'
+    compile 'org.opencadc:cadc-uws:1.+'
+    compile 'org.opencadc:cadc-uws-server:1.+'
+    compile 'org.opencadc:cadc-test-uws:1.+'
 
     testCompile 'httpunit:httpunit:1.+'
     testCompile 'junit:junit:4.+'
     testCompile 'nekohtml:nekohtml:1.9.+'
     testCompile 'rhino:js:1.6.+'
     testCompile 'xmlunit:xmlunit:1.+'
-
-    compile 'opencadc:cadcTestUWS:1.+'
 }
