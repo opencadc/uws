@@ -98,20 +98,11 @@ import ca.nrc.cadc.uws.web.JobCreator;
 /**
  * Servlet that runs a SyncJobRunner for each request. This servlet supports both
  * GET and POST, creates and persists a job and issues a redirect to cause execution.
- * </p><p>
+ * <p>
  * This servlet requires 1 init params to be set to specify the class names that implements
  * the JobManager interface. The <code>param-name</code> specifies the interface and
  * the <code>param-value</code> is the class name that implements the interface. This class
  * must have a public no-arg constructor.
- * For example:
- * </p><p>
- * <pre>
- *      <init-param>
- *          <param-name>ca.nrc.cadc.uws.JobManager</param-name>
- *          <param-value>ca.nrc.cadc.uws.SimpleJobManager</param-value>
- *      </init-param>
- *
- * </pre>
  *
  * @author pdowler
  */
@@ -192,12 +183,12 @@ public class SyncServlet extends HttpServlet
      * and value equal to the class name of the implementation, loads the class
      * with <code>Class.forName</code> (assuming no-arg constructor), and uses it
      * as-is.
-     * </p>
      * <p>
      * To create the JobManager in some other fashion (e.g. dependency injection or
      * some pre-configured IoC container) simply override this method to return a
      * ready-to-use JobManager.
-     *
+     * </p>
+     * 
      * @param config
      * @return
      */

@@ -98,7 +98,7 @@ public class UWSAsyncApplication extends Application
     
     /**
      * Constructor. Note this constructor is convenient because you don't have
-     * to provide a context like for {@link #Application(org.restlet.Context)}.
+     * to provide a context. 
      * Therefore the context will initially be null. It's only when you attach
      * the application to a virtual host via one of its attach*() methods that
      * a proper context will be set.
@@ -111,10 +111,7 @@ public class UWSAsyncApplication extends Application
     /**
      * Constructor.
      *
-     * @param context The context to use based on parent component context. This
-     *                context should be created using the
-     *                {@link org.restlet.Context#createChildContext()} method to
-     *                ensure a proper isolation with the other applications.
+     * @param context The context to use based on parent component context.
      */
     public UWSAsyncApplication(final Context context)
     {

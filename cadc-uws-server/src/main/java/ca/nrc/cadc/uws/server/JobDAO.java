@@ -124,11 +124,12 @@ import ca.nrc.cadc.uws.Result;
  * users of this class must implement the abstract methods to return the names of tables
  * where the job is to be stored. The subclass must also call setDataSource before any
  * persistence methods are called.
- * </p><p>
+ * <p>
  * Users must create at least 3 tables (possibly multiple parameter tables) with the
  * following columns. TODO: List the required columns for each table.
- *
- * @author jburke
+ * </p>
+ * 
+ * @author pdowler, jburke
  */
 public class JobDAO
 {

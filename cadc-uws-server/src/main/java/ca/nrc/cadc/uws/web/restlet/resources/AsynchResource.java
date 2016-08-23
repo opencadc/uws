@@ -178,11 +178,11 @@ public class AsynchResource extends UWSResource
      * @param document The Document to build up.
      * @throws java.io.IOException If something went wrong or the XML cannot be
      *                             built.
-     * @throws PrivilegedActionException
      */
 
     @Override
-    protected void buildXML(final Document document) throws IOException
+    protected void buildXML(final Document document) 
+        throws IOException
     {
         Subject subject = getSubject();
         if (subject == null) // anon

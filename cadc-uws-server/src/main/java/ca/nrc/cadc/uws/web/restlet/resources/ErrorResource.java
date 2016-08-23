@@ -98,8 +98,6 @@ public class ErrorResource extends BaseJobResource
      * Obtain the XML Representation of this Request.
      *
      * @return The XML Representation, fully populated.
-     * @throws TransientException 
-     * @throws PrivilegedActionException 
      */
     @Get
     @Override

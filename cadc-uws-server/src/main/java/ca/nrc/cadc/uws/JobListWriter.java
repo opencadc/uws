@@ -122,7 +122,7 @@ public class JobListWriter
     /**
      * Write the job list to an OutputStream.
      *
-     * @param job
+     * @param jobs
      * @param out OutputStream to write to.
      * @throws IOException if the writer fails to write.
      */
@@ -135,7 +135,7 @@ public class JobListWriter
     /**
      * Write the job list to our streaming xml writer.
      *
-     * @param job
+     * @param jobs
      * @param writer Writer to write to.
      * @throws IOException if the writer fails to write.
      */
@@ -170,7 +170,7 @@ public class JobListWriter
 
     /**
      * Create the XML for a short job description.
-     * @param job
+     * @param jobRef
      * @return
      */
     public Element getShortJobDescription(JobRef jobRef)

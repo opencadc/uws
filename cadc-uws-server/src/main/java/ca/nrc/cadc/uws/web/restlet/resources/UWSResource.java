@@ -138,7 +138,6 @@ public abstract class UWSResource extends ServerResource
      * Obtain the XML Representation of this Request.
      *
      * @return      The XML Representation, fully populated.
-     * @throws PrivilegedActionException 
      */
     @Get
     public Representation represent()
@@ -186,7 +185,8 @@ public abstract class UWSResource extends ServerResource
     /**
      * Generate the error Representation.
      *
-     * @param error        Error in the form.
+     * @param status
+     * @param errorMsg
      */
     protected void generateErrorRepresentation(final Status status, final String errorMsg)
     {
@@ -201,7 +201,8 @@ public abstract class UWSResource extends ServerResource
     /**
      * Generate the error Representation.
      *
-     * @param error        Error in the form.
+     * @param t        Error in the form.
+     * @return 
      */
     protected Representation generateRetryRepresentation(TransientException t)
     {

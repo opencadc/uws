@@ -328,16 +328,17 @@ public class Job
      * available in all environments, this duration is defined in real clock
      * seconds. An execution duration of 0 implies unlimited execution
      * duration.
-     * <p/>
+     * <p>
      * When the execution duration has been exceeded the service will
      * automatically abort the job, which has the same effect as when a manual
      * "Abort" is requested.
-     * <p/>
+     * </p>
+     * <p>
      * When a job is created, the service sets the initial execution duration.
      * The client may write to an Execution Duration to try to change the
      * job's CPU time allocation.  The service may forbid changes, or may set
      * limits on the allowed execution duration.
-     *
+     * </p>
      * @return long execution duration.
      */
     public Long getExecutionDuration()
@@ -358,17 +359,18 @@ public class Job
     /**
      * The Destruction Time object represents the instant when the job shall be
      * destroyed. The Destruction Time is an absolute time.
-     * <p/>
+     * <p>
      * The Destruction Time may be viewed as a measure of the amount of time
      * that a service is prepared to allocate storage for a job – typically
      * this will be a longer duration that the amount of CPU time that a
      * service would allocate.
-     * <p/>
+     * </p>
+     * <p>
      * When a job is created the service sets the initial Destruction Time.
      * The client may write to the Destruction Time to try to change the life
      * expectancy of the job. The service may forbid changes, or may set limits
      * on the allowed destruction time.
-     *
+     * </p>
      * @return Date of destruction.
      */
     public Date getDestructionTime()
@@ -390,12 +392,13 @@ public class Job
      * A Quote object predicts when the job is likely to complete. The
      * intention is that a client creates the same job on several services,
      * compares the quotes and then accepts the best quote.
-     * <p/>
+     * <p>
      * Quoting for a computational job is notoriously difficult. A UWS
      * implementation must always provide a quote object, in order that the
      * two-phase committal of jobs be uniform across all UWS, but it may supply
      * a "don't know" answer for the completion time.
-     *
+     * </p>
+     * 
      * @return Date Quote.
      */
     public Date getQuote()
@@ -524,23 +527,6 @@ public class Job
     }
 
     /**
-     * Reading the Results List itself enumerates the available or expected
-     * result objects.
-     * <p/>
-     * A particular implementation of UWS may choose to allow the parameters to
-     * be updated after the initial job creation step, before the Phase is set
-     * to the executing state. It is up to the individual implementation to
-     * specify exactly how these parameters may be updated, but good practice
-     * would be to choose one of the following options.
-     * <p/>
-     * 1.   HTTP POST an application/x-www-form-urlencoded parameter name,
-     * value pair to either
-     * 1.  /{jobs}/{job-id)
-     * 2.  /{jobs}/{job-id)/parameters
-     * <p/>
-     * 2.   HTTP PUT the parameter value to
-     * /{jobs}/{job-id)/parameters/(parameter-name)
-     *
      * @return ParameterList instance.
      */
     public List<Parameter> getParameterList()

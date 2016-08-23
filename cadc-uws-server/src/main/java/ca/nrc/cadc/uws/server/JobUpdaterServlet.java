@@ -91,19 +91,13 @@ import org.apache.log4j.Logger;
 /**
  * Simple servlet that accepts a remote call (POST) to update the job phase using a
  * <code>JobUpdater</code> implementation.
- * </p><p>
+ * <p>
  * This servlet requires 1 init param to be set to specify the class names that implement
  * the required interface. The <code>param-name</code> specifies the interface and
  * the <code>param-value</code> is the class name that implements the interface. This class
  * must have a public no-arg constructor.
- * For example:
- * </p><p>
- * <pre>
- *      <init-param>
- *          <param-name>ca.nrc.cadc.uws.JobUpdater</param-name>
- *          <param-value>com.example.uws.MyJobUpdater</param-value>
- *      </init-param>
- *
+ * </p>
+ * 
  * @author pdowler
  */
 public class JobUpdaterServlet extends HttpServlet

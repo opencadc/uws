@@ -129,10 +129,11 @@ public abstract class AbstractExecutor  implements JobExecutor
      * if the sync argument is not null. This method transitions the phase from PENDING
      * to QUEUED and, if successful, instantiates and configures the JobRunner and then
      * executes the job.
-     * </p><p>
+     * <p>
      * Note for subclasses: the actual execution is performed by calling either
      * syncExecute or the asyncExecute method.
-     *
+     * </p>
+     * 
      * @param job
      * @param sync
      * @throws JobNotFoundException
@@ -218,9 +219,10 @@ public abstract class AbstractExecutor  implements JobExecutor
     /**
      * Abort a currently PENDING, QUEUED, or EXECUTING job. This method tries to
      * transition the phase to ABORTED and if successful, it kills the job.
-     * </p><p>
+     * <p>
      * Note for subclasses: the actual kill is performed by calling the abortJob method.
-     *
+     * </p>
+     * 
      * @param job
      * @throws JobNotFoundException
      * @throws JobPersistenceException
