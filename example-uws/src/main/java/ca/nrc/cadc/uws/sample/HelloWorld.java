@@ -95,11 +95,11 @@ import org.jdom2.Document;
 import org.jdom2.Element;
 
 /**
- * Basic Job Runner class. The sample job takes two params:</p>
+ * Basic Job Runner class. The sample job takes two params:
  * <ul>
- * <li>RUNFOR=<number of seconds to run> to control how long it runs
- * <li>PASS=<true|false> to control whether it succeeds or fails
- * <li>SYNC=<true|false> to control whether
+ * <li>RUNFOR=[number of seconds to run] to control how long it runs
+ * <li>PASS=[true|false] to control whether it succeeds or fails
+ * <li>SYNC=[true|false] to control whether
  * </ul>
  */
 public class HelloWorld implements JobRunner
