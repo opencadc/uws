@@ -11,6 +11,7 @@ import java.util.NoSuchElementException;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
+import java.io.FileNotFoundException;
 
 /**
  *
@@ -42,9 +43,9 @@ public class SybaseJobDAOTest extends AbstractJobDAOTest
             JOB_SCHEMA = new JobDAO.JobSchema("uws_Job", "uws_JobDetail", true, jobTabLimits, detailTabLimits);
             log.info("configured data source: " + cc.getServer() + "," + cc.getDatabase() + "," + cc.getDriver() + "," + cc.getURL());
         }
-        catch (NoSuchElementException e)
+        catch (FileNotFoundException e)
         {
-            log.warn("Skipping integration tests, no entry found in ~/.dbrc");
+            log.warn("Skipping integration tests, no ~/.dbrc file found.");
             org.junit.Assume.assumeTrue(false);
         }
         catch(Exception ex)

@@ -13,6 +13,8 @@ import ca.nrc.cadc.util.Log4jInit;
 
 import org.junit.BeforeClass;
 
+import java.io.FileNotFoundException;
+
 /**
  *
  * @author pdowler
@@ -36,9 +38,9 @@ public class PostgresJobDAOTest extends AbstractJobDAOTest
             String userName = System.getProperty("user.name");
             JOB_SCHEMA = new JobDAO.JobSchema(userName + ".Job", userName + ".JobDetail", false);
         }
-        catch (NoSuchElementException e)
+        catch (FileNotFoundException e)
         {
-            log.warn("Skipping integration tests, no entry found in ~/.dbrc");
+            log.warn("Skipping integration tests, no ~/.dbrc file found.");
             org.junit.Assume.assumeTrue(false);
         }
         catch(Exception ex)
