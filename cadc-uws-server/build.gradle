@@ -39,6 +39,6 @@ dependencies {
     testCompile 'org.easymock:easymock:3.+'
 
     // Used for DAO tests.
-//    testCompile 'org.postgresql:postgresql:9.+'
-//    testCompile 'net.sourceforge.jtds:jtds:1.+'
+    testRuntime 'org.postgresql:postgresql:9.4.1209.jre7'
+    testRuntime 'net.sourceforge.jtds:jtds:1.+'
 }
