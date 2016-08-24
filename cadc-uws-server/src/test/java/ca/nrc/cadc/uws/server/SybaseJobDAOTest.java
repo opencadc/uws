@@ -48,6 +48,11 @@ public class SybaseJobDAOTest extends AbstractJobDAOTest
             log.warn("Skipping integration tests, no ~/.dbrc file found.");
             org.junit.Assume.assumeTrue(false);
         }
+        catch (NoSuchElementException e)
+        {
+            log.warn("Skipping integration tests, no entry found in ~/.dbrc file.");
+            org.junit.Assume.assumeTrue(false);
+        }
         catch(Exception ex)
         {
             log.error("setup failed", ex);
