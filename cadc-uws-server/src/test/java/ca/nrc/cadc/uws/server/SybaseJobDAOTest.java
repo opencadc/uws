@@ -7,8 +7,11 @@ import ca.nrc.cadc.db.DBUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.BeforeClass;
+import java.io.FileNotFoundException;
 
 /**
  *
@@ -16,9 +19,10 @@ import org.apache.log4j.Logger;
  */
 public class SybaseJobDAOTest extends AbstractJobDAOTest
 {
-    private static Logger log = Logger.getLogger(AbstractJobDAOTest.class);
+    private static Logger log = Logger.getLogger(SybaseJobDAOTest.class);
 
-    static
+    @BeforeClass
+    public static void testSetup()
     {
         Log4jInit.setLevel("ca.nrc.cadc.uws.server", Level.INFO);
         try
@@ -26,6 +30,7 @@ public class SybaseJobDAOTest extends AbstractJobDAOTest
             DBConfig conf = new DBConfig();
             ConnectionConfig cc = conf.getConnectionConfig("UWS_SYB_TEST", "cadctest");
             dataSource = DBUtil.getDataSource(cc);
+            
             log.info("configured data source: " + cc.getServer() + "," + cc.getDatabase() + "," + cc.getDriver() + "," + cc.getURL());
 
             Map<String,Integer> jobTabLimits = new HashMap<String,Integer>();
@@ -36,6 +41,17 @@ public class SybaseJobDAOTest extends AbstractJobDAOTest
             detailTabLimits.put("value", 1024);
 
             JOB_SCHEMA = new JobDAO.JobSchema("uws_Job", "uws_JobDetail", true, jobTabLimits, detailTabLimits);
+            log.info("configured data source: " + cc.getServer() + "," + cc.getDatabase() + "," + cc.getDriver() + "," + cc.getURL());
+        }
+        catch (FileNotFoundException e)
+        {
+            log.warn("Skipping integration tests, no ~/.dbrc file found.");
+            org.junit.Assume.assumeTrue(false);
+        }
+        catch (NoSuchElementException e)
+        {
+            log.warn("Skipping integration tests, no entry found in ~/.dbrc file.");
+            org.junit.Assume.assumeTrue(false);
         }
         catch(Exception ex)
         {

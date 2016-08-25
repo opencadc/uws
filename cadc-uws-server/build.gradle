@@ -28,7 +28,7 @@ dependencies {
     compile 'org.jdom:jdom2:2.+'
     compile 'org.restlet.jse:org.restlet:2.1.+'
     compile 'org.restlet.jee:org.restlet.ext.fileupload:2.+'
-    compile 'org.springframework:spring-beans:4.2.7.RELEASE'
+    compile 'org.springframework:spring-beans:2.5.6.SEC01'
 
     compile 'org.opencadc:cadc-log:1.+'
     compile 'org.opencadc:cadc-util:1.+'
@@ -39,6 +39,6 @@ dependencies {
     testCompile 'org.easymock:easymock:3.+'
 
     // Used for DAO tests.
-//    testCompile 'org.postgresql:postgresql:9.+'
-//    testCompile 'net.sourceforge.jtds:jtds:1.+'
+    testRuntime 'org.postgresql:postgresql:9.4.1209.jre7'
+    testRuntime 'net.sourceforge.jtds:jtds:1.+'
 }

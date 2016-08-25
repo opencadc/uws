@@ -2,5 +2,5 @@ language: java
 jdk:
   - openjdk7
   - oraclejdk8
-script: for mod in cadc-uws cadc-uws-server cadc-test-uws example-uws ; do cd $mod; gradle assemble check install || break -1; cd ..; done
+script: for mod in cadc-uws cadc-uws-server cadc-test-uws example-uws ; do cd $mod; gradle --full-stacktrace build javadoc install || break -1; cd ..; done
 
