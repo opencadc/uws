@@ -85,7 +85,7 @@ create table uws_Job
 
     executionPhase          varchar(16)     not null,
     executionDuration       bigint          not null,
-    creationTime            datatime        not null,
+    creationTime            datetime        not null,
     destructionTime         datetime        null,
     quote                   datetime        null,
     startTime               datetime        null,
@@ -131,3 +131,4 @@ go
 create clustered index uws_detail_i1
     on uws_JobDetail(jobID)
 go
+

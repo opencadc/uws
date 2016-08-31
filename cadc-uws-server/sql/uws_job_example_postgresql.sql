@@ -80,7 +80,7 @@ create table Job
 
     executionPhase          varchar(16)     not null,
     executionDuration       bigint          not null,
-    creationTime            timestmap       not null,
+    creationTime            timestamp       not null,
     destructionTime         timestamp,
     quote                   timestamp,
     startTime               timestamp,
