@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2011.                            (c) 2011.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,116 +62,51 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
+*  $Revision: 5 $
 *
 ************************************************************************
 */
 
-package ca.nrc.cadc.conformance.uws;
+package ca.nrc.cadc.conformance.uws2;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.Reader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
-public class TestProperties
+import ca.nrc.cadc.conformance.uws.TestProperties;
+import java.net.URI;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
+
+/**
+ * Sync test runner. This class iterates through the TestProperties and executes
+ * the test jobs as sync POST requests. Subclasses should override
+ * validateResponse() to check (make assertions) as this class does no checking.
+ * 
+ * @author pdowler
+ */
+public class SyncPostTest extends AbstractUWSTest2
 {
-    public static final String NEW_LINE = System.getProperty("line.separator");
+    private static final Logger log = Logger.getLogger(SyncPostTest.class);
 
-    public String filename;
-    public Map<String, List<String>> parameters;
-    public Map<String, List<String>> preconditions;
-    public Map<String, List<String>> expectations;
-
-    public TestProperties()
-    {
-        super();
-    }
-
-    public Map<String,Object> getParameters()
-    {
-        Map<String,Object> ret = new HashMap<String,Object>();
-        ret.putAll(parameters);
-        return ret;
+    public SyncPostTest(URI resourceID, URI standardID) 
+    { 
+        super(resourceID, standardID);
     }
     
-    public void load(Reader reader, String propertiesFilename) throws IOException
+    @Test
+    public void testPOST()
     {
-        String strLine, key, value;
-        char firstChar;
-        List<String> valueList;
-        int idxColon, idxEquals, lineLength;
-        Map<String, List<String>> targetMap = null;
-
-        parameters = new HashMap<String, List<String>>();
-        preconditions = new HashMap<String, List<String>>();
-        expectations = new HashMap<String, List<String>>();
-
-        BufferedReader br = new BufferedReader(reader);
-        //Read File Line By Line
-        while ((strLine = br.readLine()) != null)
+        try
         {
-            strLine = strLine.trim();
-            targetMap = parameters;
-            
-            lineLength = strLine.length();
-            if (lineLength == 0)
-                continue;
-
-            firstChar = strLine.charAt(0);
-            if (firstChar == '#' || firstChar == '!') //comment line
-                continue;
-            
-            idxEquals = strLine.indexOf('=');
-            idxColon = strLine.indexOf(':');
-            if (idxColon != -1 && idxColon < idxEquals) // precondition or expectation
+            for ( TestProperties tp : super.testPropertiesList.propertiesList)
             {
-                if (strLine.startsWith("expect"))
-                    targetMap = expectations;
-                else if (strLine.startsWith("precond"))
-                    targetMap = preconditions;
-                strLine = strLine.substring(idxColon + 1);
-                idxEquals = strLine.indexOf('=');
-            }
-            
-            if (idxEquals == 0) // "=foo"
-                continue;
-
-            key = strLine.substring(0, idxEquals).trim();
-            value = strLine.substring(idxEquals + 1).trim();
-
-            valueList = targetMap.get(key);
-            if (valueList == null) // the key is not in parameters yet 
-            {
-                valueList = new ArrayList<String>();
-                targetMap.put(key, valueList);
-            }
-            valueList.add(value);
-        }
-        //Close the buffered reader
-        br.close();
-
-        filename = propertiesFilename;
-    }
-
-    public String toString()
-    {
-        List<String> valueList;
-
-        StringBuilder sb = new StringBuilder();
-        List<String> keyList = new ArrayList<String>(parameters.keySet());
-        for (String key : keyList)
-        {
-            valueList = parameters.get(key);
-            for (String value : valueList)
-            {
-                sb.append(key).append('=').append(value).append(NEW_LINE);
+                JobResultWrapper result = createAndExecuteSyncParamJobPOST(tp.filename, tp.getParameters());
+                validateResponse(result);
             }
         }
-        return sb.toString();
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
     }
-
 }
