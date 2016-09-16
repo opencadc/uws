@@ -77,7 +77,10 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- *
+ * Sync test runner. This class iterates through the TestProperties and executes
+ * the test jobs as sync POST requests. Subclasses should override
+ * validateResponse() to check (make assertions) as this class does no checking.
+ * 
  * @author pdowler
  */
 public class SyncPostTest extends AbstractUWSTest2
@@ -97,16 +100,6 @@ public class SyncPostTest extends AbstractUWSTest2
             for ( TestProperties tp : super.testPropertiesList.propertiesList)
             {
                 JobResultWrapper result = createAndExecuteSyncParamJobPOST(tp.filename, tp.getParameters());
-                
-                String expContentType = getExpectedContentType(tp);
-                Integer expResponseCode = getExpectedResponseCode(tp);
-                
-                if (expResponseCode != null)
-                    Assert.assertEquals(expResponseCode.intValue(), result.responseCode);
-                
-                if (expContentType != null)
-                    Assert.assertEquals(expContentType, result.contentType);
-                
                 validateResponse(result);
             }
         }
@@ -115,16 +108,5 @@ public class SyncPostTest extends AbstractUWSTest2
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
-    }
-    
-    /**
-     * Subclasses can override this method to perform additional checks on the
-     * test result.
-     * 
-     * @param result 
-     */
-    protected void validateResponse(JobResultWrapper result)
-    {
-        // no -op
     }
 }

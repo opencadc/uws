@@ -71,14 +71,11 @@ package ca.nrc.cadc.conformance.uws2;
 
 
 import ca.nrc.cadc.auth.AuthMethod;
-import ca.nrc.cadc.conformance.uws.TestProperties;
 import ca.nrc.cadc.conformance.uws.TestPropertiesList;
 import ca.nrc.cadc.net.HttpDownload;
 import ca.nrc.cadc.net.HttpPost;
 import ca.nrc.cadc.net.NetUtil;
 import ca.nrc.cadc.reg.client.RegistryClient;
-import ca.nrc.cadc.util.Log4jInit;
-import ca.nrc.cadc.uws.ExecutionPhase;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobReader;
 import java.io.ByteArrayInputStream;
@@ -91,13 +88,17 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.Map;
 import java.util.TreeMap;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import static org.junit.Assert.fail;
 
 /**
- *
+ * Base class that supports executing jobs as tests. This class has the low level 
+ * job creation and execution for async and sync jobs. It also supports reading a
+ * set of properties files with parameters for parameter-based jobs, but subclasses
+ * have to iterate and execute the tests. Only subclass this directly if you do not
+ * use the TestProperties feature. 
+ * 
  * @author pdowler
  */
 public abstract class AbstractUWSTest2 
@@ -153,7 +154,6 @@ public abstract class AbstractUWSTest2
         try
         {
             testPropertiesList = new TestPropertiesList(propertiesDir.getPath(), testFilePrefix);
-            log.info(testFilePrefix + ": found " + testPropertiesList.propertiesList.size() + " tests in " + propertiesDir);
             if (testPropertiesList.propertiesList.isEmpty())
                 fail(testFilePrefix + ": no matching properties file(s) in " + propertiesDir);
         }
@@ -162,6 +162,19 @@ public abstract class AbstractUWSTest2
             log.error(e);
             fail(e.getMessage());
         }
+        
+        log.info(testFilePrefix + ": found " + testPropertiesList.propertiesList.size() + " tests in " + propertiesDir);
+    }
+    
+    /**
+     * Subclasses can override this method to perform checks on the
+     * test result.
+     * 
+     * @param result 
+     */
+    protected void validateResponse(JobResultWrapper result)
+    {
+        // no -op
     }
     
     /**
@@ -171,13 +184,13 @@ public abstract class AbstractUWSTest2
      * @param params parameters for this job
      * @return 
      */
-    protected JobResultWrapper createAndExecuteSyncParamJobPOST(String jobName, Map<String,Object> params)
+    protected final JobResultWrapper createAndExecuteSyncParamJobPOST(String jobName, Map<String,Object> params)
     {
         JobResultWrapper ret = new JobResultWrapper(jobName);
         try
         {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            log.info(jobName + ": POST " + jobListURL);
+            log.info(jobName);
             HttpPost doit = new HttpPost(jobListURL, params, bos);
             doit.run();
 
@@ -200,7 +213,7 @@ public abstract class AbstractUWSTest2
      * @param params parameters for this job
      * @return 
      */
-    protected JobResultWrapper createAndExecuteSyncParamJobGET(String jobName, Map<String,Object> params)
+    protected final JobResultWrapper createAndExecuteSyncParamJobGET(String jobName, Map<String,Object> params)
     {
         StringBuilder sb = new StringBuilder();
         sb.append(jobListURL.toExternalForm()).append("?");
@@ -232,7 +245,7 @@ public abstract class AbstractUWSTest2
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             URL getURL = new URL(surl);
 
-            log.info(jobName + ": GET " + getURL);
+            log.info(jobName);
             HttpDownload doit = new HttpDownload(getURL, bos);
             doit.run();
             
@@ -251,7 +264,7 @@ public abstract class AbstractUWSTest2
         return ret;
     }
     
-    protected URL createAsyncParamJob(String jobName, Map<String,Object> params)
+    protected final URL createAsyncParamJob(String jobName, Map<String,Object> params)
     {
         HttpPost post = new HttpPost(jobListURL, params, false);
         post.run();
@@ -260,99 +273,64 @@ public abstract class AbstractUWSTest2
         
         URL ret = post.getRedirectURL();
         Assert.assertNotNull("redirectURL", ret);
-        log.info(jobName + ": created " + ret);
+        log.info(jobName + " created " + ret);
         return ret;
     }
     
-    protected URL createAsyncDocumentJob(String document, String contentType)
+    protected final URL createAsyncDocumentJob(String document, String contentType)
     {
         throw new UnsupportedOperationException("not implemented");
     }
     
-    protected Job executeAsyncJob(URL jobURL, long timeout, long pollInterval)
+    /**
+     * 
+     * @param jobURL
+     * @param timeout time to allow job to execute before assuming failure (seconds)
+     * @return 
+     */
+    protected final Job executeAsyncJob(String jobName, URL jobURL, long timeout)
     {
-        Map<String,Object> params = new TreeMap<String,Object>();
-        params.put("PHASE", "RUN");
-        HttpPost post = new HttpPost(jobURL, params, false);
-        post.run();
-        if (post.getThrowable() != null)
-            Assert.fail("failed to set PHASE=RUN for " + jobURL + " reason: " + post.getThrowable());
-        
-        long start = System.currentTimeMillis();
-        boolean done = false;
-        
         try
         {
+            
+            Map<String,Object> params = new TreeMap<String,Object>();
+            params.put("PHASE", "RUN");
+            URL phaseURL = new URL(jobURL.toExternalForm() + "/phase");
+            log.info(jobName + " execute " + phaseURL);
+            HttpPost post = new HttpPost(phaseURL, params, false);
+            post.run();
+            if (post.getThrowable() != null)
+                Assert.fail("failed to set PHASE=RUN for " + jobURL + " reason: " + post.getThrowable());
+
+            long start = System.currentTimeMillis();
+        
             JobReader r = new JobReader();
-            while (!done && (start + timeout) < System.currentTimeMillis())
+            // loop in case server limits block < timeout
+            long tRemain = (start + timeout*1000L) - System.currentTimeMillis();
+            while ( tRemain > 0 )
             {
+                long block = tRemain/1000L; // sec
+                URL blockURL = new URL(jobURL.toExternalForm() + "?WAIT=" + block);
+                log.info(jobName + " wait " + blockURL);
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                HttpDownload get = new HttpDownload(jobURL, bos);
-                get.run();
+                HttpDownload get = new HttpDownload(blockURL, bos);
+                get.run(); // blocking wait
                 if (get.getThrowable() != null)
                     Assert.fail("failed to check phase for " + jobURL + " reason: " + get.getThrowable());
-
+                
+                tRemain = (start + timeout) - System.currentTimeMillis();
+                
                 Job j = r.read(new ByteArrayInputStream(bos.toByteArray()));
-                if ( j.getExecutionPhase().isActive() )
-                {
-                    Thread.sleep(pollInterval);
-                }
-                else
+                if ( !j.getExecutionPhase().isActive() )
                     return j;
+                // else another blocking wait
             }
-        }
-        catch(InterruptedException ex)
-        {
-            Assert.fail("failed to wait for job " + jobURL + " reason: " + ex);
         }
         catch(Exception ex)
         {
-            Assert.fail("failed to read job " + jobURL + " reason: " + ex);
+            Assert.fail("failed to execute job " + jobURL + " reason: " + ex);
         }
         
         throw new RuntimeException("timeout: job " + jobURL + " did not complete after " + timeout + "ms");
-    }
-    
-    protected String getExpectedContentType(final TestProperties properties)
-    {
-        String contentType = null;
-        if (properties.expectations != null)
-        {
-            if (properties.expectations.containsKey("Content-Type"))
-            {
-                contentType = properties.expectations.get("Content-Type").get(0);
-            }            
-        }
-        
-        return contentType;
-    }
-    
-    protected Integer getExpectedResponseCode(final TestProperties properties)
-    {
-        Integer responseCode = null; 
-        if (properties.expectations != null)
-        {
-            if (properties.expectations.containsKey("Response-Code"))
-            {
-                responseCode = Integer.valueOf(properties.expectations.get("Response-Code").get(0));
-            }
-        }
-        
-        return responseCode;
-    }
-    
-    protected ExecutionPhase getExpectedPhase(final TestProperties properties)
-    {
-        ExecutionPhase ret = null;
-        if (properties.expectations != null)
-        {
-            if (properties.expectations.containsKey("Execution-Phase"))
-            {
-                String s = properties.expectations.get("Execution-Phase").get(0);
-                ret = ExecutionPhase.toValue(s);
-            }            
-        }
-        
-        return ret;
     }
 }

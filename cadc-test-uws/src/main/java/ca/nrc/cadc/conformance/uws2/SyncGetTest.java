@@ -77,7 +77,10 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- *
+ * Sync test runner. This class iterates through the TestProperties and executes
+ * the test jobs as sync GET requests. Subclasses should override
+ * validateResponse() to check (make assertions) as this class does no checking.
+ * 
  * @author pdowler
  */
 public class SyncGetTest extends AbstractUWSTest2
@@ -105,16 +108,5 @@ public class SyncGetTest extends AbstractUWSTest2
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
-    }
-    
-    /**
-     * Subclasses can override this method to perform additional checks on the
-     * test result.
-     * 
-     * @param result 
-     */
-    protected void validateResponse(JobResultWrapper result)
-    {
-        // no -op
     }
 }

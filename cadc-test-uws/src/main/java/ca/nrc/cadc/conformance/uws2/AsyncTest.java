@@ -70,36 +70,52 @@
 package ca.nrc.cadc.conformance.uws2;
 
 
-import ca.nrc.cadc.uws.Job;
+import ca.nrc.cadc.conformance.uws.TestProperties;
+import java.net.URI;
+import java.net.URL;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
- *
+ * Async test runner. This class iterates through the TestProperties, creates,
+ * and executes each test job in async mode. Subclasses should override
+ * validateResponse() to check (make assertions) as this class does no checking.
+ * 
  * @author pdowler
  */
-public class JobResultWrapper 
+public class AsyncTest extends AbstractUWSTest2
 {
-    private static final Logger log = Logger.getLogger(JobResultWrapper.class);
+    private static final Logger log = Logger.getLogger(AsyncTest.class);
 
-    public String name;
+    private final long timeout;
     
-    public int responseCode;
-    public String contentType;
-    public String contentEncoding;
-    public Throwable throwable;
-    
-    /**
-     * The Job object for async jobs.
-     */
-    public Job job;
-    
-    /**
-     * The response body for sync jobs.
-     */
-    public byte[] syncOutput;
-    
-    public JobResultWrapper(String name) 
+    public AsyncTest(URI resourceID, URI standardID, long timeout) 
     { 
-        this.name = name;
+        super(resourceID, standardID);
+        this.timeout = timeout;
     }
+    
+    @Test
+    public void testJob()
+    {
+        try
+        {
+            for ( TestProperties tp : super.testPropertiesList.propertiesList)
+            {
+                JobResultWrapper result = new JobResultWrapper(tp.filename);
+                
+                URL jobURL = createAsyncParamJob(tp.filename, tp.getParameters());
+                result.job = executeAsyncJob(tp.filename, jobURL, timeout);
+                
+                validateResponse(result);
+            }
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+    
 }
