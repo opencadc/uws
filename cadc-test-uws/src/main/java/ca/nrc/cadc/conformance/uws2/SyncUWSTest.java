@@ -94,7 +94,6 @@ public class SyncUWSTest extends AbstractUWSTest2
      * 
      * @param resourceID service to test
      * @param standardID feature of service to test
-     * @param usePost true for POST, false for GET
      */
     public SyncUWSTest(URI resourceID, URI standardID) 
     { 
