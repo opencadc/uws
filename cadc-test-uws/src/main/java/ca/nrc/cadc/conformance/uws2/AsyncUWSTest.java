@@ -72,34 +72,42 @@ package ca.nrc.cadc.conformance.uws2;
 
 import ca.nrc.cadc.conformance.uws.TestProperties;
 import java.net.URI;
+import java.net.URL;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * Sync test runner. This class iterates through the TestProperties and executes
- * the test jobs as sync GET requests. Subclasses should override
+ * Async test runner. This class iterates through the TestProperties, creates,
+ * and executes each test job in async mode. Subclasses should override
  * validateResponse() to check (make assertions) as this class does no checking.
  * 
  * @author pdowler
  */
-public class SyncGetTest extends AbstractUWSTest2
+public class AsyncUWSTest extends AbstractUWSTest2
 {
-    private static final Logger log = Logger.getLogger(SyncGetTest.class);
+    private static final Logger log = Logger.getLogger(AsyncUWSTest.class);
 
-    public SyncGetTest(URI resourceID, URI standardID) 
+    private final long timeout;
+    
+    public AsyncUWSTest(URI resourceID, URI standardID, long timeout) 
     { 
         super(resourceID, standardID);
+        this.timeout = timeout;
     }
     
     @Test
-    public void testGET()
+    public void testJob()
     {
         try
         {
             for ( TestProperties tp : super.testPropertiesList.propertiesList)
             {
-                JobResultWrapper result = createAndExecuteSyncParamJobGET(tp.filename, tp.getParameters());
+                JobResultWrapper result = new JobResultWrapper(tp.filename);
+                
+                URL jobURL = createAsyncParamJob(tp.filename, tp.getParameters());
+                result.job = executeAsyncJob(tp.filename, jobURL, timeout);
+                
                 validateResponse(result);
             }
         }
@@ -109,4 +117,5 @@ public class SyncGetTest extends AbstractUWSTest2
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
+    
 }
