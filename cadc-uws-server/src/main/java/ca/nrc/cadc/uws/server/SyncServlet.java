@@ -507,6 +507,22 @@ public class SyncServlet extends HttpServlet
             w.close();
             return;
         }
+        catch(AccessControlException ex)
+        {
+            if (syncOutput != null && syncOutput.isOpen())
+            {
+                log.error("failure after OutputStream opened, cannot report error to user");
+                return;
+            }
+            // OutputStream not open, write an error response
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.setContentType("text/plain");
+            PrintWriter w = response.getWriter();
+            w.println("failed to execute job " + jobID);
+            w.println("   reason: " + ex.getMessage());
+            w.close();
+            return;
+        }
         catch(Throwable t)
         {
             if (jobID == null)

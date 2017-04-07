@@ -160,6 +160,10 @@ public class AsynchResource extends UWSResource
             LOGGER.info("Exception caught in doAccept: " + errorMessage);
             generateErrorRepresentation(Status.CLIENT_ERROR_REQUEST_ENTITY_TOO_LARGE, errorMessage);
         }
+        catch (AccessControlException e)
+        {
+            generateErrorRepresentation(Status.CLIENT_ERROR_FORBIDDEN, e.getMessage());
+        }
         catch (TransientException t)
         {
             generateRetryRepresentation(t);
