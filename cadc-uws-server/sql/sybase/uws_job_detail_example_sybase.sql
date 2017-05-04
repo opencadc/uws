@@ -70,38 +70,26 @@
 -- table names: these can be changed since the names of table used at runtime
 -- are configured via the JobDAO.JobSchema class
 
-create table Job
+-- Sybase ASE DDLs for use with JobDAO
+-- note 1: size of varchar columns may be altered as necessary; the ones below
+--         have been set to fit the row in a single 2K page size limit
+-- note 2: column limits must configured in the JobDAO.JobSchema in order to
+--         make use of the TEXT columns
+
+create table uws_JobDetail
 (
     jobID                   varchar(16)     not null,
-    runID                   varchar,
-
--- suitable column when using the X500IdentityManager
-    ownerID                 varchar,
-
-    executionPhase          varchar(16)     not null,
-    executionDuration       bigint          not null,
-    creationTime            timestamp       not null,
-    destructionTime         timestamp,
-    quote                   timestamp,
-    startTime               timestamp,
-    endTime                 timestamp,
-    error_summaryMessage    varchar,
-    error_type              varchar(16),
-    error_documentURL       varchar,
-   
-    requestPath             varchar,
-    remoteIP                varchar,
-
-    jobInfo_content         varchar,
-    jobInfo_contentType     varchar,
-    jobInfo_valid           smallint,
-
-    deletedByUser           smallint        default 0,
-    lastModified            timestamp       not null,
-
-    primary key (jobID)
--- can append this to previous line: using index tablespace <name of tablespace>
+    type                    char(1)         not null,
+    name                    varchar(256)    not null,
+-- two possible columns depending on length of stored string
+    value                   varchar(1024)   null,
+    value_text              text            null,
+    foreign key (jobID) references uws_Job (jobID)
 )
---tablespace <name of tablespace>
-;
+lock datarows
+go
+
+create clustered index uws_detail_i1
+    on uws_JobDetail(jobID)
+go
 

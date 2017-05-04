@@ -67,41 +67,6 @@
 --***********************************************************************
 --
 
--- table names: these can be changed since the names of table used at runtime
--- are configured via the JobDAO.JobSchema class
-
-create table Job
-(
-    jobID                   varchar(16)     not null,
-    runID                   varchar,
-
--- suitable column when using the X500IdentityManager
-    ownerID                 varchar,
-
-    executionPhase          varchar(16)     not null,
-    executionDuration       bigint          not null,
-    creationTime            timestamp       not null,
-    destructionTime         timestamp,
-    quote                   timestamp,
-    startTime               timestamp,
-    endTime                 timestamp,
-    error_summaryMessage    varchar,
-    error_type              varchar(16),
-    error_documentURL       varchar,
-   
-    requestPath             varchar,
-    remoteIP                varchar,
-
-    jobInfo_content         varchar,
-    jobInfo_contentType     varchar,
-    jobInfo_valid           smallint,
-
-    deletedByUser           smallint        default 0,
-    lastModified            timestamp       not null,
-
-    primary key (jobID)
--- can append this to previous line: using index tablespace <name of tablespace>
-)
---tablespace <name of tablespace>
-;
+print "dropping: JobAvailability, "
+drop table JobAvailability;
 

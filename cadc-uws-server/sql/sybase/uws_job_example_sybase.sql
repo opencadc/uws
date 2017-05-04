@@ -3,7 +3,7 @@
 --******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 --*************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 --
---  (c) 2010.                            (c) 2010.
+--  (c) 2017.                            (c) 2017.
 --  Government of Canada                 Gouvernement du Canada
 --  National Research Council            Conseil national de recherches
 --  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -113,22 +113,5 @@ lock datarows
 go
 
 alter table uws_Job add primary key clustered (jobID)
-go
-
-create table uws_JobDetail
-(
-    jobID                   varchar(16)     not null,
-    type                    char(1)         not null,
-    name                    varchar(256)    not null,
--- two possible columns depending on length of stored string
-    value                   varchar(1024)   null,
-    value_text              text            null,
-    foreign key (jobID) references uws_Job (jobID)
-)
-lock datarows
-go
-
-create clustered index uws_detail_i1
-    on uws_JobDetail(jobID)
 go
 
