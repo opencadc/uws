@@ -75,6 +75,7 @@ import ca.nrc.cadc.conformance.uws.TestPropertiesList;
 import ca.nrc.cadc.net.HttpDownload;
 import ca.nrc.cadc.net.HttpPost;
 import ca.nrc.cadc.net.NetUtil;
+import ca.nrc.cadc.reg.Standards;
 import ca.nrc.cadc.reg.client.RegistryClient;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobReader;
@@ -107,6 +108,8 @@ public abstract class AbstractUWSTest2
 
     protected final URI resourceID;
     protected final URI standardID;
+    protected final URI interfaceType;
+    
     protected URL jobListURL;
     
     // track these to help debug test config
@@ -117,13 +120,19 @@ public abstract class AbstractUWSTest2
     
     public AbstractUWSTest2(URI resourceID, URI standardID)
     {
+        this(resourceID, standardID, Standards.INTERFACE_PARAM_HTTP);
+    }
+    
+    public AbstractUWSTest2(URI resourceID, URI standardID, URI interfaceType)
+    {
         this.resourceID = resourceID;
         this.standardID = standardID;
-        
+        this.interfaceType = interfaceType;
         RegistryClient rc = new RegistryClient();
-        this.jobListURL = rc.getServiceURL(resourceID, standardID, AuthMethod.ANON);
+        this.jobListURL = rc.getServiceURL(resourceID, standardID, AuthMethod.ANON, interfaceType);
         if (jobListURL == null)
-            throw new RuntimeException("init FAIL, service not found:" + resourceID + " " + standardID + " " + AuthMethod.ANON);
+            throw new RuntimeException("init FAIL, service not found:" 
+                + resourceID + " " + standardID + " " + AuthMethod.ANON + " " + interfaceType);
         log.info("jobListURL: " + jobListURL);
     }
     
