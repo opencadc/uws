@@ -3,7 +3,7 @@
 --******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 --*************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 --
---  (c) 2010.                            (c) 2010.
+--  (c) 2017.                            (c) 2017.
 --  Government of Canada                 Gouvernement du Canada
 --  National Research Council            Conseil national de recherches
 --  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -75,45 +75,6 @@
 --         have been set to fit the row in a single 2K page size limit
 -- note 2: column limits must configured in the JobDAO.JobSchema in order to
 --         make use of the TEXT columns
-
-create table uws_Job
-(
-    jobID                   varchar(16)     not null,
-    runID                   varchar(64)     null,
--- suitable column when using the X500IdentityManager
-    ownerID                 varchar(256)    null,
-
-    executionPhase          varchar(16)     not null,
-    executionDuration       bigint          not null,
-    creationTime            datetime        not null,
-    destructionTime         datetime        null,
-    quote                   datetime        null,
-    startTime               datetime        null,
-    endTime                 datetime        null,
-    error_summaryMessage    varchar(256)    null,
-    error_type              varchar(16)     null,
--- two possible columns depending on length of stored string
-    error_documentURL       varchar(256)    null,
-    error_documentURL_text  text            null,
-
-    
-    requestPath             varchar(256)    null,
-    remoteIP                varchar(16)     null,
-
--- two possible columns depending on length of stored string
-    jobInfo_content         varchar(256)    null,
-    jobInfo_content_text    text            null,
-    jobInfo_contentType     varchar(64)     null,
-    jobInfo_valid           tinyint         null,
-
-    deletedByUser           tinyint         default 0,
-    lastModified            datetime        not null
-)
-lock datarows
-go
-
-alter table uws_Job add primary key clustered (jobID)
-go
 
 create table uws_JobDetail
 (
