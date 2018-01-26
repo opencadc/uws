@@ -71,6 +71,7 @@ package ca.nrc.cadc.conformance.uws2;
 
 
 import ca.nrc.cadc.conformance.uws.TestProperties;
+import ca.nrc.cadc.reg.Standards;
 import java.net.URI;
 import java.net.URL;
 import org.apache.log4j.Logger;
@@ -90,9 +91,13 @@ public class AsyncUWSTest extends AbstractUWSTest2
 
     private final long timeout;
     
-    public AsyncUWSTest(URI resourceID, URI standardID, long timeout) 
+    public AsyncUWSTest(URI resourceID, URI standardID, long timeout) {
+        this(resourceID, standardID, Standards.INTERFACE_PARAM_HTTP, timeout);
+    }
+    
+    public AsyncUWSTest(URI resourceID, URI standardID, URI interfaceType, long timeout) 
     { 
-        super(resourceID, standardID);
+        super(resourceID, standardID, interfaceType);
         this.timeout = timeout;
     }
     
