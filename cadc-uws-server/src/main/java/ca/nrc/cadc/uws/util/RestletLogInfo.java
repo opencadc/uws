@@ -70,11 +70,8 @@
 package ca.nrc.cadc.uws.util;
 
 import org.restlet.Request;
-import org.restlet.data.Form;
-import org.restlet.data.Parameter;
 
 import ca.nrc.cadc.log.WebServiceLogInfo;
-import ca.nrc.cadc.net.NetUtil;
 
 
 /**
@@ -110,9 +107,7 @@ public class RestletLogInfo extends WebServiceLogInfo
     {
         super();
         this.method = request.getMethod().getName().toUpperCase();
-        final Form requestHeaders = (Form) request.getAttributes().get("org.restlet.http.headers");
-        final Parameter forwardedClientIP = requestHeaders.getFirst(NetUtil.FORWARDED_FOR_CLIENT_IP_HEADER);
-        this.from = (forwardedClientIP == null) ? request.getClientInfo().getAddress() : forwardedClientIP.getValue();
+        this.from = RestletWebUtil.getClientIP(request);
         this.path = path;
     }
 

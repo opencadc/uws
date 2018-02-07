@@ -83,6 +83,7 @@ import org.jdom2.Document;
 import org.restlet.Request;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
+import org.restlet.data.Parameter;
 import org.restlet.data.Reference;
 import org.restlet.data.Status;
 import org.restlet.representation.Representation;
@@ -91,8 +92,10 @@ import org.restlet.resource.Get;
 import org.restlet.resource.ServerResource;
 
 import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.net.NetUtil;
 import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.uws.server.JobManager;
+import ca.nrc.cadc.uws.util.RestletWebUtil;
 import ca.nrc.cadc.uws.web.InlineContentHandler;
 import ca.nrc.cadc.uws.web.restlet.RestletPrincipalExtractor;
 import ca.nrc.cadc.uws.web.restlet.UWSAsyncApplication;
@@ -282,15 +285,15 @@ public abstract class UWSResource extends ServerResource
         }
         return path;
     }
-    
+
     /**
      * Return the IP address of the original HTTP requester.
-     * 
+     *
      * @return String of requester IP
      */
     protected String getRemoteIP()
     {
-        return getRequest().getClientInfo().getAddress();
+        return RestletWebUtil.getClientIP(getRequest());
     }
 
     /**
