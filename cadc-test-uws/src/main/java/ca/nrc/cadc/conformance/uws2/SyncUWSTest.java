@@ -99,6 +99,11 @@ public class SyncUWSTest extends AbstractUWSTest2
     { 
         super(resourceID, standardID);
     }
+    
+    public SyncUWSTest(URI resourceID, URI standardID, URI interfaceType) 
+    { 
+        super(resourceID, standardID, interfaceType);
+    }
 
     /**
      * @param enablePost true to run test using HTTP POST, false to disable
