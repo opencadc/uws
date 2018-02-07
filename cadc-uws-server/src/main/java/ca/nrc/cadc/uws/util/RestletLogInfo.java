@@ -70,8 +70,11 @@
 package ca.nrc.cadc.uws.util;
 
 import org.restlet.Request;
+import org.restlet.data.Form;
+import org.restlet.data.Parameter;
 
 import ca.nrc.cadc.log.WebServiceLogInfo;
+import ca.nrc.cadc.net.NetUtil;
 
 
 /**
@@ -95,16 +98,21 @@ public class RestletLogInfo extends WebServiceLogInfo
     }
     
     /**
-     * Restlet request constructor that taken a path
-     * override parameters.
-     * @param request
-     * @param path
+     * Restlet request constructor that taken a path override parameters.
+     *
+     * TODO: This method REQUIRES Restlet 2.0.2.
+     * TODO: jenkinsd 2018.02.06
+     *
+     * @param request       The Request object.
+     * @param path          The path being logged.
      */
     public RestletLogInfo(Request request, String path)
     {
         super();
         this.method = request.getMethod().getName().toUpperCase();
-        this.from = request.getClientInfo().getAddress();
+        final Form requestHeaders = (Form) request.getAttributes().get("org.restlet.http.headers");
+        final Parameter forwardedClientIP = requestHeaders.getFirst(NetUtil.FORWARDED_FOR_CLIENT_IP_HEADER);
+        this.from = (forwardedClientIP == null) ? request.getClientInfo().getAddress() : forwardedClientIP.getValue();
         this.path = path;
     }
 
