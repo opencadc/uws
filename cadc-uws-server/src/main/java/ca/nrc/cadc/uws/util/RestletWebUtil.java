@@ -79,8 +79,6 @@ public class RestletWebUtil {
     /**
      * Restlet request constructor that taken a path override parameters.
      * <p>
-     * TODO: This method REQUIRES Restlet 2.0.2.
-     * TODO: jenkinsd 2018.02.06
      *
      * @param request The Request object.
      */

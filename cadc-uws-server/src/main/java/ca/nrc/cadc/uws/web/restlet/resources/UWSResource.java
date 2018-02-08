@@ -71,7 +71,6 @@
 package ca.nrc.cadc.uws.web.restlet.resources;
 
 import java.io.IOException;
-import java.security.PrivilegedActionException;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Map;
@@ -83,7 +82,6 @@ import org.jdom2.Document;
 import org.restlet.Request;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
-import org.restlet.data.Parameter;
 import org.restlet.data.Reference;
 import org.restlet.data.Status;
 import org.restlet.representation.Representation;
@@ -92,7 +90,6 @@ import org.restlet.resource.Get;
 import org.restlet.resource.ServerResource;
 
 import ca.nrc.cadc.auth.AuthenticationUtil;
-import ca.nrc.cadc.net.NetUtil;
 import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.uws.server.JobManager;
 import ca.nrc.cadc.uws.util.RestletWebUtil;
