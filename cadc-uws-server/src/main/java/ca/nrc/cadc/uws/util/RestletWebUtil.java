@@ -78,16 +78,17 @@ public class RestletWebUtil {
 
     /**
      * Restlet request constructor that taken a path override parameters.
-     *
+     * <p>
      * TODO: This method REQUIRES Restlet 2.0.2.
      * TODO: jenkinsd 2018.02.06
      *
-     * @param request       The Request object.
+     * @param request The Request object.
      */
-    public static String getClientIP(final Request request)
-    {
+    public static String getClientIP(final Request request) {
         final Form requestHeaders = (Form) request.getAttributes().get("org.restlet.http.headers");
-        final Parameter forwardedClientIP = requestHeaders.getFirst(NetUtil.FORWARDED_FOR_CLIENT_IP_HEADER);
-        return (forwardedClientIP == null) ? request.getClientInfo().getAddress() : forwardedClientIP.getValue();
+        final Parameter forwardedClientIP = (requestHeaders == null)
+            ? null : requestHeaders.getFirst(NetUtil.FORWARDED_FOR_CLIENT_IP_HEADER);
+        return (forwardedClientIP == null)
+            ? request.getClientInfo().getAddress() : forwardedClientIP.getValue().split(",")[0];
     }
 }

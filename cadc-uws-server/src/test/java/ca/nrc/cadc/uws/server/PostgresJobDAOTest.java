@@ -24,7 +24,7 @@ public class PostgresJobDAOTest extends AbstractJobDAOTest
     private static Logger log = Logger.getLogger(PostgresJobDAOTest.class);
 
     @BeforeClass
-    public static void testSetup() throws Exception
+    public static void testSetup() 
     {
         Log4jInit.setLevel("ca.nrc.cadc.uws.server", Level.INFO);
         try
@@ -47,6 +47,11 @@ public class PostgresJobDAOTest extends AbstractJobDAOTest
         {
             log.warn("Skipping integration tests, no entry found in ~/.dbrc file.");
             org.junit.Assume.assumeTrue(false);
+        }
+        catch(Exception ex)
+        {
+            log.error("setup failed", ex);
+            throw new IllegalStateException("failed to create DataSource", ex);
         }
     }
 }
