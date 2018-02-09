@@ -2,7 +2,7 @@ plugins {
     id 'java'
     id 'maven'
     id 'maven-publish'
-    id 'com.jfrog.bintray' version '1.7.1'
+    id 'com.jfrog.bintray' version '1.7.3'
 }
 
 repositories {
@@ -19,7 +19,12 @@ sourceCompatibility = 1.7
 
 group = 'org.opencadc'
 
-version = '1.0.5'
+version = '1.0.6'
+
+// Allow override of user.name (-Duser.name=uws).  Useful to connect to a PostgreSQL Docker container.
+test {
+    systemProperties System.getProperties()
+}
 
 dependencies {
     compile 'commons-fileupload:commons-fileupload:1.3.+'

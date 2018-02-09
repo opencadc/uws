@@ -20,6 +20,7 @@ import org.apache.commons.fileupload.util.Streams;
 import org.apache.log4j.Logger;
 
 import ca.nrc.cadc.date.DateUtil;
+import ca.nrc.cadc.net.NetUtil;
 import ca.nrc.cadc.util.StringUtil;
 import ca.nrc.cadc.uws.ExecutionPhase;
 import ca.nrc.cadc.uws.Job;
@@ -112,7 +113,7 @@ public class JobCreator
             log.error("failed to get request path", oops);
         }
         
-        job.setRemoteIP(request.getRemoteAddr());
+        job.setRemoteIP(NetUtil.getClientIP(request));
         return job;
     }
     
