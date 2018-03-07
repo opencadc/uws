@@ -95,16 +95,19 @@ public class RestletLogInfo extends WebServiceLogInfo
     }
     
     /**
-     * Restlet request constructor that taken a path
-     * override parameters.
-     * @param request
-     * @param path
+     * Restlet request constructor that taken a path override parameters.
+     *
+     * TODO: This method REQUIRES Restlet 2.0.2.
+     * TODO: jenkinsd 2018.02.06
+     *
+     * @param request       The Request object.
+     * @param path          The path being logged.
      */
     public RestletLogInfo(Request request, String path)
     {
         super();
         this.method = request.getMethod().getName().toUpperCase();
-        this.from = request.getClientInfo().getAddress();
+        this.from = RestletWebUtil.getClientIP(request);
         this.path = path;
     }
 

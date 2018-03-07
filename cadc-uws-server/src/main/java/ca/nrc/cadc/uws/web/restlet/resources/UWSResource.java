@@ -71,7 +71,6 @@
 package ca.nrc.cadc.uws.web.restlet.resources;
 
 import java.io.IOException;
-import java.security.PrivilegedActionException;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Map;
@@ -93,6 +92,7 @@ import org.restlet.resource.ServerResource;
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.uws.server.JobManager;
+import ca.nrc.cadc.uws.util.RestletWebUtil;
 import ca.nrc.cadc.uws.web.InlineContentHandler;
 import ca.nrc.cadc.uws.web.restlet.RestletPrincipalExtractor;
 import ca.nrc.cadc.uws.web.restlet.UWSAsyncApplication;
@@ -282,15 +282,15 @@ public abstract class UWSResource extends ServerResource
         }
         return path;
     }
-    
+
     /**
      * Return the IP address of the original HTTP requester.
-     * 
+     *
      * @return String of requester IP
      */
     protected String getRemoteIP()
     {
-        return getRequest().getClientInfo().getAddress();
+        return RestletWebUtil.getClientIP(getRequest());
     }
 
     /**
