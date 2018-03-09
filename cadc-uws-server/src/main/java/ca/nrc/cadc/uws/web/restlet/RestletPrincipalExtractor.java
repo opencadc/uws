@@ -71,8 +71,7 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
     private final Request request;
     private X509CertificateChain chain;
     private DelegationToken token;
-    
-//    private SSOCookieCredential cookieCredential;
+
     private List<SSOCookieCredential> cookieCredentialList;
     private Principal cookiePrincipal; // principal extracted from cookie
 
@@ -142,12 +141,6 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
                 SSOCookieManager ssoCookieManager = new SSOCookieManager();
                 try
                 {
-//                    cookiePrincipal = ssoCookieManager.parse(
-//                                    ssoCookie.getValue());
-//                    cookieCredential = new
-//                            SSOCookieCredential(ssoCookie.getValue(),
-//                                                NetUtil.getDomainName(
-//                                                        getRequest().getResourceRef().toUrl()));
                     DelegationToken cookieToken = ssoCookieManager.parse(
                         ssoCookie.getValue());
                     cookiePrincipal = cookieToken.getUser();
