@@ -90,6 +90,7 @@ import org.apache.log4j.Logger;
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.io.ByteLimitExceededException;
 import ca.nrc.cadc.net.TransientException;
+import ca.nrc.cadc.profiler.Profiler;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobWriter;
 import ca.nrc.cadc.uws.web.InlineContentHandler;
@@ -106,8 +107,7 @@ import ca.nrc.cadc.uws.web.JobCreator;
  *
  * @author pdowler
  */
-public class SyncServlet extends HttpServlet
-{
+public class SyncServlet extends HttpServlet {
     private static Logger log = Logger.getLogger(SyncServlet.class);
     private static final long serialVersionUID = 201009291100L;
     private static final String JOB_EXEC = "run";
@@ -118,20 +118,24 @@ public class SyncServlet extends HttpServlet
     private boolean execOnPOST = false;
 
     @Override
-    public void init(ServletConfig config) throws ServletException
-    {
+    public void init(ServletConfig config) throws ServletException {
         super.init(config);
 
-        try
-        {
+        try {
             String str = config.getInitParameter(SyncServlet.class.getName() + ".execOnGET");
-            if (str !=null)
-                try { execOnGET = Boolean.parseBoolean(str); }
-                catch(Exception ignore) { }
+            if (str != null) {
+                try {
+                    execOnGET = Boolean.parseBoolean(str);
+                } catch (Exception ignore) {
+                }
+            }
             str = config.getInitParameter(SyncServlet.class.getName() + ".execOnPOST");
-            if (str !=null)
-                try { execOnPOST = Boolean.parseBoolean(str); }
-                catch(Exception ignore) { }
+            if (str != null) {
+                try {
+                    execOnPOST = Boolean.parseBoolean(str);
+                } catch (Exception ignore) {
+                }
+            }
             log.info("execOnGET: " + execOnGET);
             log.info("execOnPOST: " + execOnPOST);
 
@@ -139,39 +143,30 @@ public class SyncServlet extends HttpServlet
 
             String cname = InlineContentHandler.class.getName();
             String pname = config.getInitParameter(cname);
-            if (pname == null)
-                log.info("CONFIGURATION INFO: init-param not found: " + cname + " = <class name of InlineContentHandler implementation>");
-            else
-            {
-                try
-                {
+            if (pname == null) {
+                log.info("CONFIGURATION INFO: init-param not found: " + cname + " = <class name of " +
+                             "InlineContentHandler implementation>");
+            } else {
+                try {
                     inlineContentHandlerClass = Class.forName(pname);
                     InlineContentHandler ret = (InlineContentHandler) inlineContentHandlerClass.newInstance();
                     log.info("created InlineContentHandler: " + ret.getClass().getName());
-                }
-                catch (Exception e)
-                {
-                    log.error("CONFIGURATION ERROR: error loading class: " + cname + " = <class name of InlineContentHandler implementation>", e);
+                } catch (Exception e) {
+                    log.error("CONFIGURATION ERROR: error loading class: " + cname + " = <class name of " +
+                                  "InlineContentHandler implementation>", e);
                 }
             }
-        }
-        catch(Exception ex)
-        {
+        } catch (Exception ex) {
             log.error("failed to init: " + ex);
         }
     }
 
     @Override
-    public void destroy()
-    {
-        if (jobManager != null)
-        {
-            try
-            {
+    public void destroy() {
+        if (jobManager != null) {
+            try {
                 jobManager.terminate();
-            }
-            catch(Throwable t)
-            {
+            } catch (Throwable t) {
                 log.error("failed to terminate Jobmanager", t);
             }
         }
@@ -188,51 +183,41 @@ public class SyncServlet extends HttpServlet
      * some pre-configured IoC container) simply override this method to return a
      * ready-to-use JobManager.
      * </p>
-     * 
+     *
      * @param config
      * @return
      */
-    protected JobManager createJobManager(ServletConfig config)
-    {
+    protected JobManager createJobManager(ServletConfig config) {
         String pname = JobManager.class.getName();
-        try
-        {
+        try {
             String cname = config.getInitParameter(pname);
             //if (cname == null) // try a context param
             //    cname = config.getServletContext().getInitParameter(pname);
-            if (cname != null && cname.trim().length() > 0)
-            {
+            if (cname != null && cname.trim().length() > 0) {
                 Class c = Class.forName(cname);
                 JobManager ret = (JobManager) c.newInstance();
                 log.info("created JobManager: " + ret.getClass().getName());
                 return ret;
+            } else {
+                log.error("CONFIGURATION ERROR: required init-param not found: " + pname + " = <class name of " +
+                              "JobManager implementation>");
             }
-            else
-                log.error("CONFIGURATION ERROR: required init-param not found: " + pname + " = <class name of JobManager implementation>");
-        }
-        catch(Exception ex)
-        {
+        } catch (Exception ex) {
             log.error("failed to create JobManager", ex);
         }
         return null;
     }
 
-    protected JobCreator getJobCreator()
-    {
+    protected JobCreator getJobCreator() {
         return new JobCreator(getInlineContentHandler());
     }
 
-    protected InlineContentHandler getInlineContentHandler()
-    {
+    protected InlineContentHandler getInlineContentHandler() {
         InlineContentHandler handler = null;
-        if (inlineContentHandlerClass != null)
-        {
-            try
-            {
+        if (inlineContentHandlerClass != null) {
+            try {
                 handler = (InlineContentHandler) inlineContentHandlerClass.newInstance();
-            }
-            catch (Throwable t)
-            {
+            } catch (Throwable t) {
                 log.error("Unable to create inline content handler ", t);
             }
         }
@@ -241,8 +226,7 @@ public class SyncServlet extends HttpServlet
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
-        throws ServletException, IOException
-    {
+        throws ServletException, IOException {
         log.debug("doGet - START");
         doit(execOnGET, request, response);
         log.debug("doGet - DONE");
@@ -250,8 +234,7 @@ public class SyncServlet extends HttpServlet
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
-        throws ServletException, IOException
-    {
+        throws ServletException, IOException {
         log.debug("doPost - START");
         doit(execOnPOST, request, response);
         log.debug("doPost - DONE");
@@ -259,21 +242,25 @@ public class SyncServlet extends HttpServlet
 
     @Override
     protected void doHead(HttpServletRequest request, HttpServletResponse response)
-        throws ServletException, IOException
-    {
+        throws ServletException, IOException {
         log.debug("doHead - START");
         response.setStatus(HttpServletResponse.SC_NOT_IMPLEMENTED);
         log.debug("doHead - DONE");
     }
 
+    private String getCheckpointID(final HttpServletRequest request) {
+        final String identifier = request.getParameter("ID");
+        return request.getRequestURI() + "/" + identifier;
+    }
+
     private void doit(final boolean execOnCreate, final HttpServletRequest request, final HttpServletResponse response)
-        throws ServletException, IOException
-    {
-        try
-        {
+        throws IOException {
+
+        final Profiler profiler = new Profiler(SyncServlet.class);
+
+        try {
             log.debug("doit: execOnCreate=" + execOnCreate);
-            if (jobManager == null)
-            {
+            if (jobManager == null) {
                 // config error
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 response.setContentType("text/plain");
@@ -284,86 +271,67 @@ public class SyncServlet extends HttpServlet
             }
 
             Subject subject = AuthenticationUtil.getSubject(request);
-            if (subject == null)
-            {
+            if (subject == null) {
                 processRequest(execOnCreate, request, response);
-            }
-            else
-            {
-                Subject.doAs(subject, new PrivilegedExceptionAction<Object>()
-                {
+            } else {
+                Subject.doAs(subject, new PrivilegedExceptionAction<Object>() {
                     @Override
-                    public Object run() throws Exception
-                    {
+                    public Object run() throws Exception {
                         processRequest(execOnCreate, request, response);
                         return null;
                     }
-                } );
+                });
             }
-        }
-        catch (Throwable t)
-        {
-            try
-            {
+        } catch (Throwable t) {
+            try {
                 response.setContentType("text/plain");
-                if (t instanceof PrivilegedActionException)
-                {
-                    if (((PrivilegedActionException)t).getException() != null)
-                        throw ((PrivilegedActionException)t).getException();
+                if (t instanceof PrivilegedActionException) {
+                    if (((PrivilegedActionException) t).getException() != null) {
+                        throw ((PrivilegedActionException) t).getException();
+                    }
                 }
                 throw t;
-            }
-            catch (AccessControlException e)
-            {
+            } catch (AccessControlException e) {
                 response.sendError(403, "Permission denied: " + e.getMessage());
-            }
-            catch (IllegalArgumentException e)
-            {
+            } catch (IllegalArgumentException e) {
                 response.sendError(400, "Illegal use: " + e.getMessage());
-            }
-            catch (FileNotFoundException e)
-            {
+            } catch (FileNotFoundException e) {
                 response.sendError(404, "Not found: " + e.getMessage());
-            }
-            catch (TransientException e)
-            {
-                if (e.getRetryDelay() > 0)
+            } catch (TransientException e) {
+                if (e.getRetryDelay() > 0) {
                     response.setHeader("Retry-After", Integer.toString(e.getRetryDelay()));
+                }
                 response.sendError(503, "Transient error: " + e.getMessage());
-            }
-            catch (Throwable t2)
-            {
+            } catch (Throwable t2) {
                 response.sendError(500, "Internal server error: " + t2.getMessage());
             }
+        } finally {
+            profiler.checkpoint(getCheckpointID(request) + " - doit()");
         }
     }
 
     private void processRequest(boolean execOnCreate, HttpServletRequest request, HttpServletResponse response)
-        throws ServletException, IOException
-    {
+        throws IOException {
         log.debug("doit: execOnCreate=" + execOnCreate);
         SyncOutputImpl syncOutput = null;
+        final Profiler profiler = new Profiler(SyncServlet.class);
 
         String jobID = null;
         Job job = null;
         String action = null;
-        try
-        {
+        try {
             jobID = getJobID(request);
-            if (jobID == null)
-            {
+            if (jobID == null) {
                 // create
                 job = getJobCreator().create(request);
                 job = jobManager.create(job);
                 jobID = job.getID();
 
                 log.debug("created job: " + jobID);
-                if (execOnCreate)
-                {
+                if (execOnCreate) {
                     log.debug("no redirect, action = " + JOB_EXEC);
                     action = JOB_EXEC;
-                }
-                else // redirect
+                } else // redirect
                 {
                     String jobURL = getJobURL(request, job.getID());
                     String execURL = jobURL + "/" + JOB_EXEC;
@@ -372,21 +340,22 @@ public class SyncServlet extends HttpServlet
                     response.setStatus(HttpServletResponse.SC_SEE_OTHER);
                     return;
                 }
-            }
-            else
-                // get job from persistence
+            } else
+            // get job from persistence
+            {
                 job = jobManager.get(jobID);
+            }
 
             // set the protocol of the request
             job.setProtocol(request.getScheme());
 
             log.debug("found: " + jobID);
 
-            if (action == null)
+            if (action == null) {
                 action = getJobAction(request);
+            }
 
-            if (action == null)
-            {
+            if (action == null) {
                 log.info("dumping job: " + jobID);
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.setContentType("text/xml");
@@ -395,7 +364,7 @@ public class SyncServlet extends HttpServlet
                 return;
             }
 
-            if ( !JOB_EXEC.equals(action) ) // this is the only valid action
+            if (!JOB_EXEC.equals(action)) // this is the only valid action
             {
                 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 response.setContentType("text/plain");
@@ -408,12 +377,9 @@ public class SyncServlet extends HttpServlet
             log.debug("executing job: " + jobID);
             syncOutput = new SyncOutputImpl(response);
             jobManager.execute(job, syncOutput);
-        }
-        catch(JobPhaseException ex)
-        {
+        } catch (JobPhaseException ex) {
             log.debug("failed to change phase of job " + jobID, ex);
-            if (syncOutput != null && syncOutput.isOpen())
-            {
+            if (syncOutput != null && syncOutput.isOpen()) {
                 log.error("failure after OutputStream opened, cannot report error to user");
                 return;
             }
@@ -424,12 +390,9 @@ public class SyncServlet extends HttpServlet
             w.println(ex.getMessage());
             w.close();
             return;
-        }
-        catch(JobNotFoundException ex)
-        {
+        } catch (JobNotFoundException ex) {
             log.debug("failed to find job " + jobID, ex);
-            if (syncOutput != null && syncOutput.isOpen())
-            {
+            if (syncOutput != null && syncOutput.isOpen()) {
                 log.error("failure after OutputStream opened, cannot report error to user");
                 return;
             }
@@ -440,11 +403,8 @@ public class SyncServlet extends HttpServlet
             w.println("failed to find " + jobID);
             w.close();
             return;
-        }
-        catch(TransientException ex)
-        {
-            if (syncOutput != null && syncOutput.isOpen())
-            {
+        } catch (TransientException ex) {
+            if (syncOutput != null && syncOutput.isOpen()) {
                 log.error("failure after OutputStream opened, cannot report error to user");
                 return;
             }
@@ -457,12 +417,9 @@ public class SyncServlet extends HttpServlet
             w.println("   reason: " + ex.getMessage());
             w.close();
             return;
-        }
-        catch(JobPersistenceException ex)
-        {
+        } catch (JobPersistenceException ex) {
             log.error("failed to persist job", ex);
-            if (syncOutput != null && syncOutput.isOpen())
-            {
+            if (syncOutput != null && syncOutput.isOpen()) {
                 log.error("failure after OutputStream opened, cannot report error to user");
                 return;
             }
@@ -474,11 +431,8 @@ public class SyncServlet extends HttpServlet
             w.println("   reason: " + ex.getMessage());
             w.close();
             return;
-        }
-        catch(ByteLimitExceededException ex)
-        {
-            if (syncOutput != null && syncOutput.isOpen())
-            {
+        } catch (ByteLimitExceededException ex) {
+            if (syncOutput != null && syncOutput.isOpen()) {
                 log.error("failure after OutputStream opened, cannot report error to user");
                 return;
             }
@@ -490,11 +444,8 @@ public class SyncServlet extends HttpServlet
             w.println("   reason: XML document exceeds " + ex.getLimit() + " bytes");
             w.close();
             return;
-        }
-        catch(IllegalArgumentException ex)
-        {
-            if (syncOutput != null && syncOutput.isOpen())
-            {
+        } catch (IllegalArgumentException ex) {
+            if (syncOutput != null && syncOutput.isOpen()) {
                 log.error("failure after OutputStream opened, cannot report error to user");
                 return;
             }
@@ -506,11 +457,8 @@ public class SyncServlet extends HttpServlet
             w.println("   reason: " + ex.getMessage());
             w.close();
             return;
-        }
-        catch(AccessControlException ex)
-        {
-            if (syncOutput != null && syncOutput.isOpen())
-            {
+        } catch (AccessControlException ex) {
+            if (syncOutput != null && syncOutput.isOpen()) {
                 log.error("failure after OutputStream opened, cannot report error to user");
                 return;
             }
@@ -522,15 +470,13 @@ public class SyncServlet extends HttpServlet
             w.println("   reason: " + ex.getMessage());
             w.close();
             return;
-        }
-        catch(Throwable t)
-        {
-            if (jobID == null)
+        } catch (Throwable t) {
+            if (jobID == null) {
                 log.error("create job failed", t);
-            else
+            } else {
                 log.error("execute job failed", t);
-            if (syncOutput != null && syncOutput.isOpen() )
-            {
+            }
+            if (syncOutput != null && syncOutput.isOpen()) {
                 log.error("unexpected failure after OutputStream opened", t);
                 return;
             }
@@ -543,37 +489,35 @@ public class SyncServlet extends HttpServlet
             //t.printStackTrace(w);
             w.close();
             return;
-        }
-        finally
-        {
-            if (syncOutput != null && syncOutput.isOpen())
-                try
-                {
+        } finally {
+            if (syncOutput != null && syncOutput.isOpen()) {
+                try {
                     OutputStream ostream = syncOutput.getOutputStream();
                     ostream.flush();
+                } catch (Throwable ignore) {
                 }
-                catch(Throwable ignore) { }
+            }
+
+            profiler.checkpoint(getCheckpointID(request) + "/" + jobID + " - processRequest()");
         }
     }
 
-    private class SyncOutputImpl implements SyncOutput
-    {
+    private class SyncOutputImpl implements SyncOutput {
         OutputStream ostream;
         HttpServletResponse response;
 
-        SyncOutputImpl(HttpServletResponse response)
-        {
+        SyncOutputImpl(HttpServletResponse response) {
             this.response = response;
         }
 
-        public boolean isOpen() { return ostream != null; }
+        public boolean isOpen() {
+            return ostream != null;
+        }
 
         @Override
         public OutputStream getOutputStream()
-            throws IOException
-        {
-            if (ostream == null)
-            {
+            throws IOException {
+            if (ostream == null) {
                 log.debug("opening OutputStream");
                 ostream = new SafeOutputStream(response.getOutputStream());
             }
@@ -581,72 +525,78 @@ public class SyncServlet extends HttpServlet
         }
 
         @Override
-        public void setResponseCode(int code)
-        {
+        public void setResponseCode(int code) {
             if (ostream == null) // header not committed
+            {
                 response.setStatus(code);
-            else
+            } else {
                 log.warn("setResponseCode: " + code + " AFTER OutputStream opened, ignoring");
+            }
         }
+
         @Override
-        public void setHeader(String key, String value)
-        {
+        public void setHeader(String key, String value) {
             if (ostream == null) // header not committed
+            {
                 response.setHeader(key, value);
-            else
+            } else {
                 log.warn("setHeader: " + key + " = " + value + " AFTER OutputStream opened, ignoring");
+            }
         }
     }
 
-    private String getJobID(HttpServletRequest request)
-    {
+    private String getJobID(HttpServletRequest request) {
         String path = request.getPathInfo();
         log.debug("path: " + path);
         // path can be null, <jobID> or <jobID>/exec
-        if (path == null)
+        if (path == null) {
             return null;
-        if (path.startsWith("/"))
+        }
+        if (path.startsWith("/")) {
             path = path.substring(1);
+        }
         String[] parts = path.split("/");
         log.debug("path: " + path + " jobID: " + parts[0]);
         return parts[0];
     }
 
-    private String getJobAction(HttpServletRequest request)
-    {
+    private String getJobAction(HttpServletRequest request) {
         String path = request.getPathInfo();
         log.debug("path: " + path);
         // path can be null, <jobID> or <jobID>/<token>
-        if (path == null)
+        if (path == null) {
             return null;
-        if (path.startsWith("/"))
+        }
+        if (path.startsWith("/")) {
             path = path.substring(1);
+        }
         String[] parts = path.split("/");
         String ret = null;
-        if (parts.length == 2)
+        if (parts.length == 2) {
             ret = parts[1];
+        }
         log.debug("path: " + path + " jobAction: " + ret);
         return ret;
     }
 
-    private String getJobURL(HttpServletRequest request, String jobID)
-    {
+    private String getJobURL(HttpServletRequest request, String jobID) {
         StringBuffer sb = request.getRequestURL();
         log.debug("request URL: " + sb);
-        if ( sb.charAt(sb.length()-1) != '/' )
+        if (sb.charAt(sb.length() - 1) != '/') {
             sb.append("/");
+        }
         sb.append(jobID);
         return sb.toString();
     }
 
-    private class SafeOutputStream extends FilterOutputStream
-    {
-        SafeOutputStream(OutputStream ostream) { super(ostream); }
+    private class SafeOutputStream extends FilterOutputStream {
+        SafeOutputStream(OutputStream ostream) {
+            super(ostream);
+        }
 
         @Override
         public void close()
-            throws IOException
-        {
+            throws IOException {
             // must not let the JobRunner call close on the OutputStream!!!
         }
     }
