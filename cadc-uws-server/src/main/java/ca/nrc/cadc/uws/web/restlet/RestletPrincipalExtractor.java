@@ -52,6 +52,7 @@ import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import org.apache.log4j.Logger;
 import org.restlet.Request;
@@ -70,8 +71,8 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
     private final Request request;
     private X509CertificateChain chain;
     private DelegationToken token;
-    
-    private SSOCookieCredential cookieCredential;
+
+    private List<SSOCookieCredential> cookieCredentialList;
     private Principal cookiePrincipal; // principal extracted from cookie
 
     /**
@@ -140,12 +141,13 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
                 SSOCookieManager ssoCookieManager = new SSOCookieManager();
                 try
                 {
-                    cookiePrincipal = ssoCookieManager.parse(
-                                    ssoCookie.getValue());
-                    cookieCredential = new 
-                            SSOCookieCredential(ssoCookie.getValue(),
-                                                NetUtil.getDomainName(
-                                                        getRequest().getResourceRef().toUrl()));
+                    DelegationToken cookieToken = ssoCookieManager.parse(
+                        ssoCookie.getValue());
+                    cookiePrincipal = cookieToken.getUser();
+
+                    cookieCredentialList = ssoCookieManager.getSSOCookieCredentials(ssoCookie.getValue(),
+                        NetUtil.getDomainName(getRequest().getResourceRef().toUrl()),
+                        cookieToken.getExpiryTime());
                 } 
                 catch (IOException e)
                 {
@@ -252,8 +254,8 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
     }
 
     @Override
-    public SSOCookieCredential getSSOCookieCredential()
+    public List<SSOCookieCredential> getSSOCookieCredentials()
     {
-       return cookieCredential;
+       return cookieCredentialList;
     }
 }
