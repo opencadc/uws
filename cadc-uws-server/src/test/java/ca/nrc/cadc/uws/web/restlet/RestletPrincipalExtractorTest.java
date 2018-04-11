@@ -37,10 +37,13 @@ import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.CookiePrincipal;
 import ca.nrc.cadc.auth.DelegationToken;
 import ca.nrc.cadc.auth.HttpPrincipal;
+import ca.nrc.cadc.auth.PrincipalComparator;
 import ca.nrc.cadc.auth.SSOCookieManager;
 import java.security.Principal;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import org.apache.log4j.Logger;
 import org.restlet.Request;
 import org.restlet.data.ChallengeResponse;
 import org.restlet.data.ChallengeScheme;
@@ -67,9 +70,10 @@ import org.restlet.data.Form;
 
 public class RestletPrincipalExtractorTest
 {
+    private static final Logger log = Logger.getLogger(RestletPrincipalExtractorTest.class);
+
     private RestletPrincipalExtractor testSubject;
     private final Request mockRequest = createMock(Request.class);
-
 
     @Test
     public void testGetDelegationToken() throws Exception
@@ -81,10 +85,13 @@ public class RestletPrincipalExtractorTest
             {
                 return getMockRequest();
             }
+
+            @Override
+            protected String getAuthenticatedUsername() { return null;}
         });
         
         final Series<Cookie> requestCookies = new CookieSeries();
-        expect(getMockRequest().getCookies()).andReturn(requestCookies).once();
+        expect(getMockRequest().getCookies()).andReturn(requestCookies).atLeastOnce();
         
         final ConcurrentMap<String, Object> attributes =
                 new ConcurrentHashMap<String, java.lang.Object>();
@@ -93,14 +100,15 @@ public class RestletPrincipalExtractorTest
         expect(mockHeaders.getFirstValue(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
         expect(getMockRequest().getAttributes()).andReturn(attributes).atLeastOnce();
 
+        replay(mockHeaders);
         replay(getMockRequest());
 
         DelegationToken dt = getTestSubject().getDelegationToken();
+        System.out.println(dt);
         assertNull("Should have no token", dt);
-        
-        //Set<Principal> ps = new HashSet<Principal>();
-        //getTestSubject().addHTTPPrincipal(ps);
-        //assertTrue("Should have no principals.", ps.isEmpty());
+
+        Set<Principal> ps = getTestSubject().getPrincipals();
+        assertTrue("Should have no principals.", ps.isEmpty());
         
         verify(getMockRequest());
     }
@@ -177,7 +185,6 @@ public class RestletPrincipalExtractorTest
     @Test
     public void addHTTPPrincipal() throws Exception
     {
-        
 
         setTestSubject(new RestletPrincipalExtractor()
         {
@@ -186,10 +193,10 @@ public class RestletPrincipalExtractorTest
             {
                 return getMockRequest();
             }
-        });
 
-        final ClientInfo clientInfo = new ClientInfo();
-        expect(getMockRequest().getClientInfo()).andReturn(clientInfo).atLeastOnce();
+            @Override
+            protected String getAuthenticatedUsername() { return null;}
+        });
         
         final Series<Cookie> requestCookies = new CookieSeries();
         expect(getMockRequest().getCookies()).andReturn(requestCookies).atLeastOnce();

@@ -50,6 +50,7 @@ import java.io.IOException;
 import java.security.AccessControlException;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -73,7 +74,8 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
     private DelegationToken token;
 
     private List<SSOCookieCredential> cookieCredentialList;
-    private Principal cookiePrincipal; // principal extracted from cookie
+    private Set<Principal> cookiePrincipals = new HashSet<>(); // identities extracted from cookie
+    private Set<Principal> principals = new HashSet<>();
 
     /**
      * Hidden no-arg constructor for testing.
@@ -100,12 +102,18 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
             final Collection<X509Certificate> requestCertificates =
                 (Collection<X509Certificate>) getRequest().getAttributes().get(
                         "org.restlet.https.clientCertificates");
-            if ((requestCertificates != null) && (!requestCertificates.isEmpty()))
+            if ((requestCertificates != null) && (!requestCertificates.isEmpty())) {
                 this.chain = new X509CertificateChain(requestCertificates);
+                if (this.chain != null) {
+                    principals.add(this.chain.getPrincipal());
+                }
+            }
+
         }
         
         if (token == null)
         {
+            log.info("adding token");
             Form headers = (Form) getRequest().getAttributes().get("org.restlet.http.headers");
             String tokenValue = headers.getFirstValue(AuthenticationUtil.AUTH_HEADER);
             if ( StringUtil.hasText(tokenValue) )
@@ -127,13 +135,25 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
                 finally { }
             }
         }
+log.info("adding principals");
+        // add HttpPrincipal
+        final String httpUser = getAuthenticatedUsername();
+        if (StringUtil.hasText(httpUser)) // user from HTTP AUTH
+            principals.add(new HttpPrincipal(httpUser));
+        else if (token != null) // user from token
+            principals.add(token.getUser());
         
         Series<Cookie> cookies = getRequest().getCookies();
+        log.info("cookie count: " + cookies.size());
+        log.info("principal count: " + principals.size());
+        log.info(principals);
         if (cookies == null || (cookies.size() == 0))
             return;
         
         for (Cookie ssoCookie : cookies)
         {
+            log.info(ssoCookie.toString());
+
             if (SSOCookieManager.DEFAULT_SSO_COOKIE_NAME.equals(
                     ssoCookie.getName())
                     && StringUtil.hasText(ssoCookie.getValue()))
@@ -143,11 +163,12 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
                 {
                     DelegationToken cookieToken = ssoCookieManager.parse(
                         ssoCookie.getValue());
-                    cookiePrincipal = cookieToken.getUser();
+
+                    cookiePrincipals = cookieToken.getIdentityPrincipals();
+                    principals.addAll(cookiePrincipals);
 
                     cookieCredentialList = ssoCookieManager.getSSOCookieCredentials(ssoCookie.getValue(),
-                        NetUtil.getDomainName(getRequest().getResourceRef().toUrl()),
-                        cookieToken.getExpiryTime());
+                        NetUtil.getDomainName(getRequest().getResourceRef().toUrl()));
                 } 
                 catch (IOException e)
                 {
@@ -163,6 +184,7 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
             }
         }
     }
+
     public X509CertificateChain getCertificateChain()
     {
         init();
@@ -172,8 +194,6 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
     public Set<Principal> getPrincipals()
     {
         init();
-        Set<Principal> principals = new HashSet<Principal>();
-        addPrincipals(principals);
         return principals;
     }
 
@@ -182,44 +202,6 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
         init();
         return token;
     }
-
-    
-
-    /**
-     * Add known principals.
-     */
-    protected void addPrincipals(Set<Principal> principals)
-    {
-        addHTTPPrincipal(principals);
-        addX500Principal(principals);
-    }
-
-    /**
-     * Add the HTTP Principal, if it exists.
-     */
-    protected void addHTTPPrincipal(Set<Principal> principals)
-    {
-        final String httpUser = getAuthenticatedUsername();
-        
-        // only add one HttpPrincipal, precedence order
-        if (StringUtil.hasText(httpUser)) // user from HTTP AUTH
-            principals.add(new HttpPrincipal(httpUser));
-        else if (cookiePrincipal != null) // user from cookie
-            principals.add(cookiePrincipal);
-        else if (token != null) // user from token
-            principals.add(token.getUser());
-    }
-
-    /**
-     * Add the X500 Principal, if it exists.
-     */
-    protected void addX500Principal(Set<Principal> principals)
-    {
-        init();
-        if (chain != null)
-            principals.add(chain.getPrincipal());
-    }
-
 
     /**
      * Obtain the Username submitted with the Request.
@@ -230,6 +212,11 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
     {
         final String username;
 
+//        log.info("getrequest object: " + request);
+//        Request req = getRequest();
+//        log.info("req: "  + req);
+//        log.info("client info: " + req.getClientInfo());
+//        log.info("principals: " + req.getClientInfo().getPrincipals());
         if (!getRequest().getClientInfo().getPrincipals().isEmpty())
         {
             // Put in to support Safari not injecting a Challenge Response.
@@ -238,6 +225,7 @@ public class RestletPrincipalExtractor implements PrincipalExtractor
             // call to getRequest().getChallengeResponse().getIdentifier() would
             // return whatever username the caller provided in a non-authenticating call
             username = getRequest().getClientInfo().getPrincipals().get(0).getName();
+            log.info("username: " + username);
         }
         else 
         {
