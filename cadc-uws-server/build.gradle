@@ -19,7 +19,7 @@ sourceCompatibility = 1.7
 
 group = 'org.opencadc'
 
-version = '1.0.7'
+version = '1.0.8'
 
 // Allow override of user.name (-Duser.name=uws).  Useful to connect to a PostgreSQL Docker container.
 test {
@@ -36,7 +36,7 @@ dependencies {
     compile 'org.springframework:spring-jdbc:2.5.6.SEC01'
 
     compile 'org.opencadc:cadc-log:1.+'
-    compile 'org.opencadc:cadc-util:[1.1.1,)'
+    compile 'org.opencadc:cadc-util:[1.1,)'
     compile 'org.opencadc:cadc-vosi:1.+'
     compile 'org.opencadc:cadc-uws:1.+'
 

@@ -197,7 +197,7 @@ public class RestletPrincipalExtractorTest
             @Override
             protected String getAuthenticatedUsername() { return null;}
         });
-        
+
         final Series<Cookie> requestCookies = new CookieSeries();
         expect(getMockRequest().getCookies()).andReturn(requestCookies).atLeastOnce();
         
