@@ -17,7 +17,12 @@ sourceCompatibility = 1.7
 
 group = 'org.opencadc'
 
-version = '1.0'
+version = '1000'
+
+war {
+    //archivename = project.name + '##' + project.version + '.war'
+    archivename = project.name + '.war'
+}
 
 dependencies {
     compile 'commons-fileupload:commons-fileupload:1.3.+'
