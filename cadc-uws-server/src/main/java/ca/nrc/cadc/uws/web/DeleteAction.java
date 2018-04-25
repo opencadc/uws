@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2018.                            (c) 2018.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,116 +62,26 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
-*
 ************************************************************************
 */
 
-package ca.nrc.cadc.uws.web.restlet;
+package ca.nrc.cadc.uws.web;
 
-import ca.nrc.cadc.uws.ExecutionPhase;
-import ca.nrc.cadc.uws.Job;
-import ca.nrc.cadc.uws.JobAttribute;
-import ca.nrc.cadc.uws.Parameter;
-import ca.nrc.cadc.uws.web.InlineContentHandler;
-import ca.nrc.cadc.uws.web.JobCreator;
-import ca.nrc.cadc.uws.web.restlet.validators.JobFormValidatorImpl;
-import ca.nrc.cadc.uws.web.validators.FormValidator;
-import java.io.IOException;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import org.apache.commons.fileupload.FileItemIterator;
-import org.apache.commons.fileupload.FileUploadException;
 import org.apache.log4j.Logger;
-import org.restlet.data.Form;
-import org.restlet.data.MediaType;
-import org.restlet.ext.fileupload.RestletFileUpload;
-
-import org.restlet.representation.Representation;
 
 /**
- * Simple class to assemble items from a Request into a job.
+ *
+ * @author pdowler
  */
-public class RestletJobCreator extends JobCreator
-{
-    private final static Logger log = Logger.getLogger(RestletJobCreator.class);
+public class DeleteAction extends JobAction {
+    private static final Logger log = Logger.getLogger(DeleteAction.class);
 
-    private InlineContentHandler inlineContentHandler;
-    
-    public RestletJobCreator(InlineContentHandler inlineContentHandler)
-    {
-        super();
-        this.inlineContentHandler = inlineContentHandler;
+    public DeleteAction() { 
     }
 
-    public Job create(Representation entity)
-        throws FileUploadException, IOException
-    {
-        Job job = new Job();
-        job.setExecutionPhase(ExecutionPhase.PENDING);
-        job.setParameterList(new ArrayList<Parameter>());
-
-        if (entity == null || entity.getMediaType().equals(MediaType.APPLICATION_WWW_FORM, true))
-        {
-            Form form = new Form(entity);
-            FormValidator validator = new JobFormValidatorImpl(form);
-            Map<String, String> errors = validator.validate();
-            if (!errors.isEmpty())
-            {
-                String message = getErrorMessage(errors);
-                log.error(message);
-                throw new WebRepresentationException(message);
-            }
-
-            Set<String> names = form.getNames();
-            for (String name : names)
-                processParameter(job, name, form.getValuesArray(name, true));
-        }
-        else if (inlineContentHandler != null)
-        {
-            if (entity.getMediaType().equals(MediaType.MULTIPART_FORM_DATA, true))
-            {
-                RestletFileUpload upload = new RestletFileUpload();
-                FileItemIterator itemIterator = upload.getItemIterator(entity);
-                processMultiPart(job, itemIterator);
-            }
-            else
-            {
-                processStream(null, entity.getMediaType().getName(), entity.getStream());
-            }
-            inlineContentHandler.setParameterList(job.getParameterList());
-            job.setParameterList(inlineContentHandler.getParameterList());
-            job.setJobInfo(inlineContentHandler.getJobInfo());
-        }
-
-        return job;
+    @Override
+    public void doAction() throws Exception {
+        throw new UnsupportedOperationException();
     }
-
-    // this is called by JobAsynchResource and ParameterListResource, could be refactored
-    // to be less wasteful
-    public List<Parameter> getParameterList(Form form)
-    {
-        Job job = new Job();
-        for (String name : form.getNames())
-            processParameter(job, name, form.getValuesArray(name, true));
-        return job.getParameterList();
-    }
-
-    private String getErrorMessage(Map<String, String> errors)
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Errors found during Job Creation: \n");
-        for (Map.Entry<String, String> error : errors.entrySet())
-        {
-            sb.append("\n");
-            sb.append(error.getKey());
-            sb.append(": ");
-            sb.append(error.getValue());
-        }
-        return sb.toString();
-    }
-    
 }

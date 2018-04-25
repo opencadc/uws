@@ -115,11 +115,11 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
         this(new RandomStringGenerator(16), new X500IdentityManager(), 30000L);
     }
 
-    public MemoryJobPersistence(StringIDGenerator idGenerator, IdentityManager identityManager, long JobCleanerCheckInterval)
+    public MemoryJobPersistence(StringIDGenerator idGenerator, IdentityManager identityManager, long jobCleanerInterval)
     {
         this.idGenerator = idGenerator;
         this.identityManager = identityManager;
-        setJobCleaner(JobCleanerCheckInterval);
+        setJobCleaner(jobCleanerInterval);
     }
 
     /**
@@ -167,7 +167,7 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
 
     private class JobCleaner implements Runnable
     {
-        long dt = 6000L;
+        long dt = 60000L;
 
         JobCleaner(long dt) { this.dt = dt; }
 
@@ -180,7 +180,7 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
                 {
                     synchronized(jobs)
                     {
-                        log.debug("looking for old jobs...");
+                        log.debug(this + ": looking for old jobs...");
                         Iterator<Map.Entry<String,Job>> iter = jobs.entrySet().iterator();
                         while ( iter.hasNext() )
                         {

@@ -26,6 +26,9 @@ import ca.nrc.cadc.uws.ExecutionPhase;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobAttribute;
 import ca.nrc.cadc.uws.Parameter;
+import ca.nrc.cadc.rest.SyncInput;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Simple class used to read job description from the request and create a new Job.
@@ -44,12 +47,32 @@ public class JobCreator
 
     protected InlineContentHandler inlineContentHandler;
 
-    public JobCreator(InlineContentHandler inlineContentHandler)
-    {
-        this.inlineContentHandler = inlineContentHandler;
+    public JobCreator() {
     }
 
-    public Job create(HttpServletRequest request)
+    public Job create(SyncInput input) {
+        Job job = new Job();
+        job.setExecutionPhase(ExecutionPhase.PENDING);
+        job.setParameterList(new ArrayList<Parameter>());
+        for (String pname : input.getParameterNames()) {
+            if (JobAttribute.isValue(pname)) {
+                processUWSParameter(job, pname, input.getParameter(pname));
+            } else {
+                processJobParameter(job, pname, input.getParameters(pname));
+            }
+        }
+        
+        for (String cname : input.getContentNames()) {
+            // TODO: Content -> jobInfo
+            // TODO: Content -> alter parameters (eg UPLOAD=name,inline to UPLOAD=name,lcoal-url)
+            throw new UnsupportedOperationException("stream content: " + cname);
+        }
+        job.setRemoteIP(input.getClientIP());
+        return job;
+    }
+    
+    @Deprecated
+    public Job create(HttpServletRequest request, InlineContentHandler inlineContentHandler)
         throws FileUploadException, IOException
     {
         Job job = new Job();
@@ -119,15 +142,17 @@ public class JobCreator
     
     protected void processParameter(Job job, String name, String[] values)
     {
-        if (JobAttribute.isValue(name))
-            processUWSParameter(job, name, values);
-        else
-            processJobParameter(job, name, values);
+        if (JobAttribute.isValue(name)) {
+            if (values != null && values.length > 0) {
+                processUWSParameter(job, name, values[0]);
+            }
+        } else {
+            processJobParameter(job, name, Arrays.asList(values));
+        }
     }
 
-    private void processUWSParameter(Job job, String name, String[] values)
+    private void processUWSParameter(Job job, String name, String value)
     {
-        String value = values[0];
         if (name.equalsIgnoreCase(JobAttribute.RUN_ID.getAttributeName()))
         {
             job.setRunID(value);
@@ -177,10 +202,11 @@ public class JobCreator
         }
     }
 
-    protected void processJobParameter(Job job, String name, String[] values)
+    protected void processJobParameter(Job job, String name, Iterable<String> values)
     {
-        for (String value : values)
+        for (String value : values) {
             job.getParameterList().add(new Parameter(name, value));
+        }
     }
 
     protected void processMultiPart(Job job, FileItemIterator itemIterator)

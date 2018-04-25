@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2018.                            (c) 2018.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,116 +62,102 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
-*
 ************************************************************************
 */
 
-package ca.nrc.cadc.uws.web.restlet;
+package ca.nrc.cadc.uws.web;
 
+
+import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.uws.ExecutionPhase;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobAttribute;
-import ca.nrc.cadc.uws.Parameter;
-import ca.nrc.cadc.uws.web.InlineContentHandler;
-import ca.nrc.cadc.uws.web.JobCreator;
-import ca.nrc.cadc.uws.web.restlet.validators.JobFormValidatorImpl;
-import ca.nrc.cadc.uws.web.validators.FormValidator;
-import java.io.IOException;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import org.apache.commons.fileupload.FileItemIterator;
-import org.apache.commons.fileupload.FileUploadException;
+import ca.nrc.cadc.uws.server.JobNotFoundException;
+import ca.nrc.cadc.uws.server.JobPersistenceException;
+import ca.nrc.cadc.uws.server.JobPhaseException;
 import org.apache.log4j.Logger;
-import org.restlet.data.Form;
-import org.restlet.data.MediaType;
-import org.restlet.ext.fileupload.RestletFileUpload;
-
-import org.restlet.representation.Representation;
 
 /**
- * Simple class to assemble items from a Request into a job.
+ *
+ * @author pdowler
  */
-public class RestletJobCreator extends JobCreator
-{
-    private final static Logger log = Logger.getLogger(RestletJobCreator.class);
+public class PostAction extends JobAction {
+    private static final Logger log = Logger.getLogger(PostAction.class);
 
-    private InlineContentHandler inlineContentHandler;
-    
-    public RestletJobCreator(InlineContentHandler inlineContentHandler)
-    {
-        super();
-        this.inlineContentHandler = inlineContentHandler;
+    public PostAction() { 
     }
 
-    public Job create(Representation entity)
-        throws FileUploadException, IOException
-    {
-        Job job = new Job();
-        job.setExecutionPhase(ExecutionPhase.PENDING);
-        job.setParameterList(new ArrayList<Parameter>());
-
-        if (entity == null || entity.getMediaType().equals(MediaType.APPLICATION_WWW_FORM, true))
-        {
-            Form form = new Form(entity);
-            FormValidator validator = new JobFormValidatorImpl(form);
-            Map<String, String> errors = validator.validate();
-            if (!errors.isEmpty())
-            {
-                String message = getErrorMessage(errors);
-                log.error(message);
-                throw new WebRepresentationException(message);
+    @Override
+    public void doAction() throws Exception {
+        String jobID = getJobID();
+        String field = getJobField();
+        boolean redirect = true;
+        
+        if (jobID == null) {
+            // create
+            JobCreator jc = new JobCreator();
+            Job in = jc.create(syncInput);
+            Job job = jobManager.create(in);
+            jobID = job.getID();
+            redirect = true;
+        } else if (field == null && isDeleteAction()) {
+            jobManager.delete(jobID);
+        } else if (field != null) {
+            // uws job control
+            JobAttribute ja = JobAttribute.toValue(field);
+            switch (ja) {
+                case EXECUTION_PHASE:
+                    // start or stop job with PHASE=RUN|ABORT
+                    doPhaseChange(jobID);
+                    break;
+                //case DESTRUCTION_TIME:
+                //    break;
+                //case EXECUTION_DURATION:
+                //    break;
+                //case QUOTE:
+                //    break;
+                default:
+                    throw new UnsupportedOperationException("not implemented: UWS job control");
             }
-
-            Set<String> names = form.getNames();
-            for (String name : names)
-                processParameter(job, name, form.getValuesArray(name, true));
+        } else {
+            // new job params
+            JobCreator jc = new JobCreator();
+            Job tmp = jc.create(syncInput);
+            jobManager.update(jobID, tmp.getParameterList());
         }
-        else if (inlineContentHandler != null)
-        {
-            if (entity.getMediaType().equals(MediaType.MULTIPART_FORM_DATA, true))
-            {
-                RestletFileUpload upload = new RestletFileUpload();
-                FileItemIterator itemIterator = upload.getItemIterator(entity);
-                processMultiPart(job, itemIterator);
-            }
-            else
-            {
-                processStream(null, entity.getMediaType().getName(), entity.getStream());
-            }
-            inlineContentHandler.setParameterList(job.getParameterList());
-            job.setParameterList(inlineContentHandler.getParameterList());
-            job.setJobInfo(inlineContentHandler.getJobInfo());
+        
+        if (redirect) {
+            String jobURL = syncInput.getRequestURI() + "/" + jobID;
+            log.debug("redirect: " + jobURL);
+            syncOutput.setHeader("Location", jobURL);
+            syncOutput.setCode(303);
+        } else {
+            // TODO: remove this if never needed?
+            syncOutput.setCode(200);
         }
-
-        return job;
-    }
-
-    // this is called by JobAsynchResource and ParameterListResource, could be refactored
-    // to be less wasteful
-    public List<Parameter> getParameterList(Form form)
-    {
-        Job job = new Job();
-        for (String name : form.getNames())
-            processParameter(job, name, form.getValuesArray(name, true));
-        return job.getParameterList();
-    }
-
-    private String getErrorMessage(Map<String, String> errors)
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Errors found during Job Creation: \n");
-        for (Map.Entry<String, String> error : errors.entrySet())
-        {
-            sb.append("\n");
-            sb.append(error.getKey());
-            sb.append(": ");
-            sb.append(error.getValue());
-        }
-        return sb.toString();
     }
     
+    private void doPhaseChange(String jobID) throws JobNotFoundException, JobPhaseException, JobPersistenceException, TransientException {
+        String nep = syncInput.getParameter("PHASE");
+        boolean run = "RUN".equalsIgnoreCase(nep);
+        boolean abort = "ABORT".equalsIgnoreCase(nep);
+        // check
+        Job job = jobManager.get(jobID);
+        ExecutionPhase ep = job.getExecutionPhase();
+        if (abort) {
+            jobManager.abort(jobID);
+        } else if (run) {
+            jobManager.execute(jobID);
+        } else {
+            throw new IllegalArgumentException("invalid PHASE value: " + nep);
+        }
+    }
+    
+    private boolean isDeleteAction() {
+        String action = syncInput.getParameter("ACTION");
+        if (action != null && "DELETE".equalsIgnoreCase(action)) {
+            return true;
+        }
+        return false;
+    }
 }
