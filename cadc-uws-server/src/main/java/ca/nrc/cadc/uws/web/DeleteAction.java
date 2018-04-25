@@ -68,6 +68,9 @@
 package ca.nrc.cadc.uws.web;
 
 
+import ca.nrc.cadc.net.ResourceNotFoundException;
+import ca.nrc.cadc.uws.server.JobNotFoundException;
+import ca.nrc.cadc.uws.server.JobPersistenceException;
 import org.apache.log4j.Logger;
 
 /**
@@ -82,6 +85,32 @@ public class DeleteAction extends JobAction {
 
     @Override
     public void doAction() throws Exception {
-        throw new UnsupportedOperationException();
+        super.init();
+
+        log.debug("START: " + syncInput.getPath());
+        String jobID = getJobID();
+        try {
+            if (jobID == null) {
+                throw new IllegalArgumentException("cannot delete job list");
+            }
+
+            String field = getJobField();
+            if (field != null) {
+                throw new IllegalArgumentException("cannot delete " + jobID + "/" + field);
+            }
+
+            jobManager.delete(jobID);
+
+            String jobListURL = getJobListURL();
+            log.debug("redirect: " + jobListURL);
+            syncOutput.setHeader("Location", jobListURL);
+            syncOutput.setCode(303);
+        } catch (JobNotFoundException ex) {
+            throw new ResourceNotFoundException("not found: " + jobID, ex);
+        } catch (JobPersistenceException ex) {
+            throw new RuntimeException("failed to access job pertsistence", ex);
+        } finally {
+            log.debug("DONE: " + syncInput.getPath());
+        }
     }
 }

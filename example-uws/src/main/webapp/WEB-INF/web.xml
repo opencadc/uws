@@ -5,7 +5,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2018.                            (c) 2018.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -83,7 +83,7 @@
         <servlet-class>ca.nrc.cadc.log.LogControlServlet</servlet-class>
         <init-param>
             <param-name>logLevel</param-name>
-            <param-value>debug</param-value>
+            <param-value>info</param-value>
         </init-param>
         <init-param>
             <param-name>logLevelPackages</param-name>
@@ -102,7 +102,7 @@
       <servlet-class>ca.nrc.cadc.uws.server.SyncServlet</servlet-class>
       <init-param>
           <param-name>ca.nrc.cadc.uws.server.JobManager</param-name>
-          <param-value>ca.nrc.cadc.uws.sample.SampleJobManager</param-value>
+          <param-value>ca.nrc.cadc.uws.sample.SyncJobManager</param-value>
       </init-param>
       <init-param>
           <param-name>ca.nrc.cadc.uws.server.SyncServlet.execOnGET</param-name>
@@ -125,7 +125,7 @@
         <servlet-class>ca.nrc.cadc.uws.server.AsyncServlet</servlet-class>
         <init-param>
           <param-name>ca.nrc.cadc.uws.server.JobManager</param-name>
-          <param-value>ca.nrc.cadc.uws.sample.SampleJobManager</param-value>
+          <param-value>ca.nrc.cadc.uws.sample.AsyncJobManager</param-value>
         </init-param>
         <!-- actions -->
         <init-param>

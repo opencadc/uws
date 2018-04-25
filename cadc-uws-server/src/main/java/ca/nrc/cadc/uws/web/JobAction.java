@@ -67,13 +67,13 @@
 
 package ca.nrc.cadc.uws.web;
 
-import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.rest.InlineContentHandler;
 import ca.nrc.cadc.rest.RestAction;
 import ca.nrc.cadc.uws.Job;
+import ca.nrc.cadc.uws.JobAttribute;
 import ca.nrc.cadc.uws.server.JobManager;
-import ca.nrc.cadc.uws.server.JobNotFoundException;
-import ca.nrc.cadc.uws.server.JobPersistenceException;
+import java.util.HashMap;
+import java.util.Map;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -89,21 +89,48 @@ public abstract class JobAction extends RestAction {
     private String jobID;
     private String jobField;
     private String resultID;
-    private Job job;
     protected JobManager jobManager;
+    
+    // JobAttribute has strings used in XML document; the REST child resource names and update param names can differ
+    protected static final Map<String,JobAttribute> CHILD_RESOURCE_NAMES = new HashMap<String,JobAttribute>();
+    protected static final Map<JobAttribute,String> CHILD_PARAM_NAMES = new HashMap<JobAttribute,String>();
+    
+    static {
+        CHILD_RESOURCE_NAMES.put("phase", JobAttribute.EXECUTION_PHASE);
+        CHILD_RESOURCE_NAMES.put("executionduration", JobAttribute.EXECUTION_DURATION);
+        CHILD_RESOURCE_NAMES.put("destruction", JobAttribute.DESTRUCTION_TIME);
+        CHILD_RESOURCE_NAMES.put("quote", JobAttribute.QUOTE);
+        CHILD_RESOURCE_NAMES.put("owner", JobAttribute.OWNER_ID); 
+        CHILD_RESOURCE_NAMES.put("parameters", JobAttribute.PARAMETERS);
+        
+        CHILD_PARAM_NAMES.put(JobAttribute.EXECUTION_PHASE, JobAttribute.EXECUTION_PHASE.getValue().toUpperCase());
+        CHILD_PARAM_NAMES.put(JobAttribute.EXECUTION_DURATION, JobAttribute.EXECUTION_DURATION.getValue().toUpperCase());
+        CHILD_PARAM_NAMES.put(JobAttribute.DESTRUCTION_TIME, JobAttribute.DESTRUCTION_TIME.getValue().toUpperCase());
+        CHILD_PARAM_NAMES.put(JobAttribute.QUOTE, JobAttribute.QUOTE.getValue().toUpperCase());
+    }
     
     public JobAction() { 
         super();
-        try {
-            Context ctx = new InitialContext();
-            this.jobManager = (JobManager) ctx.lookup("AsyncServlet.jobManager");
-            if (jobManager != null) {
-                log.debug("found: " + jobManager.getClass().getName());
-            } else {
-                log.error("CONFIG: faled to find AsyncServlet.jobManager via JNDI");
+    }
+    
+    /**
+     * Initialisation that cannot be performed in the constructor. This method must
+     * be called at the start of doAction in all subclasses.
+     */
+    protected void init() {
+        if (jobManager == null) {
+            String jndiKey = restContext + ".jobManager"; // see AsyncServlet
+            try {
+                Context ctx = new InitialContext();
+                this.jobManager = (JobManager) ctx.lookup(jndiKey);
+                if (jobManager != null) {
+                    log.debug("found: " + jndiKey +"=" + jobManager.getClass().getName());
+                } else {
+                    log.error("BUG: failed to find " + jndiKey + " via JNDI");
+                }
+            } catch (NamingException ex) {
+                log.error("BUG: failed to find " + jndiKey + " via JNDI", ex);
             }
-        } catch (NamingException ex) {
-            log.error("CONFIG: failed to find AsyncServlet.jobManager via JNDI", ex);
         }
     }
     
@@ -131,6 +158,15 @@ public abstract class JobAction extends RestAction {
     @Override
     protected InlineContentHandler getInlineContentHandler() {
         return null;
+    }
+    
+    protected String getJobListURL() {
+        String ret = syncInput.getRequestURI();
+        String path = syncInput.getPath();
+        if (path != null) {
+            ret = ret.replace("/" + path, ""); // syncInput removes leading /
+        }
+        return ret;
     }
     
     protected String getJobID() {

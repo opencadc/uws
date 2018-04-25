@@ -186,11 +186,13 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
                         {
                             if ( Thread.interrupted() )
                                 return;
-                            Map.Entry<String,Job>me = iter.next();
-                            Date t = me.getValue().getDestructionTime();
-                            if ( now.compareTo(t) > 0 ) // destruction time has past
+                            Map.Entry<String,Job> me = iter.next();
+                            Job job = me.getValue();
+                            ExecutionPhase ep = job.getExecutionPhase();
+                            Date t = job.getDestructionTime();
+                            if (!ep.isActive() && now.compareTo(t) > 0 ) // not running and destruction time has past
                             {
-                                log.debug("delete: " + me.getKey() + ", destruction = " + t);
+                                log.debug("delete: " + me.getKey() + " " + ep.getValue() + " destruction = " + t);
                                 iter.remove();
                             }
                         }

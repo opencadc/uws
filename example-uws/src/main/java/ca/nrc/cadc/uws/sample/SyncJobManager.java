@@ -62,79 +62,43 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
-*
 ************************************************************************
 */
 
+package ca.nrc.cadc.uws.sample;
 
-package ca.nrc.cadc.uws;
 
+import ca.nrc.cadc.auth.X500IdentityManager;
+import ca.nrc.cadc.uws.server.JobExecutor;
+import ca.nrc.cadc.uws.server.MemoryJobPersistence;
+import ca.nrc.cadc.uws.server.RandomStringGenerator;
+import ca.nrc.cadc.uws.server.SimpleJobManager;
+import ca.nrc.cadc.uws.server.SyncJobExecutor;
+import ca.nrc.cadc.uws.server.ThreadPoolExecutor;
+import org.apache.log4j.Logger;
 
 /**
- * Job Attribute Enumeration to build an XML document.
+ *
+ * @author pdowler
  */
-public enum JobAttribute
-{
-    JOB("job"),
-    JOBS("jobs"),
-    JOB_REF("jobref"),
-    JOB_ID("jobId"),
-    EXECUTION_PHASE("phase"),
-    START_TIME("startTime"),
-    END_TIME("endTime"),
-    CREATION_TIME("creationTime"),
-    EXECUTION_DURATION("executionDuration"),
-    DESTRUCTION_TIME("destruction"),
-    QUOTE("quote"),
-    OWNER_ID("ownerId"),
-    RUN_ID("runId"),
-    PARAMETERS("parameters"),
-    PARAMETER("parameter"),
-    RESULTS("results"),
-    RESULT("result"),
-    ERROR_SUMMARY("errorSummary"),
-    ERROR_SUMMARY_MESSAGE("message"),
-    ERROR_SUMMARY_DETAIL_LINK("detail"),
-    ERROR_SUMMARY_TYPE("type"),
-    MESSAGE("message"),
-    DETAIL("detail"),
-    JOB_INFO("jobInfo"),
-    VERSION("version");
+public class SyncJobManager extends SimpleJobManager {
+    private static final Logger log = Logger.getLogger(SyncJobManager.class);
 
-
-    private String attributeName;
-
-
-    JobAttribute(final String attributeName)
-    {
-        this.attributeName = attributeName;
-    }
-
-    public static JobAttribute toValue(String s) {
-        for (JobAttribute j : values()) {
-            if (j.attributeName.equalsIgnoreCase(s)) {
-                return j;
-            }
-        }
-        throw new IllegalArgumentException("invalid value: " + s);
-    }
+    private static final long MEM_CLEANUP = 300*1000L;
+    private static final long MAX_DURATION = 300*1000L;
     
-    public String getValue() {
-        return attributeName;
-    }
-    
-    @Deprecated
-    public String getAttributeName()
-    {
-        return attributeName;
-    }
+    public SyncJobManager() { 
+        super();
+        MemoryJobPersistence jobPersist = new MemoryJobPersistence(new RandomStringGenerator(16), new X500IdentityManager(), MEM_CLEANUP);
 
-    public static boolean isValue(String v)
-    {
-        for (JobAttribute ja : values())
-            if (ja.attributeName.equalsIgnoreCase(v))
-                return true;
-        return false;
+        // this implementation spawns a new thread for every job:
+        //JobExecutor jobExec = new ThreadExecutor(jobPersist, HelloWorld.class);
+
+        // this implementation uses a thread pool (with 2 threads)
+        JobExecutor jobExec = new SyncJobExecutor(jobPersist, HelloWorld.class);
+
+        super.setJobPersistence(jobPersist);
+        super.setJobExecutor(jobExec);
+        super.setMaxExecDuration(MAX_DURATION);
     }
 }

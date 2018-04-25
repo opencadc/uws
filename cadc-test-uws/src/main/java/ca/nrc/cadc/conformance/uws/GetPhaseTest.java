@@ -108,7 +108,7 @@ public class GetPhaseTest extends AbstractUWSTest
     }
 
     @Test
-    public void testPhase()
+    public void testPhase() throws Throwable
     {
         try
         {
@@ -123,11 +123,10 @@ public class GetPhaseTest extends AbstractUWSTest
 
             log.info("GetPhaseTest.testPhase completed.");
         }
-        catch (Throwable t)
+        catch (Exception unexpected)
         {
-            log.error(t);
-            t.printStackTrace();
-            fail(t.getMessage());
+            log.error("unexpected exception", unexpected);
+            throw unexpected;
         }
     }
 
@@ -147,8 +146,9 @@ public class GetPhaseTest extends AbstractUWSTest
                 response.getText());
     }
 
-    @Test
-    public void testRunPhase()
+    // canot have a run test without knowing job params; the ones here are for the example-uws 
+    //@Test
+    public void testRunPhase() throws Throwable
     {
         try
         {
@@ -178,16 +178,15 @@ public class GetPhaseTest extends AbstractUWSTest
 
             log.info("GetPhaseTest.testRunPhase completed.");
         }
-        catch (Throwable t)
+        catch (Exception unexpected)
         {
-            log.error(t);
-            t.printStackTrace();
-            fail(t.getMessage());
+            log.error("unexpected exception", unexpected);
+            throw unexpected;
         }
     }
 
     @Test
-    public void testAbortPhase()
+    public void testAbortPhase() throws Throwable
     {
         try
         {
@@ -208,11 +207,10 @@ public class GetPhaseTest extends AbstractUWSTest
 
             log.info("GetPhaseTest.testAbortPhase completed.");
         }
-        catch (Throwable t)
+        catch (Exception unexpected)
         {
-            log.error(t);
-            t.printStackTrace();
-            fail(t.getMessage());
+            log.error("unexpected exception", unexpected);
+            throw unexpected;
         }
     }
 

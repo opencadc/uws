@@ -102,7 +102,7 @@ public class JobIdTest extends AbstractUWSTest
     }
 
     @Test
-    public void testJobID()
+    public void testJobID() throws Exception
     {
         try
         {
@@ -138,10 +138,10 @@ public class JobIdTest extends AbstractUWSTest
 
             log.info("JobIdTest.testJobId completed.");
         }
-        catch (Throwable t)
+        catch (Exception unexpected)
         {
-            log.error(t);
-            fail(t.getMessage());
+            log.error("unexpected exception", unexpected);
+            throw unexpected;
         }
     }
 

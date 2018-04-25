@@ -84,6 +84,7 @@ import org.jdom2.output.XMLOutputter;
 
 import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.xml.XmlUtil;
+import java.util.List;
 
 /**
  * Writes a Job as XML to an output.
@@ -146,6 +147,20 @@ public class JobWriter
         Document document = new Document(root);
         outputter.output(document, writer);
     }
+    
+    public void write(List<Parameter> params, OutputStream out)
+        throws IOException
+    {
+        write(params, new OutputStreamWriter(out));
+    }
+    
+    public void write(List<Parameter> params, Writer writer) throws IOException {
+        Element root = getRootElement(params);
+        XMLOutputter outputter = new XMLOutputter();
+        outputter.setFormat(Format.getPrettyFormat());
+        Document document = new Document(root);
+        outputter.output(document, writer);
+    }
 
     /**
      * Get an Element representing a job Element.
@@ -161,6 +176,14 @@ public class JobWriter
         return element;
     }
 
+    public Element getRootElement(List<Parameter> params) {
+        Element root = getParameters(params);
+        root.addNamespaceDeclaration(UWS.NS);
+        root.addNamespaceDeclaration(UWS.XLINK_NS);
+        root.setAttribute(JobAttribute.VERSION.getAttributeName(), UWS.XSD_VERSION);
+        return root;
+    }
+    
     /**
      * Create the root element of a job document.
      * @param job
@@ -183,7 +206,7 @@ public class JobWriter
         root.addContent(getCreationTime(job));
         root.addContent(getExecutionDuration(job));
         root.addContent(getDestruction(job));
-        root.addContent(getParameters(job));
+        root.addContent(getParameters(job.getParameterList()));
         root.addContent(getResults(job));
         Element errorSummary = getErrorSummary(job);
         if (errorSummary != null)
@@ -358,10 +381,10 @@ public class JobWriter
      *
      * @return The Job parameters Element.
      */
-    public Element getParameters(Job job)
+    public Element getParameters(List<Parameter> params)
     {
         Element element = new Element(JobAttribute.PARAMETERS.getAttributeName(), UWS.NS);
-        for (Parameter parameter : job.getParameterList())
+        for (Parameter parameter : params)
         {
             Element e = new Element(JobAttribute.PARAMETER.getAttributeName(), UWS.NS);
             e.setAttribute("id", parameter.getName());

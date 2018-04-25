@@ -107,7 +107,7 @@ public class HelloWorld implements JobRunner
     private static final Logger log = Logger.getLogger(HelloWorld.class);
 
     public static long MIN_RUNFOR = 500L;   // milliseconds
-    public static long MAX_RUNFOR = 10000L; // milliseconds
+    public static long MAX_RUNFOR = 60000L; // milliseconds
     
     public static String PASS   = "PASS";
     public static String RUNFOR = "RUNFOR";

@@ -68,6 +68,8 @@
 package ca.nrc.cadc.uws.web;
 
 
+import ca.nrc.cadc.date.DateUtil;
+import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.uws.ExecutionPhase;
 import ca.nrc.cadc.uws.Job;
@@ -75,6 +77,8 @@ import ca.nrc.cadc.uws.JobAttribute;
 import ca.nrc.cadc.uws.server.JobNotFoundException;
 import ca.nrc.cadc.uws.server.JobPersistenceException;
 import ca.nrc.cadc.uws.server.JobPhaseException;
+import java.text.DateFormat;
+import java.util.Date;
 import org.apache.log4j.Logger;
 
 /**
@@ -89,51 +93,98 @@ public class PostAction extends JobAction {
 
     @Override
     public void doAction() throws Exception {
+        super.init();
+
+        log.debug("START: " + syncInput.getPath());
         String jobID = getJobID();
-        String field = getJobField();
-        boolean redirect = true;
-        
-        if (jobID == null) {
-            // create
-            JobCreator jc = new JobCreator();
-            Job in = jc.create(syncInput);
-            Job job = jobManager.create(in);
-            jobID = job.getID();
-            redirect = true;
-        } else if (field == null && isDeleteAction()) {
-            jobManager.delete(jobID);
-        } else if (field != null) {
-            // uws job control
-            JobAttribute ja = JobAttribute.toValue(field);
-            switch (ja) {
-                case EXECUTION_PHASE:
-                    // start or stop job with PHASE=RUN|ABORT
-                    doPhaseChange(jobID);
-                    break;
-                //case DESTRUCTION_TIME:
-                //    break;
-                //case EXECUTION_DURATION:
-                //    break;
-                //case QUOTE:
-                //    break;
-                default:
-                    throw new UnsupportedOperationException("not implemented: UWS job control");
+        try {
+            String field = getJobField();
+            String redirectURL = getJobListURL() + "/" + jobID;
+
+            if (jobID == null) {
+                // create
+                JobCreator jc = new JobCreator();
+                Job in = jc.create(syncInput);
+                Job job = jobManager.create(in);
+                jobID = job.getID();
+                redirectURL = getJobListURL() + "/" + jobID;
+            } else if (field == null && isDeleteAction()) {
+                jobManager.delete(jobID);
+                redirectURL = getJobListURL();
+            } else if (field == null || field.equals("parameters")) {
+                // new job params
+                JobCreator jc = new JobCreator();
+                Job tmp = jc.create(syncInput);
+                jobManager.update(jobID, tmp.getParameterList());
+            } else { // field != null
+                // uws job control
+                Job job = jobManager.get(jobID);
+                DateFormat df = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
+                JobAttribute ja = CHILD_RESOURCE_NAMES.get(field);
+                if (field == null) {
+                    throw new ResourceNotFoundException("not found: " + field);
+                }
+                String param = CHILD_PARAM_NAMES.get(ja);
+                switch (ja) {
+                    case EXECUTION_PHASE:
+                        doPhaseChange(jobID);
+                        break;
+                    case DESTRUCTION_TIME:
+                        String dtv = syncInput.getParameter(param);
+                        if (dtv != null) {
+                            try {
+                                Date nv = df.parse(dtv);
+                                if (nv.compareTo(job.getDestructionTime()) < 0) {
+                                    job.setDestructionTime(nv);
+                                    jobManager.update(jobID, nv, job.getExecutionDuration(), job.getQuote());
+                                }
+                            } catch (Exception ex) {
+                                throw new IllegalArgumentException("invalid destruction time value (IVOA timestamp): " + dtv);
+                            }
+                        }
+                        break;
+                    case EXECUTION_DURATION:
+                        String edv = syncInput.getParameter(param);
+                        if (edv != null) {
+                            try {
+                                Long nv = new Long(edv);
+                                if (nv < job.getExecutionDuration()) {
+                                    job.setExecutionDuration(nv);
+                                    jobManager.update(jobID, job.getDestructionTime(), nv, job.getQuote());
+                                }
+                            } catch (Exception ex) {
+                                throw new IllegalArgumentException("invalid execution duration value (long): " + edv);
+                            }
+                        }
+                        break;
+                    case QUOTE:
+                        String qv = syncInput.getParameter(param);
+                        if (qv != null) {
+                            try {
+                                Date nv = df.parse(qv);
+                                if (nv.compareTo(job.getQuote()) < 0) {
+                                    job.setQuote(nv);
+                                    jobManager.update(jobID, job.getDestructionTime(), job.getExecutionDuration(), nv);
+                                }
+                            } catch (Exception ex) {
+                                throw new IllegalArgumentException("invalid destruction time value (IVOA timestamp): " + qv);
+                            }
+                        }
+                        break;
+                    default:
+                        throw new UnsupportedOperationException("not implemented: UWS job control");
+                }
             }
-        } else {
-            // new job params
-            JobCreator jc = new JobCreator();
-            Job tmp = jc.create(syncInput);
-            jobManager.update(jobID, tmp.getParameterList());
-        }
-        
-        if (redirect) {
-            String jobURL = syncInput.getRequestURI() + "/" + jobID;
-            log.debug("redirect: " + jobURL);
-            syncOutput.setHeader("Location", jobURL);
+            
+            log.debug("redirect: " + redirectURL);
+            syncOutput.setHeader("Location", redirectURL);
             syncOutput.setCode(303);
-        } else {
-            // TODO: remove this if never needed?
-            syncOutput.setCode(200);
+        } catch (JobNotFoundException ex) {
+            throw new ResourceNotFoundException("not found: " + jobID, ex);
+        } catch (JobPersistenceException ex) {
+            throw new RuntimeException("failed to access job pertsistence", ex);
+        } finally {
+            log.debug("DONE: " + syncInput.getPath());
         }
     }
     

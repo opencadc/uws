@@ -83,6 +83,7 @@ public class AsyncServlet extends RestServlet {
     private static final Logger log = Logger.getLogger(AsyncServlet.class);
 
     private JobManager jobManager;
+    private String jndiKey;
     
     public AsyncServlet() { 
         super();
@@ -91,7 +92,7 @@ public class AsyncServlet extends RestServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
-        String jndiKey = config.getServletName() + ".jobManager";
+        this.jndiKey = super.restContext + ".jobManager";
         String cname = config.getInitParameter(JobManager.class.getName());
         if (cname != null)
         {
@@ -103,10 +104,10 @@ public class AsyncServlet extends RestServlet {
                 // TODO: store in JNDI
                 Context ctx = new InitialContext();
                 try {
-                    ctx.unbind("AsyncServlet.jobManager");
+                    ctx.unbind(jndiKey);
                 } catch (NamingException ignore) {
                 }
-                ctx.bind("AsyncServlet.jobManager", jobManager);
+                ctx.bind(jndiKey, jobManager);
                 
                 log.info("create: " + jndiKey + " " + cname + " [OK]");
             }
@@ -121,13 +122,18 @@ public class AsyncServlet extends RestServlet {
     @Override
     public void destroy()
     {
-        try {
-            if (jobManager != null) {
+        if (jobManager != null) {
+            try {
                 jobManager.terminate();
+            } catch (Exception oops) {
+                log.error("failed to terminate Jobmanager", oops);
             }
-        }
-        catch (Throwable t) {
-            log.error("failed to terminate Jobmanager", t);
+            try {
+                Context ctx = new InitialContext();
+                ctx.unbind(jndiKey);
+            } catch (Exception oops) {
+                log.error("unbind failed during destroy", oops);
+            }
         }
         super.destroy();
     }

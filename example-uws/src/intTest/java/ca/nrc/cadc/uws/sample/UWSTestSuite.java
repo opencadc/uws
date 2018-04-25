@@ -65,76 +65,45 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
-
-
-package ca.nrc.cadc.uws;
-
-
-/**
- * Job Attribute Enumeration to build an XML document.
  */
-public enum JobAttribute
-{
-    JOB("job"),
-    JOBS("jobs"),
-    JOB_REF("jobref"),
-    JOB_ID("jobId"),
-    EXECUTION_PHASE("phase"),
-    START_TIME("startTime"),
-    END_TIME("endTime"),
-    CREATION_TIME("creationTime"),
-    EXECUTION_DURATION("executionDuration"),
-    DESTRUCTION_TIME("destruction"),
-    QUOTE("quote"),
-    OWNER_ID("ownerId"),
-    RUN_ID("runId"),
-    PARAMETERS("parameters"),
-    PARAMETER("parameter"),
-    RESULTS("results"),
-    RESULT("result"),
-    ERROR_SUMMARY("errorSummary"),
-    ERROR_SUMMARY_MESSAGE("message"),
-    ERROR_SUMMARY_DETAIL_LINK("detail"),
-    ERROR_SUMMARY_TYPE("type"),
-    MESSAGE("message"),
-    DETAIL("detail"),
-    JOB_INFO("jobInfo"),
-    VERSION("version");
 
+package ca.nrc.cadc.uws.sample;
 
-    private String attributeName;
+import ca.nrc.cadc.conformance.uws.DestructionTest;
+import ca.nrc.cadc.conformance.uws.ExecutionDurationTest;
+import ca.nrc.cadc.conformance.uws.GetPhaseTest;
+import ca.nrc.cadc.conformance.uws.JobIdTest;
+import ca.nrc.cadc.conformance.uws.JobInfoTest;
+import ca.nrc.cadc.conformance.uws.JobTest;
+import ca.nrc.cadc.conformance.uws.OwnerTest;
+import ca.nrc.cadc.conformance.uws.ParametersTest;
+import ca.nrc.cadc.conformance.uws.QuoteTest;
+import ca.nrc.cadc.conformance.uws.SchemaTest;
+import ca.nrc.cadc.util.Log4jInit;
+import org.apache.log4j.Level;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
 
+@RunWith(Suite.class)
+@Suite.SuiteClasses({
+        JobIdTest.class,
+        JobTest.class,
+        SchemaTest.class, 
+        GetPhaseTest.class,
 
-    JobAttribute(final String attributeName)
-    {
-        this.attributeName = attributeName;
-    }
+        DestructionTest.class,
+        ExecutionDurationTest.class,
+        QuoteTest.class,
+        OwnerTest.class,
 
-    public static JobAttribute toValue(String s) {
-        for (JobAttribute j : values()) {
-            if (j.attributeName.equalsIgnoreCase(s)) {
-                return j;
-            }
-        }
-        throw new IllegalArgumentException("invalid value: " + s);
-    }
+        //JobInfoTest.class, // this test requies an InlineContentHandler to parse/validate the input
     
-    public String getValue() {
-        return attributeName;
-    }
-    
-    @Deprecated
-    public String getAttributeName()
-    {
-        return attributeName;
-    }
+        ParametersTest.class
+    })
 
-    public static boolean isValue(String v)
-    {
-        for (JobAttribute ja : values())
-            if (ja.attributeName.equalsIgnoreCase(v))
-                return true;
-        return false;
+public class UWSTestSuite {
+
+    static {
+        Log4jInit.setLevel("ca.nrc.cadc.uws", Level.DEBUG);
     }
 }

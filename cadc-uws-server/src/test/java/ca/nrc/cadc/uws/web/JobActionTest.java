@@ -62,79 +62,26 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
-*
 ************************************************************************
 */
 
+package ca.nrc.cadc.uws.web;
 
-package ca.nrc.cadc.uws;
-
+import org.apache.log4j.Logger;
+import org.junit.Test;
 
 /**
- * Job Attribute Enumeration to build an XML document.
+ *
+ * @author pdowler
  */
-public enum JobAttribute
-{
-    JOB("job"),
-    JOBS("jobs"),
-    JOB_REF("jobref"),
-    JOB_ID("jobId"),
-    EXECUTION_PHASE("phase"),
-    START_TIME("startTime"),
-    END_TIME("endTime"),
-    CREATION_TIME("creationTime"),
-    EXECUTION_DURATION("executionDuration"),
-    DESTRUCTION_TIME("destruction"),
-    QUOTE("quote"),
-    OWNER_ID("ownerId"),
-    RUN_ID("runId"),
-    PARAMETERS("parameters"),
-    PARAMETER("parameter"),
-    RESULTS("results"),
-    RESULT("result"),
-    ERROR_SUMMARY("errorSummary"),
-    ERROR_SUMMARY_MESSAGE("message"),
-    ERROR_SUMMARY_DETAIL_LINK("detail"),
-    ERROR_SUMMARY_TYPE("type"),
-    MESSAGE("message"),
-    DETAIL("detail"),
-    JOB_INFO("jobInfo"),
-    VERSION("version");
+public class JobActionTest {
+    private static final Logger log = Logger.getLogger(JobActionTest.class);
 
-
-    private String attributeName;
-
-
-    JobAttribute(final String attributeName)
-    {
-        this.attributeName = attributeName;
-    }
-
-    public static JobAttribute toValue(String s) {
-        for (JobAttribute j : values()) {
-            if (j.attributeName.equalsIgnoreCase(s)) {
-                return j;
-            }
-        }
-        throw new IllegalArgumentException("invalid value: " + s);
+    public JobActionTest() { 
     }
     
-    public String getValue() {
-        return attributeName;
-    }
-    
-    @Deprecated
-    public String getAttributeName()
-    {
-        return attributeName;
-    }
-
-    public static boolean isValue(String v)
-    {
-        for (JobAttribute ja : values())
-            if (ja.attributeName.equalsIgnoreCase(v))
-                return true;
-        return false;
+    @Test
+    public void testInit() {
+        log.info("TODO");
     }
 }

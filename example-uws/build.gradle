@@ -13,6 +13,8 @@ repositories {
     }
 }
 
+apply from: 'intTest.gradle'
+
 sourceCompatibility = 1.7
 
 group = 'org.opencadc'
@@ -20,8 +22,8 @@ group = 'org.opencadc'
 version = '1000'
 
 war {
-    //archivename = project.name + '##' + project.version + '.war'
-    archivename = project.name + '.war'
+    //archiveName = project.name + '##' + project.version + '.war'
+    archiveName = project.name + '.war'
 }
 
 dependencies {
@@ -37,12 +39,8 @@ dependencies {
     compile 'org.opencadc:cadc-log:1.+'
     compile 'org.opencadc:cadc-util:1.+'
     compile 'org.opencadc:cadc-uws:1.+'
-    compile 'org.opencadc:cadc-uws-server:1.+'
-    compile 'org.opencadc:cadc-test-uws:1.+'
-
-    testCompile 'httpunit:httpunit:1.+'
-    testCompile 'junit:junit:4.+'
-    testCompile 'nekohtml:nekohtml:1.9.+'
-    testCompile 'rhino:js:1.6.+'
-    testCompile 'xmlunit:xmlunit:1.+'
+    compile 'org.opencadc:cadc-uws-server:[1.1,)'
+    
+    testCompile 'junit:junit:[4.0,5.0)'
+    intTestCompile 'org.opencadc:cadc-test-uws:[1.1,)'
 }

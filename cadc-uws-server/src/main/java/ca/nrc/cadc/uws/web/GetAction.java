@@ -69,17 +69,20 @@ package ca.nrc.cadc.uws.web;
 
 import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.io.ByteCountOutputStream;
+import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.uws.ExecutionPhase;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobAttribute;
 import ca.nrc.cadc.uws.JobWriter;
+import ca.nrc.cadc.uws.Parameter;
 import ca.nrc.cadc.uws.server.JobNotFoundException;
 import ca.nrc.cadc.uws.server.JobPersistenceException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.text.DateFormat;
+import java.util.List;
 import org.apache.log4j.Logger;
 
 /**
@@ -99,21 +102,34 @@ public class GetAction extends JobAction {
 
     @Override
     public void doAction() throws Exception {
-        String jobID = getJobID();
-        String field = getJobField();
-        log.debug("START: " + jobID + " " + field);
-        if (jobID == null) {
-            writeJobListing();
-        }
+        super.init();
 
-        if (field == null) {
-            Job job = doWait(jobID);
-            writeJob(job);
-        } else {
-            Job job = jobManager.get(jobID);
-            handleGetJobField(job, field);
+        log.debug("START: " + syncInput.getPath());
+        String jobID = getJobID();
+        try {
+            
+            if (jobID == null) {
+                writeJobListing();
+            }
+
+            String field = getJobField();
+            if (field == null) {
+                Job job = doWait(jobID);
+                writeJob(job);
+            } else if ("parameters".equals(field)) {
+                Job job = jobManager.get(jobID);
+                writeParameters(job.getParameterList());
+            } else {
+                Job job = jobManager.get(jobID);
+                handleGetJobField(job, field);
+            }
+        } catch (JobNotFoundException ex) {
+            throw new ResourceNotFoundException("not found: " + jobID, ex);
+        } catch (JobPersistenceException ex) {
+            throw new RuntimeException("failed to access job pertsistence", ex);
+        } finally {
+            log.debug("DONE: " + syncInput.getPath());
         }
-        log.debug("DONE: " + jobID + " " + field);
     }
 
     private void writeJobListing() throws IOException {
@@ -129,11 +145,21 @@ public class GetAction extends JobAction {
         w.write(job, bc);
         logInfo.setBytes(bc.getByteCount());
     }
+    
+    private void writeParameters(List<Parameter> params) throws IOException {
+        // TODO: content negotiation via accept header
+        JobWriter w = new JobWriter();
+        syncOutput.setHeader("Content-Type", "text/xml");
+        OutputStream os = syncOutput.getOutputStream();
+        ByteCountOutputStream bc = new ByteCountOutputStream(os);
+        w.write(params, os);
+        logInfo.setBytes(bc.getByteCount());
+    }
 
     private void handleGetJobField(Job job, String field) throws IOException {
         String value = null;
         DateFormat df = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
-        JobAttribute ja = JobAttribute.toValue(field);
+        JobAttribute ja = CHILD_RESOURCE_NAMES.get(field);
         switch (ja) {
             case DESTRUCTION_TIME:
                 value = df.format(job.getDestructionTime());
@@ -158,7 +184,7 @@ public class GetAction extends JobAction {
         OutputStream os = syncOutput.getOutputStream();
         ByteCountOutputStream bc = new ByteCountOutputStream(os);
         PrintWriter w = new PrintWriter(bc);
-        w.println(value);
+        w.print(value);
         w.flush();
         logInfo.setBytes(bc.getByteCount());
     }
