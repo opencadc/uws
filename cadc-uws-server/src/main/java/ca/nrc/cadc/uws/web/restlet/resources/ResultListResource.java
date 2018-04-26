@@ -90,7 +90,7 @@ public class ResultListResource extends BaseJobResource
     protected void buildXML(Document document)
     {
         JobWriter jobWriter = new JobWriter();
-        document.addContent(jobWriter.getResults(job));
+        document.addContent(jobWriter.getResults(job.getResultsList()));
     }
 
 }

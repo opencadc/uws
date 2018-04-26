@@ -67,7 +67,10 @@ public class JobCreator
             // TODO: Content -> alter parameters (eg UPLOAD=name,inline to UPLOAD=name,lcoal-url)
             throw new UnsupportedOperationException("stream content: " + cname);
         }
+        
+        job.setRequestPath(input.getRequestPath());
         job.setRemoteIP(input.getClientIP());
+        log.warn("created job: requestPath=" + job.getRequestPath() + " clientIP="+job.getRemoteIP());
         return job;
     }
     

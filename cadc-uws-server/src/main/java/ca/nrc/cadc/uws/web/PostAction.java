@@ -172,7 +172,7 @@ public class PostAction extends JobAction {
                         }
                         break;
                     default:
-                        throw new UnsupportedOperationException("not implemented: UWS job control");
+                        throw new IllegalArgumentException("not modifiable: " + field);
                 }
             }
             
@@ -192,13 +192,12 @@ public class PostAction extends JobAction {
         String nep = syncInput.getParameter("PHASE");
         boolean run = "RUN".equalsIgnoreCase(nep);
         boolean abort = "ABORT".equalsIgnoreCase(nep);
-        // check
-        Job job = jobManager.get(jobID);
-        ExecutionPhase ep = job.getExecutionPhase();
         if (abort) {
             jobManager.abort(jobID);
         } else if (run) {
-            jobManager.execute(jobID);
+            Job job = jobManager.get(jobID);
+            job.setProtocol(syncInput.getProtocol());
+            jobManager.execute(job);
         } else {
             throw new IllegalArgumentException("invalid PHASE value: " + nep);
         }

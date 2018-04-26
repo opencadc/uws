@@ -76,6 +76,7 @@ import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobAttribute;
 import ca.nrc.cadc.uws.JobWriter;
 import ca.nrc.cadc.uws.Parameter;
+import ca.nrc.cadc.uws.Result;
 import ca.nrc.cadc.uws.server.JobNotFoundException;
 import ca.nrc.cadc.uws.server.JobPersistenceException;
 import java.io.IOException;
@@ -119,6 +120,27 @@ public class GetAction extends JobAction {
             } else if ("parameters".equals(field)) {
                 Job job = jobManager.get(jobID);
                 writeParameters(job.getParameterList());
+            } else if ("results".equals(field)) {
+                Job job = jobManager.get(jobID);
+                String resultID = getJobResultID();
+                if (resultID == null) {
+                    writeResults(job.getResultsList());
+                } else {
+                    boolean found = false;
+                    for (Result r : job.getResultsList()) {
+                        if (resultID.equals(r.getName())) {
+                            String redirectURL = r.getURI().toASCIIString();
+                            log.debug("redirect: " + redirectURL);
+                            syncOutput.setHeader("Location", redirectURL);
+                            syncOutput.setCode(303);
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        throw new ResourceNotFoundException("result not found: " + resultID);
+                    }
+                }
             } else {
                 Job job = jobManager.get(jobID);
                 handleGetJobField(job, field);
@@ -152,7 +174,17 @@ public class GetAction extends JobAction {
         syncOutput.setHeader("Content-Type", "text/xml");
         OutputStream os = syncOutput.getOutputStream();
         ByteCountOutputStream bc = new ByteCountOutputStream(os);
-        w.write(params, os);
+        w.writeParametersDoc(params, os);
+        logInfo.setBytes(bc.getByteCount());
+    }
+    
+    private void writeResults(List<Result> params) throws IOException {
+        // TODO: content negotiation via accept header
+        JobWriter w = new JobWriter();
+        syncOutput.setHeader("Content-Type", "text/xml");
+        OutputStream os = syncOutput.getOutputStream();
+        ByteCountOutputStream bc = new ByteCountOutputStream(os);
+        w.writeResultsDoc(params, os);
         logInfo.setBytes(bc.getByteCount());
     }
 
@@ -177,7 +209,7 @@ public class GetAction extends JobAction {
                 value = job.getOwnerID();
                 break;
             default:
-                throw new UnsupportedOperationException("not implemented: result listing");
+                throw new UnsupportedOperationException("get " + field);
         }
 
         syncOutput.setHeader("Content-Type", "text/plain");
