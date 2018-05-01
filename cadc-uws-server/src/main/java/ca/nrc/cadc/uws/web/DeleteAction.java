@@ -69,8 +69,10 @@ package ca.nrc.cadc.uws.web;
 
 
 import ca.nrc.cadc.net.ResourceNotFoundException;
+import ca.nrc.cadc.rest.RestAction;
 import ca.nrc.cadc.uws.server.JobNotFoundException;
 import ca.nrc.cadc.uws.server.JobPersistenceException;
+import java.security.AccessControlException;
 import org.apache.log4j.Logger;
 
 /**
@@ -87,7 +89,15 @@ public class DeleteAction extends JobAction {
     public void doAction() throws Exception {
         super.init();
 
-        log.debug("START: " + syncInput.getPath());
+        log.debug("START: " + syncInput.getPath() + "[" + readable + "," + writable + "]");
+        if (!writable) {
+            String cause = RestAction.STATE_OFFLINE_MSG;
+            if (readable) {
+                cause = RestAction.STATE_READ_ONLY_MSG;
+            }
+            throw new AccessControlException("cannot delete job: " + cause);
+        }
+        
         String jobID = getJobID();
         try {
             if (jobID == null) {

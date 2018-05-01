@@ -67,13 +67,18 @@
 
 package ca.nrc.cadc.uws.web;
 
+import ca.nrc.cadc.auth.AuthMethod;
+import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.io.ByteCountOutputStream;
 import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.net.TransientException;
+import ca.nrc.cadc.rest.RestAction;
 import ca.nrc.cadc.uws.ExecutionPhase;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobAttribute;
+import ca.nrc.cadc.uws.JobListWriter;
+import ca.nrc.cadc.uws.JobRef;
 import ca.nrc.cadc.uws.JobWriter;
 import ca.nrc.cadc.uws.Parameter;
 import ca.nrc.cadc.uws.Result;
@@ -82,8 +87,14 @@ import ca.nrc.cadc.uws.server.JobPersistenceException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.security.AccessControlException;
 import java.text.DateFormat;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
+import javax.security.auth.Subject;
 import org.apache.log4j.Logger;
 
 /**
@@ -105,45 +116,48 @@ public class GetAction extends JobAction {
     public void doAction() throws Exception {
         super.init();
 
-        log.debug("START: " + syncInput.getPath());
+        log.debug("START: " + syncInput.getPath() + "[" + readable + "," + writable + "]");
+        if (!readable) {
+            throw new AccessControlException(RestAction.STATE_OFFLINE_MSG);
+        }
+        
         String jobID = getJobID();
         try {
-            
             if (jobID == null) {
                 writeJobListing();
-            }
-
-            String field = getJobField();
-            if (field == null) {
-                Job job = doWait(jobID);
-                writeJob(job);
-            } else if ("parameters".equals(field)) {
-                Job job = jobManager.get(jobID);
-                writeParameters(job.getParameterList());
-            } else if ("results".equals(field)) {
-                Job job = jobManager.get(jobID);
-                String resultID = getJobResultID();
-                if (resultID == null) {
-                    writeResults(job.getResultsList());
-                } else {
-                    boolean found = false;
-                    for (Result r : job.getResultsList()) {
-                        if (resultID.equals(r.getName())) {
-                            String redirectURL = r.getURI().toASCIIString();
-                            log.debug("redirect: " + redirectURL);
-                            syncOutput.setHeader("Location", redirectURL);
-                            syncOutput.setCode(303);
-                            found = true;
-                            break;
+            } else {
+                String field = getJobField();
+                if (field == null) {
+                    Job job = doWait(jobID);
+                    writeJob(job);
+                } else if ("parameters".equals(field)) {
+                    Job job = jobManager.get(jobID);
+                    writeParameters(job.getParameterList());
+                } else if ("results".equals(field)) {
+                    Job job = jobManager.get(jobID);
+                    String resultID = getJobResultID();
+                    if (resultID == null) {
+                        writeResults(job.getResultsList());
+                    } else {
+                        boolean found = false;
+                        for (Result r : job.getResultsList()) {
+                            if (resultID.equals(r.getName())) {
+                                String redirectURL = r.getURI().toASCIIString();
+                                log.debug("redirect: " + redirectURL);
+                                syncOutput.setHeader("Location", redirectURL);
+                                syncOutput.setCode(303);
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            throw new ResourceNotFoundException("result not found: " + resultID);
                         }
                     }
-                    if (!found) {
-                        throw new ResourceNotFoundException("result not found: " + resultID);
-                    }
+                } else {
+                    Job job = jobManager.get(jobID);
+                    handleGetJobField(job, field);
                 }
-            } else {
-                Job job = jobManager.get(jobID);
-                handleGetJobField(job, field);
             }
         } catch (JobNotFoundException ex) {
             throw new ResourceNotFoundException("not found: " + jobID, ex);
@@ -154,8 +168,60 @@ public class GetAction extends JobAction {
         }
     }
 
-    private void writeJobListing() throws IOException {
-        throw new UnsupportedOperationException("get job listing");
+    private void writeJobListing() throws IOException, JobPersistenceException, TransientException {
+        Subject caller = AuthenticationUtil.getCurrentSubject();
+        AuthMethod am = AuthenticationUtil.getAuthMethod(caller);
+        if (am == null || AuthMethod.ANON.equals(am)) {
+            throw new AccessControlException("anonymous job listing not permitted");
+        }
+
+        List<String> phaseParams = syncInput.getParameters("PHASE");
+        List<ExecutionPhase> phaseList = new ArrayList<ExecutionPhase>();
+        if (phaseParams != null) {
+            for (String es : phaseParams) {
+                try {
+                    phaseList.add(ExecutionPhase.toValue(es));
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException("invalid UWS execution phase: PHASE=" + es);
+                }
+            }
+        }
+
+        String lastParam = syncInput.getParameter("LAST");
+        Integer lastInt = null;
+        if (lastParam != null) {
+            try {
+                lastInt = Integer.parseInt(lastParam);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("invalid integer: LAST=" + lastParam);
+            }
+
+            if (lastInt < 1) {
+                throw new IllegalArgumentException("invalid integer: LAST=" + lastParam);
+            }
+        }
+
+        String afterParam = syncInput.getParameter("AFTER");
+        Date afterDate = null;
+        if (afterParam != null) {
+            DateFormat df = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
+            try {
+                afterDate = df.parse(afterParam);
+            } catch (ParseException e) {
+                throw new IllegalArgumentException("invalid IVOA timestamp: AFTER=" + afterParam);
+            }
+        }
+        String rp = syncInput.getRequestPath();
+        int i = rp.lastIndexOf("/");
+        rp = rp.substring(0, i);
+        log.debug("job requestPath to match: " + rp);
+        Iterator<JobRef> jobs = jobManager.iterator(rp, phaseList, afterDate, lastInt);
+        JobListWriter w = new JobListWriter();
+        syncOutput.setHeader("Content-Type", "text/xml");
+        OutputStream os = syncOutput.getOutputStream();
+        ByteCountOutputStream bc = new ByteCountOutputStream(os);
+        w.write(jobs, os);
+        logInfo.setBytes(bc.getByteCount());
     }
 
     private void writeJob(Job job) throws IOException {
@@ -167,7 +233,7 @@ public class GetAction extends JobAction {
         w.write(job, bc);
         logInfo.setBytes(bc.getByteCount());
     }
-    
+
     private void writeParameters(List<Parameter> params) throws IOException {
         // TODO: content negotiation via accept header
         JobWriter w = new JobWriter();
@@ -177,7 +243,7 @@ public class GetAction extends JobAction {
         w.writeParametersDoc(params, os);
         logInfo.setBytes(bc.getByteCount());
     }
-    
+
     private void writeResults(List<Result> params) throws IOException {
         // TODO: content negotiation via accept header
         JobWriter w = new JobWriter();
