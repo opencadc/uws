@@ -45,8 +45,6 @@ public class JobCreator
     protected static final String TEXT_XML = "text/xml";
     protected static final String MULTIPART = "multipart/form-data";
 
-    protected InlineContentHandler inlineContentHandler;
-
     public JobCreator() {
     }
 
@@ -70,7 +68,6 @@ public class JobCreator
         
         job.setRequestPath(input.getRequestPath());
         job.setRemoteIP(input.getClientIP());
-        log.warn("created job: requestPath=" + job.getRequestPath() + " clientIP="+job.getRemoteIP());
         return job;
     }
     
@@ -116,11 +113,11 @@ public class JobCreator
                 {
                     ServletFileUpload upload = new ServletFileUpload();
                     FileItemIterator itemIterator = upload.getItemIterator(request);
-                    processMultiPart(job, itemIterator);
+                    processMultiPart(job, itemIterator, inlineContentHandler);
                 }
                 else
                 {
-                    processStream(null, contentType, request.getInputStream());
+                    processStream(null, contentType, request.getInputStream(), inlineContentHandler);
                 }
 
                 inlineContentHandler.setParameterList(job.getParameterList());
@@ -212,7 +209,7 @@ public class JobCreator
         }
     }
 
-    protected void processMultiPart(Job job, FileItemIterator itemIterator)
+    protected void processMultiPart(Job job, FileItemIterator itemIterator, InlineContentHandler ich)
         throws FileUploadException, IOException
     {
         while (itemIterator.hasNext())
@@ -223,14 +220,14 @@ public class JobCreator
             if (item.isFormField())
                 processParameter(job, name, new String[] { Streams.asString(stream) });
             else
-                processStream(name, item.getContentType(), stream);
+                processStream(name, item.getContentType(), stream, ich);
         }
     }
 
-    protected void processStream(String name, String contentType, InputStream inputStream)
+    protected void processStream(String name, String contentType, InputStream inputStream, InlineContentHandler ich)
         throws IOException
     {
-        inlineContentHandler.accept(name, contentType, inputStream);
+        ich.accept(name, contentType, inputStream);
     }
 
 }
