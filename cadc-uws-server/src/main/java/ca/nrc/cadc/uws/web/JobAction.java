@@ -119,7 +119,7 @@ public abstract class JobAction extends RestAction {
      */
     protected void init() {
         if (jobManager == null) {
-            String jndiKey = restEndpoint + ".jobManager"; // see AsyncServlet
+            String jndiKey = componentID + ".jobManager"; // see AsyncServlet
             try {
                 Context ctx = new InitialContext();
                 this.jobManager = (JobManager) ctx.lookup(jndiKey);

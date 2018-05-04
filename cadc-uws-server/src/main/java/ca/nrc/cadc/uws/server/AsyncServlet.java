@@ -92,7 +92,7 @@ public class AsyncServlet extends RestServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
-        this.jndiKey = super.restEndpoint + ".jobManager";
+        this.jndiKey = componentID + ".jobManager";
         String cname = config.getInitParameter(JobManager.class.getName());
         initJobManager(cname);
     }
@@ -119,7 +119,7 @@ public class AsyncServlet extends RestServlet {
                 log.error("create: " + jndiKey + " " + cname + " [FAILED]", ex);
             }
         } else {
-            log.error("CONFIG: no JobManager configured in " + restEndpoint);
+            log.error("CONFIG: no JobManager configured in " + componentID);
         }
     }
     
