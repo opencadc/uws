@@ -139,6 +139,8 @@ public abstract class JobAction extends RestAction {
         if (jobID == null) {
             String path = syncInput.getPath();
             if (path != null) {
+                // override RestAction default path logging
+                logInfo.setPath(syncInput.getComponentPath() + "/" + path);
                 String[] parts = path.split("/");
                 if (parts.length > 0) {
                     this.jobID = parts[0];
