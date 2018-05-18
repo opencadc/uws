@@ -190,7 +190,7 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
                             Job job = me.getValue();
                             ExecutionPhase ep = job.getExecutionPhase();
                             Date t = job.getDestructionTime();
-                            if (!ep.isActive() && now.compareTo(t) > 0 ) // not running and destruction time has past
+                            if (now.after(t))
                             {
                                 log.debug("delete: " + me.getKey() + " " + ep.getValue() + " destruction = " + t);
                                 iter.remove();

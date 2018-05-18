@@ -105,7 +105,6 @@ public class AsyncServlet extends RestServlet {
                 Class<JobManager> clazz = (Class<JobManager>) Class.forName(cname);
                 this.jobManager = clazz.newInstance();
                 
-                // TODO: store in JNDI
                 Context ctx = new InitialContext();
                 try {
                     ctx.unbind(jndiKey);

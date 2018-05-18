@@ -70,6 +70,7 @@
 package ca.nrc.cadc.conformance.uws2;
 
 
+import ca.nrc.cadc.auth.AuthMethod;
 import ca.nrc.cadc.conformance.uws.TestProperties;
 import java.net.URI;
 import org.apache.log4j.Logger;

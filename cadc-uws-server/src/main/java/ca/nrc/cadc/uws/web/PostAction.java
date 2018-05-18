@@ -130,7 +130,7 @@ public class PostAction extends JobAction {
                 Job job = jobManager.get(jobID);
                 DateFormat df = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
                 JobAttribute ja = CHILD_RESOURCE_NAMES.get(field);
-                if (field == null) {
+                if (ja == null) {
                     throw new ResourceNotFoundException("not found: " + field);
                 }
                 String param = CHILD_PARAM_NAMES.get(ja);
