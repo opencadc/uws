@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2018.                            (c) 2018.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,67 +62,43 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
 */
 
-package ca.nrc.cadc.conformance.uws2;
+package ca.nrc.cadc.uws.sample;
 
 
-import ca.nrc.cadc.auth.AuthMethod;
-import ca.nrc.cadc.conformance.uws.TestProperties;
-import ca.nrc.cadc.reg.Standards;
-import java.net.URI;
-import java.net.URL;
+import ca.nrc.cadc.auth.X500IdentityManager;
+import ca.nrc.cadc.uws.server.JobExecutor;
+import ca.nrc.cadc.uws.server.MemoryJobPersistence;
+import ca.nrc.cadc.uws.server.RandomStringGenerator;
+import ca.nrc.cadc.uws.server.SimpleJobManager;
+import ca.nrc.cadc.uws.server.SyncJobExecutor;
+import ca.nrc.cadc.uws.server.ThreadPoolExecutor;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
 
 /**
- * Async test runner. This class iterates through the TestProperties, creates,
- * and executes each test job in async mode. Subclasses should override
- * validateResponse() to check (make assertions) as this class does no checking.
- * 
+ *
  * @author pdowler
  */
-public class AsyncUWSTest extends AbstractUWSTest2
-{
-    private static final Logger log = Logger.getLogger(AsyncUWSTest.class);
+public class SyncJobManager extends SimpleJobManager {
+    private static final Logger log = Logger.getLogger(SyncJobManager.class);
 
-    private final long timeout;
+    private static final long MEM_CLEANUP = 300*1000L;
+    private static final long MAX_DURATION = 300*1000L;
     
-    public AsyncUWSTest(URI resourceID, URI standardID, long timeout) {
-        super(resourceID, standardID);
-        this.timeout = timeout;
+    public SyncJobManager() { 
+        super();
+        MemoryJobPersistence jobPersist = new MemoryJobPersistence(new RandomStringGenerator(16), new X500IdentityManager(), MEM_CLEANUP);
+
+        // this implementation spawns a new thread for every job:
+        //JobExecutor jobExec = new ThreadExecutor(jobPersist, HelloWorld.class);
+
+        // this implementation uses a thread pool (with 2 threads)
+        JobExecutor jobExec = new SyncJobExecutor(jobPersist, HelloWorld.class);
+
+        super.setJobPersistence(jobPersist);
+        super.setJobExecutor(jobExec);
+        super.setMaxExecDuration(MAX_DURATION);
     }
-    
-    public AsyncUWSTest(URI resourceID, URI standardID, URI interfaceType, long timeout) 
-    { 
-        super(resourceID, standardID, interfaceType);
-        this.timeout = timeout;
-    }
-    
-    @Test
-    public void testJob()
-    {
-        try
-        {
-            for ( TestProperties tp : super.testPropertiesList.propertiesList)
-            {
-                JobResultWrapper result = new JobResultWrapper(tp.filename);
-                
-                URL jobURL = createAsyncParamJob(tp.filename, tp.getParameters());
-                result.job = executeAsyncJob(tp.filename, jobURL, timeout);
-                
-                validateResponse(result);
-            }
-        }
-        catch(Exception unexpected)
-        {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
-    }
-    
 }

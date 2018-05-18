@@ -99,9 +99,12 @@ public class RestletJobCreator extends JobCreator
 {
     private final static Logger log = Logger.getLogger(RestletJobCreator.class);
 
+    private InlineContentHandler inlineContentHandler;
+    
     public RestletJobCreator(InlineContentHandler inlineContentHandler)
     {
-        super(inlineContentHandler);
+        super();
+        this.inlineContentHandler = inlineContentHandler;
     }
 
     public Job create(Representation entity)
@@ -133,11 +136,11 @@ public class RestletJobCreator extends JobCreator
             {
                 RestletFileUpload upload = new RestletFileUpload();
                 FileItemIterator itemIterator = upload.getItemIterator(entity);
-                processMultiPart(job, itemIterator);
+                processMultiPart(job, itemIterator, inlineContentHandler);
             }
             else
             {
-                processStream(null, entity.getMediaType().getName(), entity.getStream());
+                processStream(null, entity.getMediaType().getName(), entity.getStream(), inlineContentHandler);
             }
             inlineContentHandler.setParameterList(job.getParameterList());
             job.setParameterList(inlineContentHandler.getParameterList());

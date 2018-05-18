@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2018.                            (c) 2018.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -111,7 +111,20 @@ public enum JobAttribute
         this.attributeName = attributeName;
     }
 
-
+    public static JobAttribute toValue(String s) {
+        for (JobAttribute j : values()) {
+            if (j.attributeName.equalsIgnoreCase(s)) {
+                return j;
+            }
+        }
+        throw new IllegalArgumentException("invalid value: " + s);
+    }
+    
+    public String getValue() {
+        return attributeName;
+    }
+    
+    @Deprecated
     public String getAttributeName()
     {
         return attributeName;
@@ -120,7 +133,7 @@ public enum JobAttribute
     public static boolean isValue(String v)
     {
         for (JobAttribute ja : values())
-            if (ja.getAttributeName().equalsIgnoreCase(v))
+            if (ja.attributeName.equalsIgnoreCase(v))
                 return true;
         return false;
     }

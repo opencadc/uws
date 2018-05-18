@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2018.                            (c) 2018.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,67 +62,82 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
 */
 
-package ca.nrc.cadc.conformance.uws2;
+package ca.nrc.cadc.uws.server;
 
-
-import ca.nrc.cadc.auth.AuthMethod;
-import ca.nrc.cadc.conformance.uws.TestProperties;
-import ca.nrc.cadc.reg.Standards;
-import java.net.URI;
-import java.net.URL;
+import ca.nrc.cadc.rest.RestServlet;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
 
 /**
- * Async test runner. This class iterates through the TestProperties, creates,
- * and executes each test job in async mode. Subclasses should override
- * validateResponse() to check (make assertions) as this class does no checking.
- * 
+ *
  * @author pdowler
  */
-public class AsyncUWSTest extends AbstractUWSTest2
-{
-    private static final Logger log = Logger.getLogger(AsyncUWSTest.class);
+public class AsyncServlet extends RestServlet {
+    private static final Logger log = Logger.getLogger(AsyncServlet.class);
 
-    private final long timeout;
+    private JobManager jobManager;
+    private String jndiKey;
     
-    public AsyncUWSTest(URI resourceID, URI standardID, long timeout) {
-        super(resourceID, standardID);
-        this.timeout = timeout;
+    public AsyncServlet() { 
+        super();
+    }
+
+    @Override
+    public void init(ServletConfig config) throws ServletException {
+        super.init(config);
+        this.jndiKey = componentID + ".jobManager";
+        String cname = config.getInitParameter(JobManager.class.getName());
+        initJobManager(cname);
     }
     
-    public AsyncUWSTest(URI resourceID, URI standardID, URI interfaceType, long timeout) 
-    { 
-        super(resourceID, standardID, interfaceType);
-        this.timeout = timeout;
-    }
-    
-    @Test
-    public void testJob()
-    {
-        try
+    protected void initJobManager(String cname) {
+        if (cname != null)
         {
-            for ( TestProperties tp : super.testPropertiesList.propertiesList)
+            try
             {
-                JobResultWrapper result = new JobResultWrapper(tp.filename);
+                Class<JobManager> clazz = (Class<JobManager>) Class.forName(cname);
+                this.jobManager = clazz.newInstance();
                 
-                URL jobURL = createAsyncParamJob(tp.filename, tp.getParameters());
-                result.job = executeAsyncJob(tp.filename, jobURL, timeout);
+                Context ctx = new InitialContext();
+                try {
+                    ctx.unbind(jndiKey);
+                } catch (NamingException ignore) {
+                    log.debug("unbind previous JobManager failed... ignoring");
+                }
+                ctx.bind(jndiKey, jobManager);
                 
-                validateResponse(result);
+                log.info("create: " + jndiKey + " " + cname + " [OK]");
+            } catch(Exception ex) {
+                log.error("create: " + jndiKey + " " + cname + " [FAILED]", ex);
+            }
+        } else {
+            log.error("CONFIG: no JobManager configured in " + componentID);
+        }
+    }
+    
+    @Override
+    public void destroy()
+    {
+        if (jobManager != null) {
+            try {
+                jobManager.terminate();
+            } catch (Exception oops) {
+                log.error("failed to terminate Jobmanager", oops);
+            }
+            try {
+                Context ctx = new InitialContext();
+                ctx.unbind(jndiKey);
+            } catch (Exception oops) {
+                log.error("unbind failed during destroy", oops);
             }
         }
-        catch(Exception unexpected)
-        {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
+        super.destroy();
     }
-    
 }

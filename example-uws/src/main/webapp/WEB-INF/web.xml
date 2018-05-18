@@ -1,9 +1,11 @@
-/*
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
 ************************************************************************
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2018.                            (c) 2018.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -65,32 +67,114 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+-->
+	
+<!DOCTYPE web-app
+    PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.2//EN"
+    "http://java.sun.com/j2ee/dtds/web-app_2_2.dtd">
 
+<web-app>
+    <display-name>example-uws</display-name>
+    
+    <welcome-file-list>index.jsp</welcome-file-list>
 
-package ca.nrc.cadc.uws.web.restlet.resources;
+     <servlet>
+        <servlet-name>logControl</servlet-name>
+        <servlet-class>ca.nrc.cadc.log.LogControlServlet</servlet-class>
+        <init-param>
+            <param-name>logLevel</param-name>
+            <param-value>info</param-value>
+        </init-param>
+        <init-param>
+            <param-name>logLevelPackages</param-name>
+            <param-value>
+                ca.nrc.cadc.rest
+                ca.nrc.cadc.uws
+            </param-value>
+        </init-param>
+      <load-on-startup>1</load-on-startup>
+    </servlet>
 
+    <!-- synchronous access to JobManager service -->
+    <servlet>
+        <load-on-startup>2</load-on-startup>
+      <servlet-name>SyncServlet</servlet-name>
+      <servlet-class>ca.nrc.cadc.uws.server.SyncServlet</servlet-class>
+      <init-param>
+          <param-name>ca.nrc.cadc.uws.server.JobManager</param-name>
+          <param-value>ca.nrc.cadc.uws.sample.SyncJobManager</param-value>
+      </init-param>
+      <init-param>
+          <param-name>ca.nrc.cadc.uws.server.SyncServlet.execOnGET</param-name>
+          <param-value>true</param-value>
+      </init-param>
+      <init-param>
+          <param-name>ca.nrc.cadc.uws.server.SyncServlet.execOnPOST</param-name>
+          <param-value>false</param-value>
+      </init-param>
+      <init-param>
+          <param-name>ca.nrc.cadc.uws.web.InlineContentHandler</param-name>
+          <param-value>ca.nrc.cadc.uws.sample.SampleInlineContentHandler</param-value>
+      </init-param>
+    </servlet>
 
-import org.jdom2.Document;
+    <!-- asynchronous access to JobManager service -->
+    <servlet>
+        <load-on-startup>2</load-on-startup>
+        <servlet-name>AsyncServlet</servlet-name>
+        <servlet-class>ca.nrc.cadc.uws.server.AsyncServlet</servlet-class>
+        <init-param>
+          <param-name>ca.nrc.cadc.uws.server.JobManager</param-name>
+          <param-value>ca.nrc.cadc.uws.sample.AsyncJobManager</param-value>
+        </init-param>
+        <!-- actions -->
+        <init-param>
+            <param-name>get</param-name>
+            <param-value>ca.nrc.cadc.uws.web.GetAction</param-value>
+        </init-param>
+        <init-param>
+            <param-name>post</param-name>
+            <param-value>ca.nrc.cadc.uws.web.PostAction</param-value>
+        </init-param>
+        <init-param>
+            <param-name>delete</param-name>
+            <param-value>ca.nrc.cadc.uws.web.DeleteAction</param-value>
+        </init-param>
+    </servlet>
+    
+    <!--
+    <servlet>
+        <load-on-startup>2</load-on-startup>
+        <servlet-name>AsyncServlet</servlet-name>
+        <servlet-class>org.restlet.ext.servlet.ServerServlet</servlet-class>
+        <init-param>
+            <param-name>org.restlet.application</param-name>
+            <param-value>ca.nrc.cadc.uws.web.restlet.UWSAsyncApplication</param-value>
+        </init-param>
+        <init-param>
+            <param-name>ca.nrc.cadc.uws.server.JobManager</param-name>
+            <param-value>ca.nrc.cadc.uws.sample.SampleJobManager</param-value>
+        </init-param>
+        <init-param>
+            <param-name>ca.nrc.cadc.uws.web.InlineContentHandler</param-name>
+            <param-value>ca.nrc.cadc.uws.sample.SampleInlineContentHandler</param-value>
+      </init-param>
+    </servlet>
+    -->
+    
 
-import ca.nrc.cadc.uws.JobWriter;
+    <servlet-mapping>
+            <servlet-name>SyncServlet</servlet-name>
+            <url-pattern>/sync/*</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+            <servlet-name>AsyncServlet</servlet-name>
+            <url-pattern>/async/*</url-pattern>
+    </servlet-mapping>
+	
+    <servlet-mapping>
+        <servlet-name>logControl</servlet-name>
+        <url-pattern>/logControl</url-pattern>
+    </servlet-mapping>
 
-
-/**
- * Resource to handle the Result List.
- */
-public class ResultListResource extends BaseJobResource
-{
-    /**
-     * Assemble the XML for this Resource's Representation into the given
-     * Document.
-     *
-     * @param document The Document to build up.
-     */
-    protected void buildXML(Document document)
-    {
-        JobWriter jobWriter = new JobWriter();
-        document.addContent(jobWriter.getResults(job.getResultsList()));
-    }
-
-}
+</web-app>

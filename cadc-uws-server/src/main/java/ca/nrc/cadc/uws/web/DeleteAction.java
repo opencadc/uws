@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2018.                            (c) 2018.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,67 +62,65 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
 */
 
-package ca.nrc.cadc.conformance.uws2;
+package ca.nrc.cadc.uws.web;
 
 
-import ca.nrc.cadc.auth.AuthMethod;
-import ca.nrc.cadc.conformance.uws.TestProperties;
-import ca.nrc.cadc.reg.Standards;
-import java.net.URI;
-import java.net.URL;
+import ca.nrc.cadc.net.ResourceNotFoundException;
+import ca.nrc.cadc.rest.RestAction;
+import ca.nrc.cadc.uws.server.JobNotFoundException;
+import ca.nrc.cadc.uws.server.JobPersistenceException;
+import java.security.AccessControlException;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
 
 /**
- * Async test runner. This class iterates through the TestProperties, creates,
- * and executes each test job in async mode. Subclasses should override
- * validateResponse() to check (make assertions) as this class does no checking.
- * 
+ *
  * @author pdowler
  */
-public class AsyncUWSTest extends AbstractUWSTest2
-{
-    private static final Logger log = Logger.getLogger(AsyncUWSTest.class);
+public class DeleteAction extends JobAction {
+    private static final Logger log = Logger.getLogger(DeleteAction.class);
 
-    private final long timeout;
-    
-    public AsyncUWSTest(URI resourceID, URI standardID, long timeout) {
-        super(resourceID, standardID);
-        this.timeout = timeout;
+    public DeleteAction() { 
     }
-    
-    public AsyncUWSTest(URI resourceID, URI standardID, URI interfaceType, long timeout) 
-    { 
-        super(resourceID, standardID, interfaceType);
-        this.timeout = timeout;
-    }
-    
-    @Test
-    public void testJob()
-    {
-        try
-        {
-            for ( TestProperties tp : super.testPropertiesList.propertiesList)
-            {
-                JobResultWrapper result = new JobResultWrapper(tp.filename);
-                
-                URL jobURL = createAsyncParamJob(tp.filename, tp.getParameters());
-                result.job = executeAsyncJob(tp.filename, jobURL, timeout);
-                
-                validateResponse(result);
+
+    @Override
+    public void doAction() throws Exception {
+        super.init();
+
+        log.debug("START: " + syncInput.getPath() + "[" + readable + "," + writable + "]");
+        if (!writable) {
+            String cause = RestAction.STATE_OFFLINE_MSG;
+            if (readable) {
+                cause = RestAction.STATE_READ_ONLY_MSG;
             }
+            throw new AccessControlException("cannot delete job: " + cause);
         }
-        catch(Exception unexpected)
-        {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
+        
+        String jobID = getJobID();
+        try {
+            if (jobID == null) {
+                throw new IllegalArgumentException("cannot delete job list");
+            }
+
+            String field = getJobField();
+            if (field != null) {
+                throw new IllegalArgumentException("cannot delete " + jobID + "/" + field);
+            }
+
+            jobManager.delete(jobID);
+
+            String jobListURL = getJobListURL();
+            log.debug("redirect: " + jobListURL);
+            syncOutput.setHeader("Location", jobListURL);
+            syncOutput.setCode(303);
+        } catch (JobNotFoundException ex) {
+            throw new ResourceNotFoundException("not found: " + jobID, ex);
+        } catch (JobPersistenceException ex) {
+            throw new RuntimeException("failed to access job pertsistence", ex);
+        } finally {
+            log.debug("DONE: " + syncInput.getPath());
         }
     }
-    
 }

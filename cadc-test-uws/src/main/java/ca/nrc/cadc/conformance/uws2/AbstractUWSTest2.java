@@ -65,12 +65,13 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.conformance.uws2;
 
-
 import ca.nrc.cadc.auth.AuthMethod;
+import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.auth.RunnableAction;
 import ca.nrc.cadc.conformance.uws.TestPropertiesList;
 import ca.nrc.cadc.net.HttpDownload;
 import ca.nrc.cadc.net.HttpPost;
@@ -89,119 +90,139 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.Map;
 import java.util.TreeMap;
+import javax.security.auth.Subject;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import static org.junit.Assert.fail;
 
 /**
- * Base class that supports executing jobs as tests. This class has the low level 
+ * Base class that supports executing jobs as tests. This class has the low level
  * job creation and execution for async and sync jobs. It also supports reading a
  * set of properties files with parameters for parameter-based jobs, but subclasses
  * have to iterate and execute the tests. Only subclass this directly if you do not
- * use the TestProperties feature. 
- * 
+ * use the TestProperties feature.
+ *
  * @author pdowler
  */
-public abstract class AbstractUWSTest2 
-{
+public abstract class AbstractUWSTest2 {
+
     private static final Logger log = Logger.getLogger(AbstractUWSTest2.class);
 
     protected final URI resourceID;
     protected final URI standardID;
     protected final URI interfaceType;
-    
-    protected URL jobListURL;
-    
+
     // track these to help debug test config
     protected File propertiesDir;
     protected TestPropertiesList testPropertiesList;
-    
+
     protected String testFilePrefix;
-    
-    public AbstractUWSTest2(URI resourceID, URI standardID)
-    {
+
+    private Subject subject;
+
+    public AbstractUWSTest2(URI resourceID, URI standardID) {
         this(resourceID, standardID, Standards.INTERFACE_PARAM_HTTP);
     }
-    
-    public AbstractUWSTest2(URI resourceID, URI standardID, URI interfaceType)
-    {
+
+    public AbstractUWSTest2(URI resourceID, URI standardID, URI interfaceType) {
         this.resourceID = resourceID;
         this.standardID = standardID;
         this.interfaceType = interfaceType;
-        RegistryClient rc = new RegistryClient();
-        this.jobListURL = rc.getServiceURL(resourceID, standardID, AuthMethod.ANON, interfaceType);
-        if (jobListURL == null)
-            throw new RuntimeException("init FAIL, service not found:" 
-                + resourceID + " " + standardID + " " + AuthMethod.ANON + " " + interfaceType);
-        log.info("jobListURL: " + jobListURL);
+    }
+
+    /**
+     * Set subject and search for endpoint with AuthMethod supported by credentials in
+     * the subject.
+     *
+     * @param s
+     */
+    protected void setSubject(Subject s) {
+        this.subject = s;
     }
     
+    private URL getJobListURL() {
+        AuthMethod am = AuthMethod.ANON;
+        if (subject != null) {
+            am = AuthenticationUtil.getAuthMethodFromCredentials(subject);
+        }
+        RegistryClient rc = new RegistryClient();
+        URL ret = rc.getServiceURL(resourceID, standardID, am, interfaceType);
+        if (ret == null) {
+            throw new RuntimeException("init FAIL, service not found:"
+                    + resourceID + " " + standardID + " " + am + " " + interfaceType);
+        }
+        log.info("jobListURL: " + ret);
+        return ret;
+    }
+
     /**
      * Set properties directory and load all matching properties files.
-     * 
+     *
      * @param propertiesDir
-     * @param testFilePrefix 
+     * @param testFilePrefix
      */
-    protected void setPropertiesDir(File propertiesDir, String testFilePrefix)
-    {
-        if (propertiesDir == null)
-        {
+    protected void setPropertiesDir(File propertiesDir, String testFilePrefix) {
+        if (propertiesDir == null) {
             String pdir = System.getProperty("properties.directory");
-            if (pdir != null)
+            if (pdir != null) {
                 propertiesDir = new File(pdir);
+            }
         }
-        
-        if (propertiesDir == null)
+
+        if (propertiesDir == null) {
             Assert.fail("test config fail: propertiesDir not specified");
-        
+        }
+
         if (testFilePrefix == null) // the actual test class that is running
+        {
             testFilePrefix = this.getClass().getSimpleName();
-        
+        }
+
         this.testFilePrefix = testFilePrefix;
         this.propertiesDir = propertiesDir;
-        
-        try
-        {
+
+        try {
             testPropertiesList = new TestPropertiesList(propertiesDir.getPath(), testFilePrefix);
-            if (testPropertiesList.propertiesList.isEmpty())
+            if (testPropertiesList.propertiesList.isEmpty()) {
                 fail(testFilePrefix + ": no matching properties file(s) in " + propertiesDir);
-        }
-        catch (IOException e)
-        {
+            }
+        } catch (IOException e) {
             log.error(e);
             fail(e.getMessage());
         }
-        
+
         log.info(testFilePrefix + ": found " + testPropertiesList.propertiesList.size() + " tests in " + propertiesDir);
     }
-    
+
     /**
      * Subclasses can override this method to perform checks on the
      * test result.
-     * 
-     * @param result 
+     *
+     * @param result
      */
-    protected void validateResponse(JobResultWrapper result)
-    {
+    protected void validateResponse(JobResultWrapper result) {
         // no -op
     }
-    
+
     /**
      * Create and execute a synchronous job specified by parameters.
-     * 
+     *
      * @param jobName name to be logged
      * @param params parameters for this job
-     * @return 
+     * @return
      */
-    protected final JobResultWrapper createAndExecuteSyncParamJobPOST(String jobName, Map<String,Object> params)
-    {
+    protected final JobResultWrapper createAndExecuteSyncParamJobPOST(String jobName, Map<String, Object> params) {
+        URL jobListURL = getJobListURL();
         JobResultWrapper ret = new JobResultWrapper(jobName);
-        try
-        {
+        try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             log.info(jobName);
             HttpPost doit = new HttpPost(jobListURL, params, bos);
-            doit.run();
+            if (subject != null) {
+                Subject.doAs(subject, new RunnableAction(doit));
+            } else {
+                doit.run();
+            }
 
             ret.job = null; // no formal way to get jobID
             ret.throwable = doit.getThrowable();
@@ -209,137 +230,142 @@ public abstract class AbstractUWSTest2
             ret.contentType = doit.getResponseContentType();
             ret.contentEncoding = doit.getResponseContentEncoding();
             ret.syncOutput = bos.toByteArray();
+        } finally {
         }
-        finally { }
-        
+
         return ret;
     }
-    
+
     /**
      * Create and execute a synchronous job specified by parameters.
-     * 
+     *
      * @param jobName name to be logged
      * @param params parameters for this job
-     * @return 
+     * @return
      */
-    protected final JobResultWrapper createAndExecuteSyncParamJobGET(String jobName, Map<String,Object> params)
-    {
+    protected final JobResultWrapper createAndExecuteSyncParamJobGET(String jobName, Map<String, Object> params) {
+        URL jobListURL = getJobListURL();
         StringBuilder sb = new StringBuilder();
         sb.append(jobListURL.toExternalForm()).append("?");
-        for (Map.Entry<String,Object> me : params.entrySet())
-        {
-            if (me.getValue() != null)
-            {
-                if (me.getValue() instanceof Collection)
-                {
+        for (Map.Entry<String, Object> me : params.entrySet()) {
+            if (me.getValue() != null) {
+                if (me.getValue() instanceof Collection) {
                     Collection col = (Collection) me.getValue();
-                    for (Object v : col)
-                    {
+                    for (Object v : col) {
                         sb.append(me.getKey()).append("=").append(NetUtil.encode(v.toString()));
                         sb.append("&");
                     }
-                }
-                else
-                {
+                } else {
                     sb.append(me.getKey()).append("=").append(NetUtil.encode(me.getValue().toString()));
                     sb.append("&");
                 }
             }
         }
         String surl = sb.toString();
-        
+
         JobResultWrapper ret = new JobResultWrapper(jobName);
-        try
-        {
+        try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             URL getURL = new URL(surl);
 
             log.info(jobName);
             HttpDownload doit = new HttpDownload(getURL, bos);
-            doit.run();
-            
+            if (subject != null) {
+                Subject.doAs(subject, new RunnableAction(doit));
+            } else {
+                doit.run();
+            }
+
             ret.job = null; // no formal way to get jobID
             ret.throwable = doit.getThrowable();
             ret.responseCode = doit.getResponseCode();
             ret.contentType = doit.getContentType();
             ret.contentEncoding = doit.getContentEncoding();
             ret.syncOutput = bos.toByteArray();
-        }
-        catch(MalformedURLException ex)
-        {
+        } catch (MalformedURLException ex) {
             Assert.fail(jobName + ": failed to generate valid GET URL: " + surl + " reason: " + ex);
         }
-        
+
         return ret;
     }
-    
-    protected final URL createAsyncParamJob(String jobName, Map<String,Object> params)
-    {
+
+    protected final URL createAsyncParamJob(String jobName, Map<String, Object> params) {
+        URL jobListURL = getJobListURL();
         HttpPost post = new HttpPost(jobListURL, params, false);
-        post.run();
-        if (post.getThrowable() != null)
+        if (subject != null) {
+            Subject.doAs(subject, new RunnableAction(post));
+        } else {
+            post.run();
+        }
+
+        if (post.getThrowable() != null) {
             Assert.fail("failed to create job: " + jobName + " reason: " + post.getThrowable());
-        
+        }
+
         URL ret = post.getRedirectURL();
         Assert.assertNotNull("redirectURL", ret);
         log.info(jobName + " created " + ret);
         return ret;
     }
-    
-    protected final URL createAsyncDocumentJob(String document, String contentType)
-    {
+
+    protected final URL createAsyncDocumentJob(String document, String contentType) {
         throw new UnsupportedOperationException("not implemented");
     }
-    
+
     /**
-     * 
+     *
      * @param jobURL
      * @param timeout time to allow job to execute before assuming failure (seconds)
-     * @return 
+     * @return
      */
-    protected final Job executeAsyncJob(String jobName, URL jobURL, long timeout)
-    {
-        try
-        {
-            
-            Map<String,Object> params = new TreeMap<String,Object>();
+    protected final Job executeAsyncJob(String jobName, URL jobURL, long timeout) {
+        try {
+            Map<String, Object> params = new TreeMap<String, Object>();
             params.put("PHASE", "RUN");
             URL phaseURL = new URL(jobURL.toExternalForm() + "/phase");
             log.info(jobName + " execute " + phaseURL);
             HttpPost post = new HttpPost(phaseURL, params, false);
-            post.run();
-            if (post.getThrowable() != null)
+            if (subject != null) {
+                Subject.doAs(subject, new RunnableAction(post));
+            } else {
+                post.run();
+            }
+            if (post.getThrowable() != null) {
                 Assert.fail("failed to set PHASE=RUN for " + jobURL + " reason: " + post.getThrowable());
+            }
 
             long start = System.currentTimeMillis();
-        
+
             JobReader r = new JobReader();
             // loop in case server limits block < timeout
-            long tRemain = (start + timeout*1000L) - System.currentTimeMillis();
-            while ( tRemain > 0 )
-            {
-                long block = tRemain/1000L; // sec
+            long tRemain = (start + timeout * 1000L) - System.currentTimeMillis();
+            while (tRemain > 0) {
+                long block = tRemain / 1000L; // sec
                 URL blockURL = new URL(jobURL.toExternalForm() + "?WAIT=" + block);
                 log.info(jobName + " wait " + blockURL);
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();
                 HttpDownload get = new HttpDownload(blockURL, bos);
-                get.run(); // blocking wait
-                if (get.getThrowable() != null)
+                if (subject != null) {
+                    Subject.doAs(subject, new RunnableAction(get));
+                } else {
+                    get.run();
+                }
+                if (get.getThrowable() != null) {
                     Assert.fail("failed to check phase for " + jobURL + " reason: " + get.getThrowable());
-                
+                }
+
                 tRemain = (start + timeout) - System.currentTimeMillis();
-                
+
                 Job j = r.read(new ByteArrayInputStream(bos.toByteArray()));
-                if ( !j.getExecutionPhase().isActive() )
+                if (!j.getExecutionPhase().isActive()) {
                     return j;
+                }
                 // else another blocking wait
             }
-        }
-        catch(Exception ex)
-        {
+        } catch (Exception ex) {
             Assert.fail("failed to execute job " + jobURL + " reason: " + ex);
         }
-        
+
         throw new RuntimeException("timeout: job " + jobURL + " did not complete after " + timeout + "ms");
     }
 }

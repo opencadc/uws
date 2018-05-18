@@ -84,6 +84,7 @@ import org.jdom2.output.XMLOutputter;
 
 import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.xml.XmlUtil;
+import java.util.List;
 
 /**
  * Writes a Job as XML to an output.
@@ -146,6 +147,34 @@ public class JobWriter
         Document document = new Document(root);
         outputter.output(document, writer);
     }
+    
+    public void writeParametersDoc(List<Parameter> params, OutputStream out)
+        throws IOException
+    {
+        writeParametersDoc(params, new OutputStreamWriter(out));
+    }
+    
+    public void writeParametersDoc(List<Parameter> params, Writer writer) throws IOException {
+        Element root = getParametersRootElement(params);
+        XMLOutputter outputter = new XMLOutputter();
+        outputter.setFormat(Format.getPrettyFormat());
+        Document document = new Document(root);
+        outputter.output(document, writer);
+    }
+    
+    public void writeResultsDoc(List<Result> params, OutputStream out)
+        throws IOException
+    {
+        writeResultsDoc(params, new OutputStreamWriter(out));
+    }
+    
+    public void writeResultsDoc(List<Result> results, Writer writer) throws IOException {
+        Element root = getResultsRootElement(results);
+        XMLOutputter outputter = new XMLOutputter();
+        outputter.setFormat(Format.getPrettyFormat());
+        Document document = new Document(root);
+        outputter.output(document, writer);
+    }
 
     /**
      * Get an Element representing a job Element.
@@ -161,6 +190,22 @@ public class JobWriter
         return element;
     }
 
+    public Element getParametersRootElement(List<Parameter> params) {
+        Element root = getParameters(params);
+        root.addNamespaceDeclaration(UWS.NS);
+        root.addNamespaceDeclaration(UWS.XLINK_NS);
+        root.setAttribute(JobAttribute.VERSION.getAttributeName(), UWS.XSD_VERSION);
+        return root;
+    }
+    
+    public Element getResultsRootElement(List<Result> results) {
+        Element root = getResults(results);
+        root.addNamespaceDeclaration(UWS.NS);
+        root.addNamespaceDeclaration(UWS.XLINK_NS);
+        root.setAttribute(JobAttribute.VERSION.getAttributeName(), UWS.XSD_VERSION);
+        return root;
+    }
+    
     /**
      * Create the root element of a job document.
      * @param job
@@ -183,8 +228,8 @@ public class JobWriter
         root.addContent(getCreationTime(job));
         root.addContent(getExecutionDuration(job));
         root.addContent(getDestruction(job));
-        root.addContent(getParameters(job));
-        root.addContent(getResults(job));
+        root.addContent(getParameters(job.getParameterList()));
+        root.addContent(getResults(job.getResultsList()));
         Element errorSummary = getErrorSummary(job);
         if (errorSummary != null)
             root.addContent(errorSummary);
@@ -358,10 +403,10 @@ public class JobWriter
      *
      * @return The Job parameters Element.
      */
-    public Element getParameters(Job job)
+    public Element getParameters(List<Parameter> params)
     {
         Element element = new Element(JobAttribute.PARAMETERS.getAttributeName(), UWS.NS);
-        for (Parameter parameter : job.getParameterList())
+        for (Parameter parameter : params)
         {
             Element e = new Element(JobAttribute.PARAMETER.getAttributeName(), UWS.NS);
             e.setAttribute("id", parameter.getName());
@@ -376,10 +421,10 @@ public class JobWriter
      *
      * @return The Job results Element.
      */
-    public Element getResults(Job job)
+    public Element getResults(List<Result> results)
     {
         Element element = new Element(JobAttribute.RESULTS.getAttributeName(), UWS.NS);
-        for (Result result : job.getResultsList())
+        for (Result result : results)
         {
             Element e = new Element(JobAttribute.RESULT.getAttributeName(), UWS.NS);
             e.setAttribute("id", result.getName());

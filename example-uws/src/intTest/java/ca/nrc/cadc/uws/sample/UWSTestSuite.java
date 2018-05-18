@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2018.                            (c) 2018.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,67 +62,48 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
+*  $Revision: 4 $
 *
 ************************************************************************
-*/
-
-package ca.nrc.cadc.conformance.uws2;
-
-
-import ca.nrc.cadc.auth.AuthMethod;
-import ca.nrc.cadc.conformance.uws.TestProperties;
-import ca.nrc.cadc.reg.Standards;
-import java.net.URI;
-import java.net.URL;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
-
-/**
- * Async test runner. This class iterates through the TestProperties, creates,
- * and executes each test job in async mode. Subclasses should override
- * validateResponse() to check (make assertions) as this class does no checking.
- * 
- * @author pdowler
  */
-public class AsyncUWSTest extends AbstractUWSTest2
-{
-    private static final Logger log = Logger.getLogger(AsyncUWSTest.class);
 
-    private final long timeout;
+package ca.nrc.cadc.uws.sample;
+
+import ca.nrc.cadc.conformance.uws.DestructionTest;
+import ca.nrc.cadc.conformance.uws.ExecutionDurationTest;
+import ca.nrc.cadc.conformance.uws.GetPhaseTest;
+import ca.nrc.cadc.conformance.uws.JobIdTest;
+import ca.nrc.cadc.conformance.uws.JobInfoTest;
+import ca.nrc.cadc.conformance.uws.JobTest;
+import ca.nrc.cadc.conformance.uws.OwnerTest;
+import ca.nrc.cadc.conformance.uws.ParametersTest;
+import ca.nrc.cadc.conformance.uws.QuoteTest;
+import ca.nrc.cadc.conformance.uws.SchemaTest;
+import ca.nrc.cadc.util.Log4jInit;
+import org.apache.log4j.Level;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
+
+@RunWith(Suite.class)
+@Suite.SuiteClasses({
+        JobIdTest.class,
+        JobTest.class,
+        SchemaTest.class, 
+        GetPhaseTest.class,
+
+        DestructionTest.class,
+        ExecutionDurationTest.class,
+        QuoteTest.class,
+        OwnerTest.class,
+
+        //JobInfoTest.class, // this test requies an InlineContentHandler to parse/validate the input
     
-    public AsyncUWSTest(URI resourceID, URI standardID, long timeout) {
-        super(resourceID, standardID);
-        this.timeout = timeout;
+        ParametersTest.class
+    })
+
+public class UWSTestSuite {
+
+    static {
+        Log4jInit.setLevel("ca.nrc.cadc.uws", Level.DEBUG);
     }
-    
-    public AsyncUWSTest(URI resourceID, URI standardID, URI interfaceType, long timeout) 
-    { 
-        super(resourceID, standardID, interfaceType);
-        this.timeout = timeout;
-    }
-    
-    @Test
-    public void testJob()
-    {
-        try
-        {
-            for ( TestProperties tp : super.testPropertiesList.propertiesList)
-            {
-                JobResultWrapper result = new JobResultWrapper(tp.filename);
-                
-                URL jobURL = createAsyncParamJob(tp.filename, tp.getParameters());
-                result.job = executeAsyncJob(tp.filename, jobURL, timeout);
-                
-                validateResponse(result);
-            }
-        }
-        catch(Exception unexpected)
-        {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
-    }
-    
 }

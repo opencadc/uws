@@ -219,7 +219,7 @@ public class SyncServlet extends HttpServlet
 
     protected JobCreator getJobCreator()
     {
-        return new JobCreator(getInlineContentHandler());
+        return new JobCreator();
     }
 
     protected InlineContentHandler getInlineContentHandler()
@@ -353,7 +353,7 @@ public class SyncServlet extends HttpServlet
             if (jobID == null)
             {
                 // create
-                job = getJobCreator().create(request);
+                job = getJobCreator().create(request, getInlineContentHandler());
                 job = jobManager.create(job);
                 jobID = job.getID();
 
