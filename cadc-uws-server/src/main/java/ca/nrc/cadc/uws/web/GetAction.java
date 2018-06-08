@@ -240,7 +240,7 @@ public class GetAction extends JobAction {
         syncOutput.setHeader("Content-Type", "text/xml");
         OutputStream os = syncOutput.getOutputStream();
         ByteCountOutputStream bc = new ByteCountOutputStream(os);
-        w.writeParametersDoc(params, os);
+        w.writeParametersDoc(params, bc);
         logInfo.setBytes(bc.getByteCount());
     }
 
@@ -250,7 +250,7 @@ public class GetAction extends JobAction {
         syncOutput.setHeader("Content-Type", "text/xml");
         OutputStream os = syncOutput.getOutputStream();
         ByteCountOutputStream bc = new ByteCountOutputStream(os);
-        w.writeResultsDoc(params, os);
+        w.writeResultsDoc(params, bc);
         logInfo.setBytes(bc.getByteCount());
     }
 

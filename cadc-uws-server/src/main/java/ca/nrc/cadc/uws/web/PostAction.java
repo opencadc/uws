@@ -184,7 +184,7 @@ public class PostAction extends JobAction {
                         throw new IllegalArgumentException("not modifiable: " + field);
                 }
             }
-            
+            logInfo.setJobID(jobID);
             log.debug("redirect: " + redirectURL);
             syncOutput.setHeader("Location", redirectURL);
             syncOutput.setCode(303);
