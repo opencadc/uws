@@ -95,6 +95,7 @@ public class JobLogInfo extends WebServiceLogInfo
         this.from = job.getRemoteIP();
         this.path = job.getRequestPath();
         this.user = getUser(job.ownerSubject);
+        this.runID = job.getRunID();
         setJobID(job.getID());
     }
 
