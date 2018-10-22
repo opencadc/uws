@@ -235,15 +235,15 @@ public class JobListReader
             executionPhase = ExecutionPhase.valueOf(phase);
 
             Element creationTimeElement = next.getChild(JobAttribute.CREATION_TIME.getAttributeName(), UWS.NS);
-            String time = creationTimeElement.getValue();
-            creationTime = dateFormat.parse(time);
+            if (creationTimeElement != null) {
+                String time = creationTimeElement.getValue();
+                creationTime = dateFormat.parse(time);
+            }
 
             Element runIDElement = next.getChild(JobAttribute.RUN_ID.getAttributeName(), UWS.NS);
-            nil = runIDElement.getAttribute("nil", UWS.XSI_NS);
-            if (nil != null && nil.getBooleanValue())
-                runID = null;
-            else
+            if (runIDElement != null) {
                 runID = runIDElement.getTextTrim();
+            }
 
             Element ownerIDElement = next.getChild(JobAttribute.OWNER_ID.getAttributeName(), UWS.NS);
             ownerID = ownerIDElement.getTextTrim();

@@ -223,9 +223,12 @@ public class JobWriter
         root.addContent(getOwnerId(job));
         root.addContent(getPhase(job));
         root.addContent(getQuote(job));
+        Element creationTime = getCreationTime(job);
+        if (creationTime != null) {
+            root.addContent(creationTime);
+        }
         root.addContent(getStartTime(job));
         root.addContent(getEndTime(job));
-        root.addContent(getCreationTime(job));
         root.addContent(getExecutionDuration(job));
         root.addContent(getDestruction(job));
         root.addContent(getParameters(job.getParameterList()));
@@ -361,13 +364,14 @@ public class JobWriter
      */
     public Element getCreationTime(Job job)
     {
-        Element element = new Element(JobAttribute.CREATION_TIME.getAttributeName(), UWS.NS);
+        
         Date date = job.getCreationTime();
-        if (date == null)
-            element.setAttribute("nil", "true", UWS.XSI_NS);
-        else
+        if (date != null) {
+            Element element = new Element(JobAttribute.CREATION_TIME.getAttributeName(), UWS.NS);
             element.addContent(dateFormat.format(date));
-        return element;
+            return element;
+        }
+        return null;
     }
 
     /**

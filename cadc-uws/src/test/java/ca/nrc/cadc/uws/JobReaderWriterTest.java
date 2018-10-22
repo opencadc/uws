@@ -464,6 +464,7 @@ public class JobReaderWriterTest
             job.setExecutionPhase(ExecutionPhase.PENDING);
             job.setRunID(RUN_ID);
             job.setQuote(new Date(baseDate.getTime() + 10000L));
+            job.setCreationTime(new Date());
             job.setExecutionDuration(123L);
             job.setDestructionTime(new Date(baseDate.getTime() + 300000L));
             job.setParameterList(new ArrayList<Parameter>());

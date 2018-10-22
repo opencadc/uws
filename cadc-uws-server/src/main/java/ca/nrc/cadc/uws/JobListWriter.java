@@ -178,9 +178,15 @@ public class JobListWriter
         Element shortJobDescription = new Element(JobAttribute.JOB_REF.getAttributeName(), UWS.NS);
         shortJobDescription.setAttribute("id", jobRef.getJobID());
         shortJobDescription.addContent(getPhase(jobRef));
-        shortJobDescription.addContent(getCreationTime(jobRef));
-        shortJobDescription.addContent(getRunID(jobRef));
+        Element runID = getRunID(jobRef);
+        if (runID != null) {
+            shortJobDescription.addContent(runID);
+        }
         shortJobDescription.addContent(getOwnerID(jobRef));
+        Element creationTime = getCreationTime(jobRef);
+        if (creationTime != null) {
+            shortJobDescription.addContent(creationTime);
+        }
         return shortJobDescription;
     }
 
@@ -203,13 +209,13 @@ public class JobListWriter
      */
     private Element getRunID(JobRef jobRef)
     {
-        Element element = new Element(JobAttribute.RUN_ID.getAttributeName(), UWS.NS);
         String runID = jobRef.getRunID();
-        if (runID == null)
-            element.setAttribute("nil", "true", UWS.XSI_NS);
-        else
+        if (runID != null) {
+            Element element = new Element(JobAttribute.RUN_ID.getAttributeName(), UWS.NS);
             element.addContent(runID);
-        return element;
+            return element;
+        }
+        return null;
     }
 
     /**
@@ -219,13 +225,13 @@ public class JobListWriter
      */
     private Element getCreationTime(JobRef jobRef)
     {
-        Element element = new Element(JobAttribute.CREATION_TIME.getAttributeName(), UWS.NS);
         Date creationTime = jobRef.getCreationTime();
-        if (creationTime == null)
-            element.setAttribute("nil", "true", UWS.XSI_NS);
-        else
+        if (creationTime != null) {
+            Element element = new Element(JobAttribute.CREATION_TIME.getAttributeName(), UWS.NS);
             element.addContent(dateFormat.format(jobRef.getCreationTime()));
-        return element;
+            return element;
+        }
+        return null;
     }
 
     /**
