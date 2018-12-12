@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2018.                            (c) 2018.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,29 +62,30 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
-*
 ************************************************************************
 */
 
 package ca.nrc.cadc.uws.web;
 
+import ca.nrc.cadc.rest.InlineContentHandler;
 import ca.nrc.cadc.uws.JobInfo;
 import ca.nrc.cadc.uws.Parameter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 import java.util.List;
 
 /**
+ * Extension of the base cadc-rest InlineContentHandler that gives the implementation
+ * access to the job parameter list.
  * 
- * @author jburke
- * @deprecated Use UWSInlineContentHandler
- * 
+ * @author pdowler
  */
-@Deprecated
-public interface InlineContentHandler
-{
+public interface UWSInlineContentHandler extends InlineContentHandler {
+    
+    /**
+     * Content.name value to use when the value is a JobInfo created from a
+     * job description document.
+     */
+    public static final String CONTENT_JOBINFO = "jobinfo";
+    
     /**
      * Sets the list of current Parameters.
      *
@@ -97,25 +98,4 @@ public interface InlineContentHandler
      * @return List of Parameters.
      */
     List<Parameter> getParameterList();
-
-    /**
-     * 
-     * @return JobInfo.
-     */
-    JobInfo getJobInfo();
-
-    /**
-     * Processes the data in the InputStream.
-     *
-     * @param name of the data header.
-     * @param contentType MIME type of the data.
-     * @param inputStream containing the data.
-     * @throws InlineContentException for errors storing the data.
-     * @throws IOException for errors reading the InputStream.
-     * @throws RuntimeException for processing errors.
-     * @return URL to the data, or null it the data is not stored.
-     */
-    URL accept(String name, String contentType, InputStream inputStream)
-        throws InlineContentException, IOException;
-
 }
