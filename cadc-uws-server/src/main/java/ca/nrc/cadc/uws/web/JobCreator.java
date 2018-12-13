@@ -27,6 +27,7 @@ import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobAttribute;
 import ca.nrc.cadc.uws.Parameter;
 import ca.nrc.cadc.rest.SyncInput;
+import ca.nrc.cadc.uws.JobInfo;
 import java.util.Arrays;
 import java.util.List;
 
@@ -48,6 +49,7 @@ public class JobCreator
     public JobCreator() {
     }
 
+    // cadc-rest based create method
     public Job create(SyncInput input) {
         Job job = new Job();
         job.setExecutionPhase(ExecutionPhase.PENDING);
@@ -61,9 +63,27 @@ public class JobCreator
         }
         
         for (String cname : input.getContentNames()) {
-            // TODO: Content -> jobInfo
-            // TODO: Content -> alter parameters (eg UPLOAD=name,inline to UPLOAD=name,lcoal-url)
-            throw new UnsupportedOperationException("stream content: " + cname);
+            if (UWSInlineContentHandler.CONTENT_JOBINFO.equals(cname)) {
+                JobInfo ji = (JobInfo) input.getContent(cname);
+                job.setJobInfo(ji);
+            } else if (UWSInlineContentHandler.CONTENT_PARAM_REPLACE.equals(cname)) {
+                UWSInlineContentHandler.ParameterReplacement pr = (UWSInlineContentHandler.ParameterReplacement) input.getContent(cname);
+                boolean replaced = false;
+                for (Parameter p : job.getParameterList()) {
+                    String ostr = p.getValue();
+                    String nstr = ostr.replace(pr.origStr, pr.newStr);
+                    if (!ostr.equals(nstr)) {
+                        log.debug("replace param: " + p.getName() + ": " + ostr + " -> " + nstr);
+                        p.setValue(nstr);
+                        replaced = true;
+                    }
+                }
+                if (!replaced) {
+                    log.debug("no parameter modified by " + pr);
+                }
+            } else {
+                log.debug("unhandled inline content: " + cname);
+            }
         }
         
         job.setRequestPath(input.getRequestPath());
@@ -71,6 +91,7 @@ public class JobCreator
         return job;
     }
     
+    // old restlet based create method
     @Deprecated
     public Job create(HttpServletRequest request, InlineContentHandler inlineContentHandler)
         throws FileUploadException, IOException

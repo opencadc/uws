@@ -68,9 +68,7 @@
 package ca.nrc.cadc.uws.web;
 
 import ca.nrc.cadc.rest.InlineContentHandler;
-import ca.nrc.cadc.uws.JobInfo;
 import ca.nrc.cadc.uws.Parameter;
-import java.util.List;
 
 /**
  * Extension of the base cadc-rest InlineContentHandler that gives the implementation
@@ -84,18 +82,34 @@ public interface UWSInlineContentHandler extends InlineContentHandler {
      * Content.name value to use when the value is a JobInfo created from a
      * job description document.
      */
-    public static final String CONTENT_JOBINFO = "jobinfo";
+    public static final String CONTENT_JOBINFO = "JobInfo";
     
     /**
-     * Sets the list of current Parameters.
-     *
-     * @param parameterlist
+     * Content.name value to use when the value is a ParamReplacement created by
+     * inline content processing.
      */
-    void setParameterList(List<Parameter> parameterlist);
-
+    public static final String CONTENT_PARAM_REPLACE = "ParamReplacement";
+    
     /**
-     *
-     * @return List of Parameters.
+     * InlineContentHandler.Content.value object to trigger replacing an original
+     * parameter value with a new value based on processing of inline content. After
+     * processing all input, all parameters are scanned and origStr is replaced with
+     * newStr (complete or partial replacement).
      */
-    List<Parameter> getParameterList();
+    public static class ParameterReplacement {
+        String origStr;
+        String newStr;
+
+        public ParameterReplacement(String origStr, String newStr) {
+            this.origStr = origStr;
+            this.newStr = newStr;
+        }
+
+        @Override
+        public String toString() {
+            return "UWSInlineContentHandler.ParameterReplacement[" + origStr + " -> " + newStr + "]";
+        }
+        
+        
+    }
 }

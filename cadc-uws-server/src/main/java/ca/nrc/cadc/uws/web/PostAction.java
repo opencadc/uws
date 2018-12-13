@@ -71,6 +71,7 @@ package ca.nrc.cadc.uws.web;
 import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.net.TransientException;
+import ca.nrc.cadc.rest.InlineContentHandler;
 import ca.nrc.cadc.rest.RestAction;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobAttribute;
@@ -218,5 +219,22 @@ public class PostAction extends JobAction {
             return true;
         }
         return false;
+    }
+
+    @Override
+    protected InlineContentHandler getInlineContentHandler() {
+        String cname = initParams.get(InlineContentHandler.class.getName());
+        if (cname == null) {
+            return null;
+        }
+        
+        try {
+            Class c = Class.forName(cname);
+            InlineContentHandler ret = (InlineContentHandler) c.newInstance();
+            log.debug("created: " + ret.getClass().getName());
+            return ret;
+        } catch (Throwable oops) {
+            throw new RuntimeException("CONFIG: failed to load InlineContentHandler: " + cname, oops);
+        }
     }
 }

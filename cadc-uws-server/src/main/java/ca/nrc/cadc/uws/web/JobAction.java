@@ -69,7 +69,6 @@ package ca.nrc.cadc.uws.web;
 
 import ca.nrc.cadc.rest.InlineContentHandler;
 import ca.nrc.cadc.rest.RestAction;
-import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobAttribute;
 import ca.nrc.cadc.uws.server.JobManager;
 import java.util.HashMap;
