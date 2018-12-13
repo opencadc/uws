@@ -36,12 +36,12 @@ dependencies {
     compile 'org.opencadc:cadc-util:[1.1,)'
     compile 'org.opencadc:cadc-vosi:1.+'
     compile 'org.opencadc:cadc-uws:[1.0.2,)'
-    compile 'org.opencadc:cadc-rest:[1.2,)'
+    compile 'org.opencadc:cadc-rest:[1.2.3,)'
 
     testCompile 'junit:junit:4.+'
     testCompile 'org.easymock:easymock:3.+'
 
     // Used for DAO tests.
-    testRuntime 'org.postgresql:postgresql:9.4.1209.jre7'
-    testRuntime 'net.sourceforge.jtds:jtds:1.+'
+    intTestRuntime 'org.postgresql:postgresql:9.4.1209.jre7'
+    intTestRuntime 'net.sourceforge.jtds:jtds:1.+'
 }
