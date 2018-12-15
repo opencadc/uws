@@ -131,10 +131,10 @@ public class GetAction extends JobAction {
                     Job job = doWait(jobID);
                     writeJob(job);
                 } else if ("parameters".equals(field)) {
-                    Job job = jobManager.get(jobID);
+                    Job job = jobManager.get(syncInput.getRequestPath(), jobID);
                     writeParameters(job.getParameterList());
                 } else if ("results".equals(field)) {
-                    Job job = jobManager.get(jobID);
+                    Job job = jobManager.get(syncInput.getRequestPath(), jobID);
                     String resultID = getJobResultID();
                     if (resultID == null) {
                         writeResults(job.getResultsList());
@@ -155,7 +155,7 @@ public class GetAction extends JobAction {
                         }
                     }
                 } else {
-                    Job job = jobManager.get(jobID);
+                    Job job = jobManager.get(syncInput.getRequestPath(), jobID);
                     handleGetJobField(job, field);
                 }
             }
@@ -215,22 +215,12 @@ public class GetAction extends JobAction {
         int i = rp.lastIndexOf("/");
         rp = rp.substring(0, i);
         log.debug("job requestPath to match: " + rp);
-        Iterator<JobRef> jobs = jobManager.iterator(rp, phaseList, afterDate, lastInt);
+        Iterator<JobRef> jobs = jobManager.iterator(syncInput.getRequestPath(), rp, phaseList, afterDate, lastInt);
         JobListWriter w = new JobListWriter();
         syncOutput.setHeader("Content-Type", "text/xml");
         OutputStream os = syncOutput.getOutputStream();
         ByteCountOutputStream bc = new ByteCountOutputStream(os);
         w.write(jobs, os);
-        logInfo.setBytes(bc.getByteCount());
-    }
-
-    private void writeJob(Job job) throws IOException {
-        // TODO: content negotiation via accept header
-        JobWriter w = new JobWriter();
-        syncOutput.setHeader("Content-Type", "text/xml");
-        OutputStream os = syncOutput.getOutputStream();
-        ByteCountOutputStream bc = new ByteCountOutputStream(os);
-        w.write(job, bc);
         logInfo.setBytes(bc.getByteCount());
     }
 
@@ -288,7 +278,7 @@ public class GetAction extends JobAction {
     }
 
     private Job doWait(String jobID) throws JobNotFoundException, JobPersistenceException, TransientException {
-        Job job = jobManager.get(jobID);
+        Job job = jobManager.get(syncInput.getRequestPath(), jobID);
         String waitStr = syncInput.getParameter("WAIT");
         if (waitStr != null) {
             log.debug("wait = " + waitStr);
@@ -316,7 +306,7 @@ public class GetAction extends JobAction {
                         } catch (InterruptedException ex) {
                             log.debug("interrupted: wait at phase " + ep.getValue());
                         }
-                        job = jobManager.get(jobID); // always keep/return the latest job state
+                        job = jobManager.get(syncInput.getRequestPath(), jobID); // always keep/return the latest job state
                         cur = job.getExecutionPhase();
                         rem -= dt;
                         if (n < POLL_INTERVAL.length - 1) {

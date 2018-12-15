@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2018.                            (c) 2018.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,48 +62,75 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
-*
 ************************************************************************
 */
 
-package ca.nrc.cadc.uws.server;
+package ca.nrc.cadc.uws.web;
 
-import java.io.IOException;
-import java.io.OutputStream;
+
+import ca.nrc.cadc.rest.RestAction;
+import ca.nrc.cadc.uws.Job;
+import java.security.AccessControlException;
+import org.apache.log4j.Logger;
 
 /**
- * Simple wrapper to set up synchronous output from a SyncJobRunner. All HTTP headers
- * must be set befoer the OutputStream is opened. the caller is responsibel for closing
- * the OutputStream.
- *
- * @author jburke
+ * Placeholder for replacing SyncServlet with a cadc-rest based implementation.
+ * 
+ * @author pdowler
  */
-public interface SyncOutput
-{
-    /**
-     * Set the HTTP response code. Calls to this method that occur after the
-     * OutputStream is opened are silently ignored.
-     *
-     * @param code
-     */
-    void setResponseCode(int code);
+public class SyncPostAction extends JobAction {
+    private static final Logger log = Logger.getLogger(SyncPostAction.class);
 
-    /**
-     * Set an HTTP header parameter. Calls to this method that occur after the
-     * OutputStream is opened are silently ignored.
-     *
-     * @param key header key.
-     * @param value header value.
-     */
-    void setHeader(String key, String value);
+    static final String PRG_TOKEN = "run";
+    
+    public SyncPostAction() { 
+    }
+    
+    @Override
+    public void doAction() throws Exception {
+        super.init();
 
-    /**
-     * Returns an OutputStream for streaming search results.
-     *
-     * @throws IOException
-     * @return OutputStream
-     */
-    OutputStream getOutputStream()
-        throws IOException;
+        log.debug("START: " + syncInput.getPath() + "[" + readable + "," + writable + "]");
+        if (!writable) {
+            String cause = RestAction.STATE_OFFLINE_MSG;
+            if (readable) {
+                cause = RestAction.STATE_READ_ONLY_MSG;
+            }
+            throw new AccessControlException("cannot create job: " + cause);
+        }
+        
+        String jobID = getJobID();
+        if (jobID == null) {
+            // create
+            JobCreator jc = new JobCreator();
+            Job in = jc.create(syncInput);
+            Job job = jobManager.create(syncInput.getRequestPath(), in);
+            String redirectURL = getJobListURL() + "/" + job.getID() + "/" + PRG_TOKEN;
+            logInfo.setJobID(jobID);
+            log.debug("redirect: " + redirectURL);
+            syncOutput.setHeader("Location", redirectURL);
+            syncOutput.setCode(303);
+            return;
+        }
+        
+        throw new UnsupportedOperationException("POST to sync job creation with extra path elements");
+    }
+    
+    // TODO: identical code in async PostAction
+    @Override
+    protected ca.nrc.cadc.rest.InlineContentHandler getInlineContentHandler() {
+        String cname = initParams.get(ca.nrc.cadc.rest.InlineContentHandler.class.getName());
+        if (cname == null) {
+            return null;
+        }
+        
+        try {
+            Class c = Class.forName(cname);
+            ca.nrc.cadc.rest.InlineContentHandler ret = (ca.nrc.cadc.rest.InlineContentHandler) c.newInstance();
+            log.debug("created: " + ret.getClass().getName());
+            return ret;
+        } catch (Throwable oops) {
+            throw new RuntimeException("CONFIG: failed to load InlineContentHandler: " + cname, oops);
+        }
+    }
 }

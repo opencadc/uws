@@ -65,79 +65,54 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.uws.server;
+package ca.nrc.cadc.uws.web;
 
-import ca.nrc.cadc.rest.RestServlet;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
+
+import ca.nrc.cadc.rest.RestAction;
+import ca.nrc.cadc.uws.Job;
+import java.security.AccessControlException;
 import org.apache.log4j.Logger;
 
 /**
- *
+ * Placeholder for replacing SyncServlet with a cadc-rest based implementation.
+ * 
  * @author pdowler
  */
-public class AsyncServlet extends RestServlet {
-    private static final Logger log = Logger.getLogger(AsyncServlet.class);
+public class SyncGetAction extends JobAction {
+    private static final Logger log = Logger.getLogger(SyncGetAction.class);
 
-    private JobManager jobManager;
-    private String jndiKey;
-    
-    public AsyncServlet() { 
-        super();
+    public SyncGetAction() { 
     }
-
+    
     @Override
-    public void init(ServletConfig config) throws ServletException {
-        super.init(config);
-        this.jndiKey = componentID + ".jobManager";
-        String cname = config.getInitParameter(JobManager.class.getName());
-        initJobManager(cname);
-    }
-    
-    protected void initJobManager(String cname) {
-        if (cname != null)
-        {
-            try
-            {
-                Class<JobManager> clazz = (Class<JobManager>) Class.forName(cname);
-                this.jobManager = clazz.newInstance();
-                
-                Context ctx = new InitialContext();
-                try {
-                    ctx.unbind(jndiKey);
-                } catch (NamingException ignore) {
-                    log.debug("unbind previous JobManager failed... ignoring");
-                }
-                ctx.bind(jndiKey, jobManager);
-                
-                log.info("create: " + jndiKey + " " + cname + " [OK]");
-            } catch(Exception ex) {
-                log.error("create: " + jndiKey + " " + cname + " [FAILED]", ex);
-            }
+    public void doAction() throws Exception {
+        super.init();
+
+        log.debug("START: " + syncInput.getPath() + "[" + readable + "," + writable + "]");
+        if (!readable) {
+            throw new AccessControlException(RestAction.STATE_OFFLINE_MSG);
+        }
+        
+        Job job = null;
+        boolean exec = false;
+        
+        
+        if (getJobID() == null) {
+            // create
+            JobCreator jc = new JobCreator();
+            Job in = jc.create(syncInput);
+            job = jobManager.create(syncInput.getRequestPath(), in);
+            exec = true;
         } else {
-            log.error("CONFIG: no JobManager configured in " + componentID);
+            job = jobManager.get(syncInput.getRequestPath(), getJobID());
         }
-    }
-    
-    @Override
-    public void destroy()
-    {
-        if (jobManager != null) {
-            try {
-                jobManager.terminate();
-            } catch (Exception oops) {
-                log.error("failed to terminate Jobmanager", oops);
-            }
-            try {
-                Context ctx = new InitialContext();
-                ctx.unbind(jndiKey);
-            } catch (Exception oops) {
-                log.error("unbind failed during destroy", oops);
-            }
+        
+        String token = getJobField();
+        exec = exec || SyncPostAction.PRG_TOKEN.equals(token);
+        if (exec) {
+            jobManager.execute(syncInput.getRequestPath(), job, syncOutput);
+        } else {
+            writeJob(job);
         }
-        super.destroy();
     }
 }

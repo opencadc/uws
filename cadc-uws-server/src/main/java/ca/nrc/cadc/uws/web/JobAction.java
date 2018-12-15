@@ -67,10 +67,15 @@
 
 package ca.nrc.cadc.uws.web;
 
+import ca.nrc.cadc.io.ByteCountOutputStream;
 import ca.nrc.cadc.rest.InlineContentHandler;
 import ca.nrc.cadc.rest.RestAction;
+import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobAttribute;
-import ca.nrc.cadc.uws.server.JobManager;
+import ca.nrc.cadc.uws.JobWriter;
+import ca.nrc.cadc.uws.server.JobManager2;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 import javax.naming.Context;
@@ -88,7 +93,7 @@ public abstract class JobAction extends RestAction {
     private String jobID;
     private String jobField;
     private String resultID;
-    protected JobManager jobManager;
+    protected JobManager2 jobManager;
     
     // JobAttribute has strings used in XML document; the REST child resource names and update param names can differ
     protected static final Map<String,JobAttribute> CHILD_RESOURCE_NAMES = new HashMap<String,JobAttribute>();
@@ -121,7 +126,7 @@ public abstract class JobAction extends RestAction {
             String jndiKey = componentID + ".jobManager"; // see AsyncServlet
             try {
                 Context ctx = new InitialContext();
-                this.jobManager = (JobManager) ctx.lookup(jndiKey);
+                this.jobManager = (JobManager2) ctx.lookup(jndiKey);
                 if (jobManager != null) {
                     log.debug("found: " + jndiKey +"=" + jobManager.getClass().getName());
                 } else {
@@ -181,5 +186,15 @@ public abstract class JobAction extends RestAction {
     protected String getJobResultID() {
         initTarget();
         return resultID;
+    }
+    
+    protected void writeJob(Job job) throws IOException {
+        // TODO: content negotiation via accept header
+        JobWriter w = new JobWriter();
+        syncOutput.setHeader("Content-Type", "text/xml");
+        OutputStream os = syncOutput.getOutputStream();
+        ByteCountOutputStream bc = new ByteCountOutputStream(os);
+        w.write(job, bc);
+        logInfo.setBytes(bc.getByteCount());
     }
 }

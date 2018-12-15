@@ -115,20 +115,20 @@ public class PostAction extends JobAction {
                 // create
                 JobCreator jc = new JobCreator();
                 Job in = jc.create(syncInput);
-                Job job = jobManager.create(in);
+                Job job = jobManager.create(syncInput.getRequestPath(), in);
                 jobID = job.getID();
                 redirectURL = getJobListURL() + "/" + jobID;
             } else if (field == null && isDeleteAction()) {
-                jobManager.delete(jobID);
+                jobManager.delete(syncInput.getRequestPath(), jobID);
                 redirectURL = getJobListURL();
             } else if (field == null || field.equals("parameters")) {
                 // new job params
                 JobCreator jc = new JobCreator();
                 Job tmp = jc.create(syncInput);
-                jobManager.update(jobID, tmp.getParameterList());
+                jobManager.update(syncInput.getRequestPath(), jobID, tmp.getParameterList());
             } else { // field != null
                 // uws job control
-                Job job = jobManager.get(jobID);
+                Job job = jobManager.get(syncInput.getRequestPath(), jobID);
                 DateFormat df = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
                 JobAttribute ja = CHILD_RESOURCE_NAMES.get(field);
                 if (ja == null) {
@@ -146,7 +146,7 @@ public class PostAction extends JobAction {
                                 Date nv = df.parse(dtv);
                                 if (nv.compareTo(job.getDestructionTime()) < 0) {
                                     job.setDestructionTime(nv);
-                                    jobManager.update(jobID, nv, job.getExecutionDuration(), job.getQuote());
+                                    jobManager.update(syncInput.getRequestPath(), jobID, nv, job.getExecutionDuration(), job.getQuote());
                                 }
                             } catch (Exception ex) {
                                 throw new IllegalArgumentException("invalid destruction time value (IVOA timestamp): " + dtv);
@@ -160,7 +160,7 @@ public class PostAction extends JobAction {
                                 Long nv = new Long(edv);
                                 if (nv < job.getExecutionDuration()) {
                                     job.setExecutionDuration(nv);
-                                    jobManager.update(jobID, job.getDestructionTime(), nv, job.getQuote());
+                                    jobManager.update(syncInput.getRequestPath(), jobID, job.getDestructionTime(), nv, job.getQuote());
                                 }
                             } catch (Exception ex) {
                                 throw new IllegalArgumentException("invalid execution duration value (long): " + edv);
@@ -174,7 +174,7 @@ public class PostAction extends JobAction {
                                 Date nv = df.parse(qv);
                                 if (nv.compareTo(job.getQuote()) < 0) {
                                     job.setQuote(nv);
-                                    jobManager.update(jobID, job.getDestructionTime(), job.getExecutionDuration(), nv);
+                                    jobManager.update(syncInput.getRequestPath(), jobID, job.getDestructionTime(), job.getExecutionDuration(), nv);
                                 }
                             } catch (Exception ex) {
                                 throw new IllegalArgumentException("invalid destruction time value (IVOA timestamp): " + qv);
@@ -203,11 +203,11 @@ public class PostAction extends JobAction {
         boolean run = "RUN".equalsIgnoreCase(nep);
         boolean abort = "ABORT".equalsIgnoreCase(nep);
         if (abort) {
-            jobManager.abort(jobID);
+            jobManager.abort(syncInput.getRequestPath(), jobID);
         } else if (run) {
-            Job job = jobManager.get(jobID);
+            Job job = jobManager.get(syncInput.getRequestPath(), jobID);
             job.setProtocol(syncInput.getProtocol());
-            jobManager.execute(job);
+            jobManager.execute(syncInput.getRequestPath(), job);
         } else {
             throw new IllegalArgumentException("invalid PHASE value: " + nep);
         }

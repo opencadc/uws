@@ -69,6 +69,13 @@
 
 package ca.nrc.cadc.uws.server;
 
+import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.net.TransientException;
+import ca.nrc.cadc.rest.SyncOutput;
+import ca.nrc.cadc.uws.ExecutionPhase;
+import ca.nrc.cadc.uws.Job;
+import ca.nrc.cadc.uws.JobRef;
+import ca.nrc.cadc.uws.Parameter;
 import java.security.AccessControlContext;
 import java.security.AccessControlException;
 import java.security.AccessController;
@@ -77,17 +84,8 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-
 import javax.security.auth.Subject;
-
 import org.apache.log4j.Logger;
-
-import ca.nrc.cadc.auth.AuthenticationUtil;
-import ca.nrc.cadc.net.TransientException;
-import ca.nrc.cadc.uws.ExecutionPhase;
-import ca.nrc.cadc.uws.Job;
-import ca.nrc.cadc.uws.JobRef;
-import ca.nrc.cadc.uws.Parameter;
 
 /**
  * Simple implementation of the JobManager interface.

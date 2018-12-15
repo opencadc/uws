@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2018.                            (c) 2018.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,39 +62,82 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
-*
 ************************************************************************
 */
 
 package ca.nrc.cadc.uws.server;
 
-import ca.nrc.cadc.rest.SyncOutput;
-import ca.nrc.cadc.uws.Job;
+import ca.nrc.cadc.rest.RestServlet;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import org.apache.log4j.Logger;
 
 /**
- * Interface for the code that implements the actual job execution.
- * 
+ *
  * @author pdowler
  */
-public interface JobRunner extends Runnable
-{
-    public void setJobUpdater(JobUpdater jobUpdater);
+public class JobServlet extends RestServlet {
+    private static final Logger log = Logger.getLogger(JobServlet.class);
 
-    public void setJob(Job job);
+    private JobManager2 jobManager;
+    private String jndiKey;
+    
+    public JobServlet() { 
+        super();
+    }
 
-    /**
-     * Set the job runner to do synchronous output to the specified
-     * output.
-     * 
-     * @param output
-     */
-    public void setSyncOutput(SyncOutput output);
-
-    /**
-     * Execute the job.
-     */
-    public void run();
-
-
+    @Override
+    public void init(ServletConfig config) throws ServletException {
+        super.init(config);
+        this.jndiKey = componentID + ".jobManager";
+        String cname = config.getInitParameter(JobManager.class.getName());
+        initJobManager(cname);
+    }
+    
+    protected void initJobManager(String cname) {
+        if (cname != null)
+        {
+            try
+            {
+                Class<JobManager2> clazz = (Class<JobManager2>) Class.forName(cname);
+                this.jobManager = clazz.newInstance();
+                
+                Context ctx = new InitialContext();
+                try {
+                    ctx.unbind(jndiKey);
+                } catch (NamingException ignore) {
+                    log.debug("unbind previous JobManager failed... ignoring");
+                }
+                ctx.bind(jndiKey, jobManager);
+                
+                log.info("create: " + jndiKey + " " + cname + " [OK]");
+            } catch(Exception ex) {
+                log.error("create: " + jndiKey + " " + cname + " [FAILED]", ex);
+            }
+        } else {
+            log.error("CONFIG: no JobManager configured in " + componentID);
+        }
+    }
+    
+    @Override
+    public void destroy()
+    {
+        if (jobManager != null) {
+            try {
+                jobManager.terminate();
+            } catch (Exception oops) {
+                log.error("failed to terminate Jobmanager", oops);
+            }
+            try {
+                Context ctx = new InitialContext();
+                ctx.unbind(jndiKey);
+            } catch (Exception oops) {
+                log.error("unbind failed during destroy", oops);
+            }
+        }
+        super.destroy();
+    }
 }

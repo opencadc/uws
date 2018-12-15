@@ -90,6 +90,7 @@ import org.apache.log4j.Logger;
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.io.ByteLimitExceededException;
 import ca.nrc.cadc.net.TransientException;
+import ca.nrc.cadc.rest.SyncOutput;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobWriter;
 import ca.nrc.cadc.uws.web.InlineContentHandler;
@@ -342,7 +343,7 @@ public class SyncServlet extends HttpServlet
         throws ServletException, IOException
     {
         log.debug("doit: execOnCreate=" + execOnCreate);
-        SyncOutputImpl syncOutput = null;
+        SyncOutput syncOutput = null;
 
         String jobID = null;
         Job job = null;
@@ -406,7 +407,7 @@ public class SyncServlet extends HttpServlet
             }
 
             log.debug("executing job: " + jobID);
-            syncOutput = new SyncOutputImpl(response);
+            syncOutput = new SyncOutput(response);
             jobManager.execute(job, syncOutput);
         }
         catch(JobPhaseException ex)
@@ -553,48 +554,6 @@ public class SyncServlet extends HttpServlet
                     ostream.flush();
                 }
                 catch(Throwable ignore) { }
-        }
-    }
-
-    private class SyncOutputImpl implements SyncOutput
-    {
-        OutputStream ostream;
-        HttpServletResponse response;
-
-        SyncOutputImpl(HttpServletResponse response)
-        {
-            this.response = response;
-        }
-
-        public boolean isOpen() { return ostream != null; }
-
-        @Override
-        public OutputStream getOutputStream()
-            throws IOException
-        {
-            if (ostream == null)
-            {
-                log.debug("opening OutputStream");
-                ostream = new SafeOutputStream(response.getOutputStream());
-            }
-            return ostream;
-        }
-
-        @Override
-        public void setResponseCode(int code)
-        {
-            if (ostream == null) // header not committed
-                response.setStatus(code);
-            else
-                log.warn("setResponseCode: " + code + " AFTER OutputStream opened, ignoring");
-        }
-        @Override
-        public void setHeader(String key, String value)
-        {
-            if (ostream == null) // header not committed
-                response.setHeader(key, value);
-            else
-                log.warn("setHeader: " + key + " = " + value + " AFTER OutputStream opened, ignoring");
         }
     }
 
