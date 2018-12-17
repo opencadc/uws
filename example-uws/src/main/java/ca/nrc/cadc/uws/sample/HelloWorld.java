@@ -70,6 +70,7 @@
 package ca.nrc.cadc.uws.sample;
 
 import ca.nrc.cadc.net.NetUtil;
+import ca.nrc.cadc.rest.SyncOutput;
 import ca.nrc.cadc.uws.ErrorSummary;
 import ca.nrc.cadc.uws.ErrorType;
 import ca.nrc.cadc.uws.ExecutionPhase;
@@ -79,7 +80,6 @@ import ca.nrc.cadc.uws.ParameterUtil;
 import ca.nrc.cadc.uws.Result;
 import ca.nrc.cadc.uws.server.JobRunner;
 import ca.nrc.cadc.uws.server.JobUpdater;
-import ca.nrc.cadc.uws.server.SyncOutput;
 import ca.nrc.cadc.xml.XmlUtil;
 import java.io.IOException;
 import java.io.PrintWriter;

@@ -73,7 +73,6 @@ import ca.nrc.cadc.rest.RestAction;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobAttribute;
 import ca.nrc.cadc.uws.JobWriter;
-import ca.nrc.cadc.uws.server.JobManager2;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
@@ -82,6 +81,7 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import org.apache.log4j.Logger;
+import ca.nrc.cadc.uws.server.JobManager;
 
 /**
  *
@@ -93,7 +93,7 @@ public abstract class JobAction extends RestAction {
     private String jobID;
     private String jobField;
     private String resultID;
-    protected JobManager2 jobManager;
+    protected JobManager jobManager;
     
     // JobAttribute has strings used in XML document; the REST child resource names and update param names can differ
     protected static final Map<String,JobAttribute> CHILD_RESOURCE_NAMES = new HashMap<String,JobAttribute>();
@@ -126,7 +126,7 @@ public abstract class JobAction extends RestAction {
             String jndiKey = componentID + ".jobManager"; // see AsyncServlet
             try {
                 Context ctx = new InitialContext();
-                this.jobManager = (JobManager2) ctx.lookup(jndiKey);
+                this.jobManager = (JobManager) ctx.lookup(jndiKey);
                 if (jobManager != null) {
                     log.debug("found: " + jndiKey +"=" + jobManager.getClass().getName());
                 } else {

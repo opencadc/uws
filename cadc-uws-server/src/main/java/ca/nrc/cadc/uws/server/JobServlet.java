@@ -82,7 +82,7 @@ import org.apache.log4j.Logger;
 public class JobServlet extends RestServlet {
     private static final Logger log = Logger.getLogger(JobServlet.class);
 
-    private JobManager2 jobManager;
+    private JobManager jobManager;
     private String jndiKey;
     
     public JobServlet() { 
@@ -102,7 +102,7 @@ public class JobServlet extends RestServlet {
         {
             try
             {
-                Class<JobManager2> clazz = (Class<JobManager2>) Class.forName(cname);
+                Class<JobManager> clazz = (Class<JobManager>) Class.forName(cname);
                 this.jobManager = clazz.newInstance();
                 
                 Context ctx = new InitialContext();

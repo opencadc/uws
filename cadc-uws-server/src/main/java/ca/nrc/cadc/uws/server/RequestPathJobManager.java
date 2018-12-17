@@ -98,25 +98,21 @@ import org.apache.log4j.Logger;
  *
  * @author pdowler
  */
-public class RequestPathJobManager implements JobManager2 {
+public class RequestPathJobManager extends SimpleJobManager {
 
     private static final Logger log = Logger.getLogger(RequestPathJobManager.class);
 
-    protected JobPersistence jobPersistence;
-    protected Map<String,JobPersistence> jobPersistenceMap = new TreeMap<>();
-    
-    protected JobExecutor jobExecutor;
-    protected Map<String,JobExecutor> jobExecutorMap = new TreeMap<>();
-    protected Long maxExecDuration = 3600L;
-    protected Long maxQuote = 3600L;
-    protected Long maxDestruction = 7 * 24 * 3600L;
+    protected final Map<String,JobPersistence> jobPersistenceMap = new TreeMap<>();
+    protected final Map<String,JobExecutor> jobExecutorMap = new TreeMap<>();
 
     public RequestPathJobManager() {
+        super();
     }
 
     @Override
     public void terminate()
             throws InterruptedException {
+        super.terminate();
         for (JobPersistence jp : jobPersistenceMap.values()) {
             jp.terminate();
         }
@@ -125,32 +121,6 @@ public class RequestPathJobManager implements JobManager2 {
         }
     }
 
-    /**
-     * Set a single (global) JobPersistence instance to be used for all requests.
-     * This supports backwards-compatible behaviour of using this instance and
-     * ignoring the request path. If this method is not called or is called with a
-     * null argument, createJobPersistence(requestpath) will be used to create
-     * instances as necessary.
-     * 
-     * @param jobPersistence 
-     */
-    public void setJobPersistence(JobPersistence jobPersistence) {
-        this.jobPersistence = jobPersistence;
-    }
-
-    /**
-     * Set a single (global) JobExecutor instance to be used for all requests.
-     * This supports backwards-compatible behaviour of using this instance and
-     * ignoring the request path. If this method is not called or is called with a
-     * null argument, createJobExecutor(requestpath) will be used to create
-     * instances as necessary.
-     * 
-     * @param jobExecutor 
-     */
-    public void setJobExecutor(JobExecutor jobExecutor) {
-        this.jobExecutor = jobExecutor;
-    }
-    
     /**
      * Create a JobPersistence instance for the specified request path.  The same
      * instance (e.g. a PostgresJobPersistence) can be returned if you want to use a 
@@ -176,237 +146,29 @@ public class RequestPathJobManager implements JobManager2 {
         return null;
     }
     
-    private JobPersistence getJobPersistence(String requestPath) {
-        if (jobPersistence != null) { 
-            return jobPersistence;
-        }
-        
-        JobPersistence ret = jobPersistenceMap.get(requestPath);
+    @Override
+    protected JobPersistence getJobPersistence(String requestPath) {
+        JobPersistence ret = super.getJobPersistence(requestPath);
         if (ret == null) {
-            ret = createJobPersistence(requestPath);
-            jobPersistenceMap.put(requestPath, ret);
+            ret = jobPersistenceMap.get(requestPath);
+            if (ret == null) {
+                ret = createJobPersistence(requestPath);
+                jobPersistenceMap.put(requestPath, ret);
+            }
         }
         return ret;
     }
     
-    private JobExecutor getJobExecutor(String requestPath) {
-        if (jobExecutor != null) {
-            return jobExecutor;
-        }
-        
-        JobExecutor ret = jobExecutorMap.get(requestPath);
+    @Override
+    protected JobExecutor getJobExecutor(String requestPath) {
+        JobExecutor ret = super.getJobExecutor(requestPath);
         if (ret == null) {
-            ret = createJobExecutor(requestPath);
-            jobExecutorMap.put(requestPath, ret);
+            ret = jobExecutorMap.get(requestPath);
+            if (ret == null) {
+                ret = createJobExecutor(requestPath);
+                jobExecutorMap.put(requestPath, ret);
+            }
         }
         return ret;
     }
-
-    /**
-     * Max elapsed time a job will be allowed to execute.
-     *
-     * @param maxExecDuration
-     */
-    @Override
-    public void setMaxExecDuration(Long maxExecDuration) {
-        this.maxExecDuration = maxExecDuration;
-    }
-
-    /**
-     * Max elapsed time from job creation to destruction.
-     *
-     * @param maxDestruction
-     */
-    @Override
-    public void setMaxDestruction(Long maxDestruction) {
-        this.maxDestruction = maxDestruction;
-    }
-
-    /**
-     * Max elapsed time until job should be finished.
-     *
-     * @param maxQuote
-     */
-    @Override
-    public void setMaxQuote(Long maxQuote) {
-        this.maxQuote = maxQuote;
-    }
-
-    @Override
-    public void abort(String requestPath, String jobID)
-            throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException {
-        JobPersistence jobPersistence = getJobPersistence(requestPath);
-        Job job = jobPersistence.get(jobID);
-        doAuthorizationCheck(job);
-        JobExecutor jobExecutor = getJobExecutor(requestPath);
-        jobExecutor.abort(job);
-    }
-
-    @Override
-    public Job create(String requestPath, Job job)
-            throws JobPersistenceException, TransientException {
-        // set defaults
-        job.setExecutionPhase(ExecutionPhase.PENDING);
-        JobPersistenceUtil.constrainDestruction(job, 1, maxDestruction);
-        JobPersistenceUtil.constrainDuration(job, 1, maxExecDuration);
-        JobPersistenceUtil.constrainQuote(job, 1, maxQuote);
-        JobPersistence jobPersistence = getJobPersistence(requestPath);
-        return jobPersistence.put(job);
-    }
-
-    @Override
-    public void delete(String requestPath, String jobID)
-            throws JobNotFoundException, JobPersistenceException, TransientException {
-        JobPersistence jobPersistence = getJobPersistence(requestPath);
-        Job job = jobPersistence.get(jobID);
-        doAuthorizationCheck(job);
-        jobPersistence.delete(jobID);
-    }
-
-    @Override
-    public void execute(String requestPath, String jobID)
-            throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException {
-        JobPersistence jobPersistence = getJobPersistence(requestPath);
-        Job job = jobPersistence.get(jobID);
-        doAuthorizationCheck(job);
-        execute(requestPath, job);
-    }
-
-    @Override
-    public void execute(String requestPath, Job job)
-            throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException {
-        // assume they used get which does auth check and getDetails
-        JobExecutor jobExecutor = getJobExecutor(requestPath);
-        jobExecutor.execute(job);
-    }
-
-    @Override
-    public void execute(String requestPath, String jobID, SyncOutput output)
-            throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException {
-        JobPersistence jobPersistence = getJobPersistence(requestPath);
-        Job job = jobPersistence.get(jobID);
-        doAuthorizationCheck(job);
-        jobPersistence.getDetails(job);
-        execute(requestPath, job, output);
-    }
-
-    @Override
-    public void execute(String requestPath, Job job, SyncOutput output)
-            throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException {
-        JobExecutor jobExecutor = getJobExecutor(requestPath);
-        jobExecutor.execute(job, output);
-    }
-
-    @Override
-    public Job get(String requestPath, String jobID)
-            throws JobNotFoundException, JobPersistenceException, TransientException {
-        JobPersistence jobPersistence = getJobPersistence(requestPath);
-        Job job = jobPersistence.get(jobID);
-        doAuthorizationCheck(job);
-        jobPersistence.getDetails(job);
-        return job;
-    }
-
-    @Override
-    public Iterator<JobRef> iterator(String requestPath, String appname)
-            throws JobPersistenceException, TransientException {
-        JobPersistence jobPersistence = getJobPersistence(requestPath);
-        return jobPersistence.iterator(appname);
-    }
-
-    @Override
-    public Iterator<JobRef> iterator(String requestPath, String appname, List<ExecutionPhase> phases)
-            throws JobPersistenceException, TransientException {
-        JobPersistence jobPersistence = getJobPersistence(requestPath);
-        return jobPersistence.iterator(appname, phases);
-    }
-
-    @Override
-    public Iterator<JobRef> iterator(String requestPath, String appname, List<ExecutionPhase> phases, Date after, Integer last)
-            throws JobPersistenceException, TransientException {
-        JobPersistence jobPersistence = getJobPersistence(requestPath);
-        return jobPersistence.iterator(appname, phases, after, last);
-    }
-
-    @Override
-    public void update(String requestPath, String jobID, Date destruction, Long duration, Date quote)
-            throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException {
-        log.debug("update: " + jobID + "," + destruction + "," + duration + "," + quote);
-        JobPersistence jobPersistence = getJobPersistence(requestPath);
-        Job job = jobPersistence.get(jobID);
-        doAuthorizationCheck(job);
-        if (!ExecutionPhase.PENDING.equals(job.getExecutionPhase())) {
-            throw new JobPhaseException("cannot update job control details when phase=" + job.getExecutionPhase());
-        }
-
-        if (destruction != null) {
-            job.setDestructionTime(destruction);
-        }
-        if (duration != null) {
-            job.setExecutionDuration(duration);
-        }
-        if (quote != null) {
-            job.setQuote(quote);
-        }
-
-        JobPersistenceUtil.constrainDestruction(job, 1, maxDestruction);
-        JobPersistenceUtil.constrainDuration(job, 1, maxExecDuration);
-        JobPersistenceUtil.constrainQuote(job, 1, maxQuote);
-
-        jobPersistence.put(job);
-    }
-
-    @Override
-    public void update(String requestPath, String jobID, List<Parameter> params)
-            throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException {
-        log.debug("update: " + jobID + "," + toString(params));
-        if (params == null || params.size() == 0) {
-            return;
-        }
-        JobPersistence jobPersistence = getJobPersistence(requestPath);
-        Job job = jobPersistence.get(jobID);
-        doAuthorizationCheck(job);
-        if (!ExecutionPhase.PENDING.equals(job.getExecutionPhase())) {
-            throw new JobPhaseException("cannot update job control details when phase=" + job.getExecutionPhase());
-        }
-        jobPersistence.addParameters(jobID, params);
-    }
-
-    private String toString(List list) {
-        if (list == null) {
-            return "null";
-        }
-        return "List[" + list.size() + "]";
-    }
-
-    /**
-     * Checks that the current caller is equivalent to the job owner.
-     *
-     * @param job The Job to check authorization to.
-     * @throws AccessControlException If the current subject is not
-     * authorized.
-     */
-    protected void doAuthorizationCheck(Job job)
-            throws AccessControlException {
-        log.debug("doAuthorizationCheck: " + job.getID() + "," + job.getOwnerID());
-        if (job.ownerSubject == null) {
-            return;
-        }
-        AccessControlContext acContext = AccessController.getContext();
-        Subject caller = Subject.getSubject(acContext);
-        if (caller != null) {
-            Set<Principal> ownerPrincipals = job.ownerSubject.getPrincipals();
-            Set<Principal> callerPrincipals = caller.getPrincipals();
-            for (Principal oPrin : ownerPrincipals) {
-                for (Principal cPrin : callerPrincipals) {
-                    log.debug("doAuthorizationCheck: " + oPrin + " vs " + cPrin);
-                    if (AuthenticationUtil.equals(oPrin, cPrin)) {
-                        return; // caller===owner
-                    }
-                }
-            }
-        }
-        throw new AccessControlException("permission denied");
-    }
-
 }
