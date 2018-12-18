@@ -67,17 +67,21 @@
 
 package ca.nrc.cadc.uws.web;
 
+import ca.nrc.cadc.io.ByteCountOutputStream;
 import ca.nrc.cadc.rest.InlineContentHandler;
 import ca.nrc.cadc.rest.RestAction;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobAttribute;
-import ca.nrc.cadc.uws.server.JobManager;
+import ca.nrc.cadc.uws.JobWriter;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import org.apache.log4j.Logger;
+import ca.nrc.cadc.uws.server.JobManager;
 
 /**
  *
@@ -182,5 +186,15 @@ public abstract class JobAction extends RestAction {
     protected String getJobResultID() {
         initTarget();
         return resultID;
+    }
+    
+    protected void writeJob(Job job) throws IOException {
+        // TODO: content negotiation via accept header
+        JobWriter w = new JobWriter();
+        syncOutput.setHeader("Content-Type", "text/xml");
+        OutputStream os = syncOutput.getOutputStream();
+        ByteCountOutputStream bc = new ByteCountOutputStream(os);
+        w.write(job, bc);
+        logInfo.setBytes(bc.getByteCount());
     }
 }

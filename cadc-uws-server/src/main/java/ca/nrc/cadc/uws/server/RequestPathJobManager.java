@@ -3,12 +3,12 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2018.                            (c) 2018.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -65,62 +65,110 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
+package ca.nrc.cadc.uws.server;
 
-package ca.nrc.cadc.uws.web.restlet.resources;
-
-
+import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.net.TransientException;
+import ca.nrc.cadc.rest.SyncOutput;
+import ca.nrc.cadc.uws.ExecutionPhase;
+import ca.nrc.cadc.uws.Job;
+import ca.nrc.cadc.uws.JobRef;
+import ca.nrc.cadc.uws.Parameter;
+import java.security.AccessControlContext;
+import java.security.AccessControlException;
+import java.security.AccessController;
+import java.security.Principal;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import javax.security.auth.Subject;
 import org.apache.log4j.Logger;
-import org.junit.Before;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
-
-
 
 /**
- * TestCase for the Asynchronous Resource.
+ * Implementation of the JobManager interface that can use the request path to instantiate
+ * and invoke different JobPersistence and JobExecutor instances. The intended usage is
+ * to subclass this and either (i) call setJobPersistence and/or setJobExecutor to use single
+ * instances (that ignore request path) in the constructor, or (ii) override createJobPersistence
+ * and/or createJobExecutor to instantiate instances for use with different paths.
+ *
+ * @author pdowler
  */
-public class AsynchResourceTest
-{
-    private static Logger log = Logger.getLogger(AsynchResourceTest.class);
-    
-    /**
-     * Sets up the fixture, for example, open a network connection.
-     * This method is called before a test is executed.
-     *
-     * @throws Exception for anything that goes wrong.
-     */
-    @Before
-    public void setUp()
-    {
-             
+public class RequestPathJobManager extends SimpleJobManager {
+
+    private static final Logger log = Logger.getLogger(RequestPathJobManager.class);
+
+    protected final Map<String,JobPersistence> jobPersistenceMap = new TreeMap<>();
+    protected final Map<String,JobExecutor> jobExecutorMap = new TreeMap<>();
+
+    public RequestPathJobManager() {
+        super();
     }
 
-    /**
-     * Tears down the fixture, for example, close a network connection.
-     * This method is called after a test is executed.
-     */
-    @After
-    public void tearDown()
-    {
-        
-    }
-
-    @Test
-    public void accept()
-    {
-        try
-        {
-            
+    @Override
+    public void terminate()
+            throws InterruptedException {
+        super.terminate();
+        for (JobPersistence jp : jobPersistenceMap.values()) {
+            jp.terminate();
         }
-        catch(Exception unexpected)
-        {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
+        for (JobExecutor je : jobExecutorMap.values()) {
+            je.terminate();
         }
     }
 
+    /**
+     * Create a JobPersistence instance for the specified request path.  The same
+     * instance (e.g. a PostgresJobPersistence) can be returned if you want to use a 
+     * single instance (e.g. single connection pool and single database) for one 
+     * or more sub-paths. 
+     * 
+     * @param requestPath
+     * @return a JobPersistence instance
+     */
+    protected JobPersistence createJobPersistence(String requestPath) { 
+        return null;
+    }
     
+    /**
+     * Create a JobExecutor instance for the specified request path. The same
+     * instance (e.g. a ThreadPoolExecutor) if you want to use a single instance
+     * for one or more sub-paths.
+     * 
+     * @param requestPath
+     * @return a JobExecutor instance
+     */
+    protected JobExecutor createJobExecutor(String requestPath) {
+        return null;
+    }
+    
+    @Override
+    protected JobPersistence getJobPersistence(String requestPath) {
+        JobPersistence ret = super.getJobPersistence(requestPath);
+        if (ret == null) {
+            ret = jobPersistenceMap.get(requestPath);
+            if (ret == null) {
+                ret = createJobPersistence(requestPath);
+                jobPersistenceMap.put(requestPath, ret);
+            }
+        }
+        return ret;
+    }
+    
+    @Override
+    protected JobExecutor getJobExecutor(String requestPath) {
+        JobExecutor ret = super.getJobExecutor(requestPath);
+        if (ret == null) {
+            ret = jobExecutorMap.get(requestPath);
+            if (ret == null) {
+                ret = createJobExecutor(requestPath);
+                jobExecutorMap.put(requestPath, ret);
+            }
+        }
+        return ret;
+    }
 }

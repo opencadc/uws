@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2018.                            (c) 2018.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,56 +62,75 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
-*
 ************************************************************************
 */
 
-package ca.nrc.cadc.uws.web.restlet.representation;
+package ca.nrc.cadc.uws.web;
 
-import java.io.IOException;
-import java.io.OutputStream;
 
-import org.jdom2.Document;
-import org.jdom2.output.Format;
-import org.jdom2.output.XMLOutputter;
-import org.restlet.data.MediaType;
-import org.restlet.representation.OutputRepresentation;
+import ca.nrc.cadc.rest.RestAction;
+import ca.nrc.cadc.uws.Job;
+import java.security.AccessControlException;
+import org.apache.log4j.Logger;
 
 /**
- * Representation for a JDOM Document.
- *
- * @author jburke
+ * Placeholder for replacing SyncServlet with a cadc-rest based implementation.
+ * 
+ * @author pdowler
  */
-public class JDOMRepresentation extends OutputRepresentation
-{
-    private Document document;
+public class SyncPostAction extends JobAction {
+    private static final Logger log = Logger.getLogger(SyncPostAction.class);
 
-    /**
-     * Constructor.
-     *
-     * @param mediaType The representation's media type.
-     * @param document JDOM document.
-     */
-    public JDOMRepresentation(MediaType mediaType, Document document)
-    {
-        super(mediaType);
-        this.document = document;
+    static final String PRG_TOKEN = "run";
+    
+    public SyncPostAction() { 
     }
-
-    /**
-     * Write the Document to the OutputStream.
-     * 
-     * @param out The OutputStream to write to.
-     * @throws IOException if there is a problem writing the Document.
-     */
+    
     @Override
-    public void write(OutputStream out)
-        throws IOException
-    {
-        XMLOutputter outputter = new XMLOutputter();
-        outputter.setFormat(Format.getPrettyFormat());
-        outputter.output(document, out);
-    }
+    public void doAction() throws Exception {
+        super.init();
 
+        log.debug("START: " + syncInput.getPath() + "[" + readable + "," + writable + "]");
+        if (!writable) {
+            String cause = RestAction.STATE_OFFLINE_MSG;
+            if (readable) {
+                cause = RestAction.STATE_READ_ONLY_MSG;
+            }
+            throw new AccessControlException("cannot create job: " + cause);
+        }
+        
+        String jobID = getJobID();
+        if (jobID == null) {
+            // create
+            JobCreator jc = new JobCreator();
+            Job in = jc.create(syncInput);
+            Job job = jobManager.create(syncInput.getRequestPath(), in);
+            String redirectURL = getJobListURL() + "/" + job.getID() + "/" + PRG_TOKEN;
+            logInfo.setJobID(jobID);
+            log.debug("redirect: " + redirectURL);
+            syncOutput.setHeader("Location", redirectURL);
+            syncOutput.setCode(303);
+            return;
+        }
+        
+        throw new UnsupportedOperationException("POST to sync job creation with extra path elements");
+    }
+    
+    // TODO: identical code in async PostAction
+    @Override
+    protected ca.nrc.cadc.rest.InlineContentHandler getInlineContentHandler() {
+        String cname = initParams.get(ca.nrc.cadc.rest.InlineContentHandler.class.getName());
+        if (cname == null) {
+            return null;
+        }
+        
+        try {
+            Class c = Class.forName(cname);
+            ca.nrc.cadc.rest.InlineContentHandler ret = (ca.nrc.cadc.rest.InlineContentHandler) c.newInstance();
+            log.debug("created: " + ret.getClass().getName());
+            return ret;
+        } catch (Throwable oops) {
+            throw new RuntimeException("CONFIG: failed to load InlineContentHandler: " + cname, oops);
+        }
+    }
 }

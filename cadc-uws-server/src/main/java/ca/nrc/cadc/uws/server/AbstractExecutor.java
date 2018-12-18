@@ -69,13 +69,12 @@
 
 package ca.nrc.cadc.uws.server;
 
-import java.util.Date;
-
-import org.apache.log4j.Logger;
-
 import ca.nrc.cadc.net.TransientException;
+import ca.nrc.cadc.rest.SyncOutput;
 import ca.nrc.cadc.uws.ExecutionPhase;
 import ca.nrc.cadc.uws.Job;
+import java.util.Date;
+import org.apache.log4j.Logger;
 
 /**
  *

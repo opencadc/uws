@@ -70,6 +70,7 @@
 package ca.nrc.cadc.uws.server;
 
 import ca.nrc.cadc.net.TransientException;
+import ca.nrc.cadc.rest.SyncOutput;
 import ca.nrc.cadc.uws.Job;
 
 /**

@@ -3,12 +3,12 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2018.                            (c) 2018.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -62,48 +62,82 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
-*
 ************************************************************************
 */
 
+package ca.nrc.cadc.uws.server;
 
-package ca.nrc.cadc.uws.web.restlet;
+import ca.nrc.cadc.rest.RestServlet;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import org.apache.log4j.Logger;
 
 /**
- * An exception in a Resource that matches nothing.
+ *
+ * @author pdowler
  */
-public class InvalidResourceException extends RuntimeException
-{
-    /**
-     * Constructs a new runtime exception with the specified detail message and
-     * cause.  <p>Note that the detail message associated with
-     * <code>cause</code> is <i>not</i> automatically incorporated in
-     * this runtime exception's detail message.
-     *
-     * @param message the detail message (which is saved for later retrieval
-     *                by the {@link #getMessage()} method).
-     * @param cause   the cause (which is saved for later retrieval by the
-     *                {@link #getCause()} method).  (A <tt>null</tt> value is
-     *                permitted, and indicates that the cause is nonexistent or
-     *                unknown.)
-     * @since 1.4
-     */
-    public InvalidResourceException(String message, Throwable cause)
-    {
-        super(message, cause);
+public class JobServlet extends RestServlet {
+    private static final Logger log = Logger.getLogger(JobServlet.class);
+
+    private JobManager jobManager;
+    private String jndiKey;
+    
+    public JobServlet() { 
+        super();
     }
 
-    /**
-     * Constructs a new runtime exception with the specified detail message.
-     * The cause is not initialized, and may subsequently be initialized by a
-     * call to {@link #initCause}.
-     *
-     * @param message the detail message. The detail message is saved for
-     *                later retrieval by the {@link #getMessage()} method.
-     */
-    public InvalidResourceException(String message)
+    @Override
+    public void init(ServletConfig config) throws ServletException {
+        super.init(config);
+        this.jndiKey = componentID + ".jobManager";
+        String cname = config.getInitParameter(JobManager.class.getName());
+        initJobManager(cname);
+    }
+    
+    protected void initJobManager(String cname) {
+        if (cname != null)
+        {
+            try
+            {
+                Class<JobManager> clazz = (Class<JobManager>) Class.forName(cname);
+                this.jobManager = clazz.newInstance();
+                
+                Context ctx = new InitialContext();
+                try {
+                    ctx.unbind(jndiKey);
+                } catch (NamingException ignore) {
+                    log.debug("unbind previous JobManager failed... ignoring");
+                }
+                ctx.bind(jndiKey, jobManager);
+                
+                log.info("create: " + jndiKey + " " + cname + " [OK]");
+            } catch(Exception ex) {
+                log.error("create: " + jndiKey + " " + cname + " [FAILED]", ex);
+            }
+        } else {
+            log.error("CONFIG: no JobManager configured in " + componentID);
+        }
+    }
+    
+    @Override
+    public void destroy()
     {
-        super(message);
+        if (jobManager != null) {
+            try {
+                jobManager.terminate();
+            } catch (Exception oops) {
+                log.error("failed to terminate Jobmanager", oops);
+            }
+            try {
+                Context ctx = new InitialContext();
+                ctx.unbind(jndiKey);
+            } catch (Exception oops) {
+                log.error("unbind failed during destroy", oops);
+            }
+        }
+        super.destroy();
     }
 }

@@ -109,7 +109,7 @@ public class DeleteAction extends JobAction {
                 throw new IllegalArgumentException("cannot delete " + jobID + "/" + field);
             }
 
-            jobManager.delete(jobID);
+            jobManager.delete(syncInput.getRequestPath(), jobID);
 
             String jobListURL = getJobListURL();
             log.debug("redirect: " + jobListURL);

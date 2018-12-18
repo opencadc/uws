@@ -79,7 +79,10 @@ import java.util.List;
 /**
  * 
  * @author jburke
+ * @deprecated Use UWSInlineContentHandler
+ * 
  */
+@Deprecated
 public interface InlineContentHandler
 {
     /**

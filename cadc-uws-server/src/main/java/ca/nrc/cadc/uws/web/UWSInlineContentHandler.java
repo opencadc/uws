@@ -3,12 +3,12 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2018.                            (c) 2018.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -62,35 +62,54 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
-*
 ************************************************************************
 */
 
+package ca.nrc.cadc.uws.web;
 
-package ca.nrc.cadc.uws.web.restlet.resources;
-
-
-import org.jdom2.Document;
-
-import ca.nrc.cadc.uws.JobWriter;
-
+import ca.nrc.cadc.rest.InlineContentHandler;
+import ca.nrc.cadc.uws.Parameter;
 
 /**
- * Resource to handle the Result List.
+ * Extension of the base cadc-rest InlineContentHandler that gives the implementation
+ * access to the job parameter list.
+ * 
+ * @author pdowler
  */
-public class ResultListResource extends BaseJobResource
-{
+public interface UWSInlineContentHandler extends InlineContentHandler {
+    
     /**
-     * Assemble the XML for this Resource's Representation into the given
-     * Document.
-     *
-     * @param document The Document to build up.
+     * Content.name value to use when the value is a JobInfo created from a
+     * job description document.
      */
-    protected void buildXML(Document document)
-    {
-        JobWriter jobWriter = new JobWriter();
-        document.addContent(jobWriter.getResults(job.getResultsList()));
-    }
+    public static final String CONTENT_JOBINFO = "JobInfo";
+    
+    /**
+     * Content.name value to use when the value is a ParamReplacement created by
+     * inline content processing.
+     */
+    public static final String CONTENT_PARAM_REPLACE = "ParamReplacement";
+    
+    /**
+     * InlineContentHandler.Content.value object to trigger replacing an original
+     * parameter value with a new value based on processing of inline content. After
+     * processing all input, all parameters are scanned and origStr is replaced with
+     * newStr (complete or partial replacement).
+     */
+    public static class ParameterReplacement {
+        String origStr;
+        String newStr;
 
+        public ParameterReplacement(String origStr, String newStr) {
+            this.origStr = origStr;
+            this.newStr = newStr;
+        }
+
+        @Override
+        public String toString() {
+            return "UWSInlineContentHandler.ParameterReplacement[" + origStr + " -> " + newStr + "]";
+        }
+        
+        
+    }
 }

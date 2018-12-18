@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2018.                            (c) 2018.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,48 +62,57 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
-*
 ************************************************************************
 */
 
-package ca.nrc.cadc.uws.server;
+package ca.nrc.cadc.uws.web;
 
-import java.io.IOException;
-import java.io.OutputStream;
+
+import ca.nrc.cadc.rest.RestAction;
+import ca.nrc.cadc.uws.Job;
+import java.security.AccessControlException;
+import org.apache.log4j.Logger;
 
 /**
- * Simple wrapper to set up synchronous output from a SyncJobRunner. All HTTP headers
- * must be set befoer the OutputStream is opened. the caller is responsibel for closing
- * the OutputStream.
- *
- * @author jburke
+ * Placeholder for replacing SyncServlet with a cadc-rest based implementation.
+ * 
+ * @author pdowler
  */
-public interface SyncOutput
-{
-    /**
-     * Set the HTTP response code. Calls to this method that occur after the
-     * OutputStream is opened are silently ignored.
-     *
-     * @param code
-     */
-    void setResponseCode(int code);
+public class SyncGetAction extends JobAction {
+    private static final Logger log = Logger.getLogger(SyncGetAction.class);
 
-    /**
-     * Set an HTTP header parameter. Calls to this method that occur after the
-     * OutputStream is opened are silently ignored.
-     *
-     * @param key header key.
-     * @param value header value.
-     */
-    void setHeader(String key, String value);
+    public SyncGetAction() { 
+    }
+    
+    @Override
+    public void doAction() throws Exception {
+        super.init();
 
-    /**
-     * Returns an OutputStream for streaming search results.
-     *
-     * @throws IOException
-     * @return OutputStream
-     */
-    OutputStream getOutputStream()
-        throws IOException;
+        log.debug("START: " + syncInput.getPath() + "[" + readable + "," + writable + "]");
+        if (!readable) {
+            throw new AccessControlException(RestAction.STATE_OFFLINE_MSG);
+        }
+        
+        Job job = null;
+        boolean exec = false;
+        
+        
+        if (getJobID() == null) {
+            // create
+            JobCreator jc = new JobCreator();
+            Job in = jc.create(syncInput);
+            job = jobManager.create(syncInput.getRequestPath(), in);
+            exec = true;
+        } else {
+            job = jobManager.get(syncInput.getRequestPath(), getJobID());
+        }
+        
+        String token = getJobField();
+        exec = exec || SyncPostAction.PRG_TOKEN.equals(token);
+        if (exec) {
+            jobManager.execute(syncInput.getRequestPath(), job, syncOutput);
+        } else {
+            writeJob(job);
+        }
+    }
 }
