@@ -90,20 +90,18 @@ import org.junit.runners.Suite;
         JobTest.class,
         SchemaTest.class, 
         GetPhaseTest.class,
-
         DestructionTest.class,
         ExecutionDurationTest.class,
         QuoteTest.class,
         OwnerTest.class,
-
-        //JobInfoTest.class, // this test requies an InlineContentHandler to parse/validate the input
-    
+        JobInfoTest.class,
         ParametersTest.class
     })
 
 public class UWSTestSuite {
 
     static {
+        Log4jInit.setLevel("ca.nrc.cadc.rest", Level.DEBUG);
         Log4jInit.setLevel("ca.nrc.cadc.uws", Level.DEBUG);
     }
 }

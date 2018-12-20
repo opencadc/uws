@@ -98,36 +98,32 @@
     <!-- synchronous access to JobManager service -->
     <servlet>
         <load-on-startup>2</load-on-startup>
-      <servlet-name>SyncServlet</servlet-name>
-      <servlet-class>ca.nrc.cadc.uws.server.SyncServlet</servlet-class>
-      <init-param>
-          <param-name>ca.nrc.cadc.uws.server.JobManager</param-name>
-          <param-value>ca.nrc.cadc.uws.sample.SyncJobManager</param-value>
-      </init-param>
-      <init-param>
-          <param-name>ca.nrc.cadc.uws.server.SyncServlet.execOnGET</param-name>
-          <param-value>true</param-value>
-      </init-param>
-      <init-param>
-          <param-name>ca.nrc.cadc.uws.server.SyncServlet.execOnPOST</param-name>
-          <param-value>false</param-value>
-      </init-param>
-      <init-param>
-          <param-name>ca.nrc.cadc.uws.web.InlineContentHandler</param-name>
-          <param-value>ca.nrc.cadc.uws.sample.SampleInlineContentHandler</param-value>
-      </init-param>
+        <servlet-name>SyncServlet</servlet-name>
+        <servlet-class>ca.nrc.cadc.uws.server.JobServlet</servlet-class>
+        <init-param>
+            <param-name>get</param-name>
+            <param-value>ca.nrc.cadc.uws.web.SyncGetAction</param-value>
+        </init-param>
+        <init-param>
+            <param-name>post</param-name>
+            <param-value>ca.nrc.cadc.uws.web.SyncPostAction</param-value>
+        </init-param>
+
+        <init-param>
+            <param-name>ca.nrc.cadc.uws.server.JobManager</param-name>
+            <param-value>ca.nrc.cadc.uws.sample.SyncJobManager</param-value>
+        </init-param>
+        <init-param>
+            <param-name>ca.nrc.cadc.rest.InlineContentHandler</param-name>
+            <param-value>ca.nrc.cadc.uws.sample.SampleInlineContentHandler</param-value>
+        </init-param>
     </servlet>
 
     <!-- asynchronous access to JobManager service -->
     <servlet>
         <load-on-startup>2</load-on-startup>
         <servlet-name>AsyncServlet</servlet-name>
-        <servlet-class>ca.nrc.cadc.uws.server.AsyncServlet</servlet-class>
-        <init-param>
-          <param-name>ca.nrc.cadc.uws.server.JobManager</param-name>
-          <param-value>ca.nrc.cadc.uws.sample.AsyncJobManager</param-value>
-        </init-param>
-        <!-- actions -->
+        <servlet-class>ca.nrc.cadc.uws.server.JobServlet</servlet-class>
         <init-param>
             <param-name>get</param-name>
             <param-value>ca.nrc.cadc.uws.web.GetAction</param-value>
@@ -140,29 +136,16 @@
             <param-name>delete</param-name>
             <param-value>ca.nrc.cadc.uws.web.DeleteAction</param-value>
         </init-param>
-    </servlet>
-    
-    <!--
-    <servlet>
-        <load-on-startup>2</load-on-startup>
-        <servlet-name>AsyncServlet</servlet-name>
-        <servlet-class>org.restlet.ext.servlet.ServerServlet</servlet-class>
-        <init-param>
-            <param-name>org.restlet.application</param-name>
-            <param-value>ca.nrc.cadc.uws.web.restlet.UWSAsyncApplication</param-value>
-        </init-param>
         <init-param>
             <param-name>ca.nrc.cadc.uws.server.JobManager</param-name>
-            <param-value>ca.nrc.cadc.uws.sample.SampleJobManager</param-value>
+            <param-value>ca.nrc.cadc.uws.sample.AsyncJobManager</param-value>
         </init-param>
         <init-param>
-            <param-name>ca.nrc.cadc.uws.web.InlineContentHandler</param-name>
+            <param-name>ca.nrc.cadc.rest.InlineContentHandler</param-name>
             <param-value>ca.nrc.cadc.uws.sample.SampleInlineContentHandler</param-value>
-      </init-param>
+        </init-param>
     </servlet>
-    -->
     
-
     <servlet-mapping>
             <servlet-name>SyncServlet</servlet-name>
             <url-pattern>/sync/*</url-pattern>
