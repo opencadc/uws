@@ -65,68 +65,49 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.sample;
 
 import ca.nrc.cadc.uws.JobInfo;
-import ca.nrc.cadc.uws.Parameter;
 import ca.nrc.cadc.uws.web.InlineContentException;
-import ca.nrc.cadc.uws.web.InlineContentHandler;
+import ca.nrc.cadc.uws.web.UWSInlineContentHandler;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.log4j.Logger;
 
-public class SampleInlineContentHandler implements InlineContentHandler
-{
+public class SampleInlineContentHandler implements UWSInlineContentHandler {
+
     private static Logger log = Logger.getLogger(SampleInlineContentHandler.class);
 
     private static final String TEXT_XML = "text/xml";
 
-    private List<Parameter> parameterList;
-    private JobInfo jobInfo;
-
-    public SampleInlineContentHandler() { }
-
-    public void setParameterList(List<Parameter> parameterList)
-    {
-        this.parameterList = parameterList;
+    public SampleInlineContentHandler() {
     }
 
-    public List<Parameter> getParameterList()
-    {
-        if (parameterList == null)
-            parameterList = new ArrayList<Parameter>();
-        return parameterList;
-    }
-
-    public JobInfo getJobInfo()
-    {
-        return jobInfo;
-    }
-
-    public URL accept(String name, String contentType, InputStream inputStream)
-        throws InlineContentException, IOException
-    {
-        if (inputStream == null)
+    @Override
+    public Content accept(String name, String contentType, InputStream inputStream)
+            throws InlineContentException, IOException {
+        if (inputStream == null) {
             throw new IOException("The InputStream is closed");
+        }
 
         log.debug("Content-Type: " + contentType);
-        if (contentType != null && contentType.equals(TEXT_XML))
-        {
+        if (contentType != null && contentType.equals(TEXT_XML)) {
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
             StringBuilder sb = new StringBuilder();
             String line = null;
-            while ((line = reader.readLine()) != null)
+            while ((line = reader.readLine()) != null) {
                 sb.append(line).append("\n");
-            jobInfo = new JobInfo(sb.toString(), contentType, true);
-        }
-        return null;
-    }
+            }
 
+            Content ret = new Content();
+            ret.name = UWSInlineContentHandler.CONTENT_JOBINFO;
+            ret.value = new JobInfo(sb.toString(), contentType, true);
+            return ret;
+        }
+        throw new UnsupportedOperationException("unexpected content type: " + contentType);
+    }
 }
