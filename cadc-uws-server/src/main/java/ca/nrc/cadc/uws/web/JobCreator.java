@@ -82,7 +82,12 @@ public class JobCreator
                     log.debug("no parameter modified by " + pr);
                 }
             } else {
-                log.debug("unhandled inline content: " + cname);
+                log.debug("inline content: " + cname + " -> new param");
+                // assume content -> param key=value
+                Object val = input.getContent(cname);
+                if (val != null) {
+                    job.getParameterList().add(new Parameter(cname, val.toString()));
+                }
             }
         }
         

@@ -93,7 +93,8 @@ public enum JobAttribute
     PARAMETER("parameter"),
     RESULTS("results"),
     RESULT("result"),
-    ERROR_SUMMARY("errorSummary"),
+    ERROR("error"), // REST binding
+    ERROR_SUMMARY("errorSummary"), // xml element name
     ERROR_SUMMARY_MESSAGE("message"),
     ERROR_SUMMARY_DETAIL_LINK("detail"),
     ERROR_SUMMARY_TYPE("type"),
