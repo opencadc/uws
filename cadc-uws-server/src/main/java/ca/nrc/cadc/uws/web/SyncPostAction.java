@@ -98,7 +98,7 @@ public class SyncPostAction extends JobAction {
             }
             throw new AccessControlException("cannot create job: " + cause);
         }
-        String sval = initParams.get(SyncPostAction.class.getName() + "execOnPOST");
+        String sval = initParams.get(SyncPostAction.class.getName() + ".execOnPOST");
         boolean exec = "true".equals(sval);
         
         String jobID = getJobID();
