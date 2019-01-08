@@ -98,6 +98,8 @@ public class SyncPostAction extends JobAction {
             }
             throw new AccessControlException("cannot create job: " + cause);
         }
+        String sval = initParams.get(SyncPostAction.class.getName() + "execOnPOST");
+        boolean exec = "true".equals(sval);
         
         String jobID = getJobID();
         if (jobID == null) {
@@ -105,11 +107,15 @@ public class SyncPostAction extends JobAction {
             JobCreator jc = new JobCreator();
             Job in = jc.create(syncInput);
             Job job = jobManager.create(syncInput.getRequestPath(), in);
-            String redirectURL = getJobListURL() + "/" + job.getID() + "/" + PRG_TOKEN;
-            logInfo.setJobID(jobID);
-            log.debug("redirect: " + redirectURL);
-            syncOutput.setHeader("Location", redirectURL);
-            syncOutput.setCode(303);
+            logInfo.setJobID(job.getID());
+            if (exec) {
+                jobManager.execute(syncInput.getRequestPath(), job, syncOutput);
+            } else {
+                String redirectURL = getJobListURL() + "/" + job.getID() + "/" + PRG_TOKEN;
+                log.debug("redirect: " + redirectURL);
+                syncOutput.setHeader("Location", redirectURL);
+                syncOutput.setCode(303);
+            }
             return;
         }
         
