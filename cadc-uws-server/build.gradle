@@ -32,7 +32,7 @@ dependencies {
     compile 'org.opencadc:cadc-log:[1.0.6,)'
     compile 'org.opencadc:cadc-util:[1.2.8,)'
     compile 'org.opencadc:cadc-vosi:[1.2,)'
-    compile 'org.opencadc:cadc-uws:[1.0,)'
+    compile 'org.opencadc:cadc-uws:[1.0.3,)'
     compile 'org.opencadc:cadc-rest:[1.2.3,)'
 
     testCompile 'junit:junit:4.+'
