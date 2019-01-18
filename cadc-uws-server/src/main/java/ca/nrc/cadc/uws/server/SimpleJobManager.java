@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2018.                            (c) 2018.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -82,9 +82,7 @@ import java.security.Principal;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import javax.security.auth.Subject;
 import org.apache.log4j.Logger;
 
@@ -139,7 +137,7 @@ public class SimpleJobManager implements JobManager {
         return null;
     }
     
-    protected JobExecutor getJobExecutor(String requestPath) {
+    protected JobExecutor getJobExecutor(String requestPath, JobUpdater jobUpdater) {
         if (jobExecutorImpl != null) {
             return jobExecutorImpl;
         }
@@ -182,7 +180,7 @@ public class SimpleJobManager implements JobManager {
         JobPersistence jobPersistence = getJobPersistence(requestPath);
         Job job = jobPersistence.get(jobID);
         doAuthorizationCheck(job);
-        JobExecutor jobExecutor = getJobExecutor(requestPath);
+        JobExecutor jobExecutor = getJobExecutor(requestPath, jobPersistence);
         jobExecutor.abort(job);
     }
 
@@ -220,7 +218,7 @@ public class SimpleJobManager implements JobManager {
     public void execute(String requestPath, Job job)
             throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException {
         // get does auth check and getDetails
-        JobExecutor jobExecutor = getJobExecutor(requestPath);
+        JobExecutor jobExecutor = getJobExecutor(requestPath, getJobPersistence(requestPath));
         jobExecutor.execute(job);
     }
 
@@ -237,7 +235,7 @@ public class SimpleJobManager implements JobManager {
     @Override
     public void execute(String requestPath, Job job, SyncOutput output)
             throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException {
-        JobExecutor jobExecutor = getJobExecutor(requestPath);
+        JobExecutor jobExecutor = getJobExecutor(requestPath, getJobPersistence(requestPath));
         jobExecutor.execute(job, output);
     }
 

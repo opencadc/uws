@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -77,12 +77,13 @@ import java.util.Date;
 import java.util.List;
 
 /**
- *
+ * Interface to define the subset of the JobPersistence API that is intended for use by
+ * JobRunner implementations.
+ * 
  * @author pdowler
  */
-public interface JobUpdater
-{
-     /**
+public interface JobUpdater {
+    /**
      * Get the current execution phase of the specified job.
      *
      * @param jobID

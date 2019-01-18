@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -69,23 +69,22 @@
 
 package ca.nrc.cadc.uws.server;
 
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-
 import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.uws.ExecutionPhase;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobRef;
 import ca.nrc.cadc.uws.Parameter;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Service interface for job persistence.
  */
-public interface JobPersistence
-{
+public interface JobPersistence extends JobUpdater {
     /**
      * Shutdown and release any resources. This includes ThreadPools, connections, open files, etc.
+     * @throws java.lang.InterruptedException
      */
     public void terminate()
         throws InterruptedException;
@@ -139,7 +138,10 @@ public interface JobPersistence
     /**
      * Obtain a listing of JobRef instances.
      *
+     * @param appname
      * @return iterator over visible jobs
+     * @throws ca.nrc.cadc.uws.server.JobPersistenceException
+     * @throws ca.nrc.cadc.net.TransientException
      */
     public Iterator<JobRef> iterator(String appname)
         throws JobPersistenceException, TransientException;
@@ -147,8 +149,11 @@ public interface JobPersistence
     /**
      * Obtain a listing of JobRef instances in the specified phase.
      *
+     * @param appname
      * @param phases
      * @return iterator over visible jobs
+     * @throws ca.nrc.cadc.uws.server.JobPersistenceException
+     * @throws ca.nrc.cadc.net.TransientException
      */
     public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases)
         throws JobPersistenceException, TransientException;
@@ -157,10 +162,13 @@ public interface JobPersistence
      * Obtain a listing of the last 'last' JobRef instances in the specified
      * phase with a start date after 'after'.
      *
+     * @param appname
      * @param phases
      * @param after
      * @param last
      * @return iterator over visible jobs
+     * @throws ca.nrc.cadc.uws.server.JobPersistenceException
+     * @throws ca.nrc.cadc.net.TransientException
      */
     public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases, Date after, Integer last)
         throws JobPersistenceException, TransientException;
@@ -178,8 +186,4 @@ public interface JobPersistence
      */
     public void addParameters(String jobID, List<Parameter> params)
         throws JobNotFoundException, JobPersistenceException, TransientException;
-
-    // not needed by any current use cases
-    //public void setJobInfo(String jobID, JobInfo info)
-    //    throws JobNotFoundException;
 }
