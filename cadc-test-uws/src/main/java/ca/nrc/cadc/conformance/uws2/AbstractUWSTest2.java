@@ -111,6 +111,7 @@ public abstract class AbstractUWSTest2 {
     protected final URI resourceID;
     protected final URI standardID;
     protected final URI interfaceType;
+    protected final String endpointName;
 
     // track these to help debug test config
     protected File propertiesDir;
@@ -125,9 +126,22 @@ public abstract class AbstractUWSTest2 {
     }
 
     public AbstractUWSTest2(URI resourceID, URI standardID, URI interfaceType) {
+        this(resourceID, standardID, interfaceType, null);
+    }
+    
+    /**
+     * Specify an endpoint name for cases where the standardID corresponds to the baseURL (e.g. TAP).
+     * 
+     * @param resourceID
+     * @param standardID
+     * @param interfaceType
+     * @param endpointName 
+     */
+    public AbstractUWSTest2(URI resourceID, URI standardID, URI interfaceType, String endpointName) {
         this.resourceID = resourceID;
         this.standardID = standardID;
         this.interfaceType = interfaceType;
+        this.endpointName = endpointName;
     }
 
     /**
@@ -150,6 +164,14 @@ public abstract class AbstractUWSTest2 {
         if (ret == null) {
             throw new RuntimeException("init FAIL, service not found:"
                     + resourceID + " " + standardID + " " + am + " " + interfaceType);
+        }
+        if (endpointName != null) {
+            try {
+                ret = new URL(ret.toExternalForm() + "/" + endpointName);
+            } catch (MalformedURLException ex) {
+                // would have been better to do this in ctor, but we don't know the AuthMethod
+                throw new IllegalArgumentException("invalid endpointName: " + endpointName, ex);
+            }
         }
         log.info("jobListURL: " + ret);
         return ret;
