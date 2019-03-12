@@ -99,7 +99,21 @@ public class AsyncUWSTest extends AbstractUWSTest2
     
     public AsyncUWSTest(URI resourceID, URI standardID, URI interfaceType, long timeout) 
     { 
-        super(resourceID, standardID, interfaceType);
+        super(resourceID, standardID, interfaceType, null);
+        this.timeout = timeout;
+    }
+    
+    /**
+     * Specify an endpoint name for cases where the standardID corresponds to the baseURL (e.g. TAP).
+     * @param resourceID
+     * @param standardID
+     * @param interfaceType
+     * @param timeout
+     * @param endPointName 
+     */
+    public AsyncUWSTest(URI resourceID, URI standardID, URI interfaceType, long timeout, String endPointName) 
+    { 
+        super(resourceID, standardID, interfaceType, endPointName);
         this.timeout = timeout;
     }
     
