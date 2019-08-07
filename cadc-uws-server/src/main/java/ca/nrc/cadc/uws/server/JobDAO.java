@@ -1242,7 +1242,7 @@ public class JobDAO
             if (owner != null)
             {
                 log.debug(arg + " : " + owner);
-                ret.setObject(arg++, owner);
+                ret.setString(arg++, owner.toString());
             }
 
             if (phases != null && !phases.isEmpty())
