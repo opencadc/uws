@@ -16,7 +16,7 @@ sourceCompatibility = 1.7
 
 group = 'org.opencadc'
 
-version = '1.2.3'
+version = '1.2.4'
 
 // Allow override of user.name (-Duser.name=uws).  Useful to connect to a PostgreSQL Docker container.
 test {
@@ -40,10 +40,4 @@ dependencies {
     // Used for DAO tests.
     intTestRuntime 'org.postgresql:postgresql:9.4.1209.jre7'
     intTestRuntime 'net.sourceforge.jtds:jtds:1.+'
-}
-// alinga-- 
-jar {
-    from('src/main/java') {
-        include '**/*.java'
-    }
 }
