@@ -207,7 +207,10 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
                     log.error("ignoring failure while cleaning job list", t);
                 }
 
-                try { Thread.sleep(dt); }
+                try { 
+                    log.debug(this + " sleep: " + dt);
+                    Thread.sleep(dt); 
+                }
                 catch(InterruptedException ex) { return; }
             }
         }
