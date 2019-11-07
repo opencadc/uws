@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -80,8 +80,7 @@ import ca.nrc.cadc.uws.Job;
  *
  */
 public class JobLogInfo extends WebServiceLogInfo
-{
-    
+{    
     private static final String METHOD_JOB = "UWS";
     
     /**
@@ -92,9 +91,10 @@ public class JobLogInfo extends WebServiceLogInfo
     {
         super();
         this.method = METHOD_JOB;
-        this.from = job.getRemoteIP();
+        this.ip = job.getRemoteIP();
         this.path = job.getRequestPath();
         this.user = getUser(job.ownerSubject);
+        this.serviceName = this.parseServiceName(job.getRequestPath());
         this.runID = job.getRunID();
         setJobID(job.getID());
     }

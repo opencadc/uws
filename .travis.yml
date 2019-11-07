@@ -1,4 +1,7 @@
 language: java
+sudo: required
+group: edge
+dist: trusty
 
 jdk:
   - openjdk7
