@@ -67,63 +67,92 @@
 
 package ca.nrc.cadc.uws.server.impl;
 
-import ca.nrc.cadc.auth.IdentityManager;
-import ca.nrc.cadc.db.DBUtil;
-import ca.nrc.cadc.uws.server.DatabaseJobPersistence;
-import ca.nrc.cadc.uws.server.JobDAO.JobSchema;
-import ca.nrc.cadc.uws.server.RandomStringGenerator;
-import ca.nrc.cadc.uws.server.StringIDGenerator;
-import javax.naming.NamingException;
-import javax.sql.DataSource;
+import ca.nrc.cadc.db.version.InitDatabase;
+import ca.nrc.cadc.util.Log4jInit;
+import java.util.List;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
- * Basic JobPersistence implementation that uses the standard postgresql
- * database schema setup. See also InitDatabaseUWS to automate creating
- * and upgrading UWS tables.
  *
  * @author pdowler
  */
-public class PostgresJobPersistence extends DatabaseJobPersistence {
-
-    public static final String DEFAULT_DS_NAME = "jdbc/uws";
+public class InitDatabaseUWSTest {
+    private static final Logger log = Logger.getLogger(InitDatabaseUWSTest.class);
     
-    private boolean storeOwnerASCII = false;
-
-    public PostgresJobPersistence(IdentityManager im) {
-        this(new RandomStringGenerator(16), im);
+    static {
+        Log4jInit.setLevel("ca.nrc.cadc.uws.server.impl", Level.INFO);
+        Log4jInit.setLevel("ca.nrc.cadc.db.version", Level.INFO);
+    }
+    
+    public InitDatabaseUWSTest() { 
+    }
+    
+    @Test
+    public void testParseCreateDDL() {
+        try {
+            InitDatabaseUWS init = new InitDatabaseUWS(null, null, "uws");
+            for (String fname : InitDatabaseUWS.CREATE_SQL) {
+                log.info("process file: " + fname);
+                List<String> statements = init.parseDDL(fname, "uws");
+                Assert.assertNotNull(statements);
+                Assert.assertFalse(statements.isEmpty());
+                /*
+                // sanity check statements
+                for (String s : statements) {
+                    String[] tokens = s.split(" ");
+                    String cmd = tokens[0];
+                    String type = tokens[1];
+                    String next = tokens[2];
+                    if ("create".equalsIgnoreCase(cmd)) {
+                        if ("table".equalsIgnoreCase(type) || "view".equalsIgnoreCase(type) 
+                                || "index".equalsIgnoreCase(type) || 
+                                ("unique".equalsIgnoreCase(type) && "index".equalsIgnoreCase(next))) {
+                            // OK
+                        } else {
+                            Assert.fail("[create] unexpected type: " + s);
+                        }
+                    } else if ("drop".equalsIgnoreCase(cmd)) {
+                        if ("view".equalsIgnoreCase(type)) {
+                            // OK
+                        } else {
+                            Assert.fail("[drop] dangerous drop: " + s);
+                        }
+                    } else if ("cluster".equalsIgnoreCase(cmd)) {
+                        // OK
+                    } else if ("grant".equalsIgnoreCase(cmd)) {
+                        if ("select".equalsIgnoreCase(type) || "usage".equalsIgnoreCase(type)) {
+                            // OK
+                        } else {
+                            Assert.fail("[grant] unexpected type: " + s);
+                        }
+                    } else {
+                        Assert.fail("unexpected command: " + cmd + " [" + s + "]");
+                    }
+                }
+                */
+            }
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
     }
 
-    public PostgresJobPersistence(StringIDGenerator idg, IdentityManager im) {
-        this(idg, im, false);
+    @Test
+    public void testParseUpgradeDDL() {
+        try {
+            InitDatabaseUWS init = new InitDatabaseUWS(null, null, "uws");
+            for (String fname : InitDatabaseUWS.UPGRADE_SQL) {
+                log.info("process file: " + fname);
+                List<String> statements = init.parseDDL(fname, "uws");
+                Assert.assertNotNull(statements);
+                Assert.assertFalse(statements.isEmpty());
+            }
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
     }
-
-    public PostgresJobPersistence(StringIDGenerator idg, IdentityManager im, boolean storeOwnerASCII) {
-        super(idg, im);
-        this.storeOwnerASCII = storeOwnerASCII;
-    }
-
-    /**
-     * Find a JNDI DataSource with the default name (jdbc/uws) and return it.
-     *
-     * @return a JNDI DataSource
-     * @throws NamingException
-     */
-    @Override
-    protected DataSource getDataSource()
-            throws NamingException {
-        return DBUtil.findJNDIDataSource(DEFAULT_DS_NAME);
-    }
-
-    /**
-     * The standard postgresql database configuration. Jobs are stored in a
-     * table named uws.Jobs, parameters and results are stored in a
-     * table named uws.JobDetail.
-     *
-     * @return
-     */
-    @Override
-    protected JobSchema getJobSchema() {
-        return new JobSchema("uws.Job", "uws.JobDetail", false, storeOwnerASCII);
-    }
-
 }

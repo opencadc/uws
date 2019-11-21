@@ -67,63 +67,51 @@
 
 package ca.nrc.cadc.uws.server.impl;
 
-import ca.nrc.cadc.auth.IdentityManager;
-import ca.nrc.cadc.db.DBUtil;
-import ca.nrc.cadc.uws.server.DatabaseJobPersistence;
-import ca.nrc.cadc.uws.server.JobDAO.JobSchema;
-import ca.nrc.cadc.uws.server.RandomStringGenerator;
-import ca.nrc.cadc.uws.server.StringIDGenerator;
-import javax.naming.NamingException;
+import ca.nrc.cadc.db.version.InitDatabase;
+import java.net.URL;
 import javax.sql.DataSource;
+import org.apache.log4j.Logger;
 
 /**
- * Basic JobPersistence implementation that uses the standard postgresql
- * database schema setup. See also InitDatabaseUWS to automate creating
- * and upgrading UWS tables.
- *
+ * Optional class that automates creation and upgrading of UWS tables in a
+ * database. This class currently only supports PostgreSQL. If you use this
+ * class to initialise the UWS tables, you must also set JobSchema.storeOwnerASCII
+ * when creating the JobSchema (e.g. via the PostgresJobPersistence).
+ * 
  * @author pdowler
  */
-public class PostgresJobPersistence extends DatabaseJobPersistence {
-
-    public static final String DEFAULT_DS_NAME = "jdbc/uws";
+public class InitDatabaseUWS extends InitDatabase {
+    private static final Logger log = Logger.getLogger(InitDatabaseUWS.class);
     
-    private boolean storeOwnerASCII = false;
+    public static final String MODEL_NAME = "UWS";
+    public static final String MODEL_VERSION = "1.2.5";
+    public static final String PREV_MODEL_VERSION = "n/a";
 
-    public PostgresJobPersistence(IdentityManager im) {
-        this(new RandomStringGenerator(16), im);
+    public static final String[] CREATE_SQL = new String[] {
+        "uws.ModelVersion.sql",
+        "uws.Job.sql",
+        "uws.JobDetail.sql",
+        "uws.JobAvailability.sql",
+        "uws.permissions.sql"
+    };
+
+    public static final String[] UPGRADE_SQL = new String[]{
+        
+    };
+
+    public InitDatabaseUWS(DataSource dataSource, String database, String schema) {
+        super(dataSource, database, schema, MODEL_NAME, MODEL_VERSION, PREV_MODEL_VERSION);
+        for (String s : CREATE_SQL) {
+            createSQL.add(s);
+        }
+        for (String s : UPGRADE_SQL) {
+            upgradeSQL.add(s);
+        }
     }
 
-    public PostgresJobPersistence(StringIDGenerator idg, IdentityManager im) {
-        this(idg, im, false);
-    }
-
-    public PostgresJobPersistence(StringIDGenerator idg, IdentityManager im, boolean storeOwnerASCII) {
-        super(idg, im);
-        this.storeOwnerASCII = storeOwnerASCII;
-    }
-
-    /**
-     * Find a JNDI DataSource with the default name (jdbc/uws) and return it.
-     *
-     * @return a JNDI DataSource
-     * @throws NamingException
-     */
     @Override
-    protected DataSource getDataSource()
-            throws NamingException {
-        return DBUtil.findJNDIDataSource(DEFAULT_DS_NAME);
+    protected URL findSQL(String fname) {
+        // SQL files are stored inside the jar file
+        return InitDatabaseUWS.class.getClassLoader().getResource("postgresql/" + fname);
     }
-
-    /**
-     * The standard postgresql database configuration. Jobs are stored in a
-     * table named uws.Jobs, parameters and results are stored in a
-     * table named uws.JobDetail.
-     *
-     * @return
-     */
-    @Override
-    protected JobSchema getJobSchema() {
-        return new JobSchema("uws.Job", "uws.JobDetail", false, storeOwnerASCII);
-    }
-
 }

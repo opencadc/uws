@@ -63,67 +63,78 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.server.impl;
 
-import ca.nrc.cadc.auth.IdentityManager;
+import ca.nrc.cadc.db.ConnectionConfig;
+import ca.nrc.cadc.db.DBConfig;
 import ca.nrc.cadc.db.DBUtil;
-import ca.nrc.cadc.uws.server.DatabaseJobPersistence;
-import ca.nrc.cadc.uws.server.JobDAO.JobSchema;
-import ca.nrc.cadc.uws.server.RandomStringGenerator;
-import ca.nrc.cadc.uws.server.StringIDGenerator;
-import javax.naming.NamingException;
+import ca.nrc.cadc.db.version.InitDatabase;
+import ca.nrc.cadc.util.Log4jInit;
+import ca.nrc.cadc.uws.server.TestUtil;
 import javax.sql.DataSource;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
- * Basic JobPersistence implementation that uses the standard postgresql
- * database schema setup. See also InitDatabaseUWS to automate creating
- * and upgrading UWS tables.
  *
  * @author pdowler
  */
-public class PostgresJobPersistence extends DatabaseJobPersistence {
+public class InitDatabaseUWSTest {
 
-    public static final String DEFAULT_DS_NAME = "jdbc/uws";
+    private static final Logger log = Logger.getLogger(InitDatabaseUWSTest.class);
+
+    static {
+        Log4jInit.setLevel("ca.nrc.cadc.uws.server.impl", Level.INFO);
+        Log4jInit.setLevel("ca.nrc.cadc.db.version", Level.INFO);
+    }
+
+    private DataSource dataSource;
+
+    public InitDatabaseUWSTest() {
+        try {
+            DBConfig dbrc = new DBConfig();
+            ConnectionConfig cc = dbrc.getConnectionConfig(TestUtil.SERVER, TestUtil.DATABASE);
+            dataSource = DBUtil.getDataSource(cc);
+        } catch (Exception ex) {
+            log.error("failed to init DataSource", ex);
+        }
+    }
+
+    @Test
+    public void testNewInstall() {
+        try {
+            // TODO: nuke all tables and re-create
+            // for now: create || upgrade || idempotent
+            InitDatabase init = new InitDatabaseUWS(dataSource, TestUtil.DATABASE, TestUtil.SCHEMA);
+            init.doInit();
+
+            // TODO: verify that tables were created with test queries
+            // TODO: verify that init is idempotent
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+
+    @Test
+    public void testUpgradeInstall() {
+        try {
+            // TODO: create previous version  of tables and upgrade... sounds complicated
+            // for now: create || upgrade || idempotent
+            InitDatabase init = new InitDatabaseUWS(dataSource, TestUtil.DATABASE, TestUtil.SCHEMA);
+            init.doInit();
+
+            // TODO: verify that tables were created with test queries
+            // TODO: verify that init is idempotent
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+
     
-    private boolean storeOwnerASCII = false;
-
-    public PostgresJobPersistence(IdentityManager im) {
-        this(new RandomStringGenerator(16), im);
-    }
-
-    public PostgresJobPersistence(StringIDGenerator idg, IdentityManager im) {
-        this(idg, im, false);
-    }
-
-    public PostgresJobPersistence(StringIDGenerator idg, IdentityManager im, boolean storeOwnerASCII) {
-        super(idg, im);
-        this.storeOwnerASCII = storeOwnerASCII;
-    }
-
-    /**
-     * Find a JNDI DataSource with the default name (jdbc/uws) and return it.
-     *
-     * @return a JNDI DataSource
-     * @throws NamingException
-     */
-    @Override
-    protected DataSource getDataSource()
-            throws NamingException {
-        return DBUtil.findJNDIDataSource(DEFAULT_DS_NAME);
-    }
-
-    /**
-     * The standard postgresql database configuration. Jobs are stored in a
-     * table named uws.Jobs, parameters and results are stored in a
-     * table named uws.JobDetail.
-     *
-     * @return
-     */
-    @Override
-    protected JobSchema getJobSchema() {
-        return new JobSchema("uws.Job", "uws.JobDetail", false, storeOwnerASCII);
-    }
-
 }
