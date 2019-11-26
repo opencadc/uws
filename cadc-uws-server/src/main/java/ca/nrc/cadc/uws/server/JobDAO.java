@@ -182,6 +182,8 @@ public class JobDAO
         public String jobTable;
         public String detailTable;
         boolean limitWithTop;
+        boolean storeOwnerASCII = false;
+        
         /*
          * Map of columns that have size limits in the jobTable imposed by the
          * underlying database system.
@@ -220,12 +222,25 @@ public class JobDAO
         {
             this(jobTable, detailTable, limitWithTop, null, null);
         }
+        
+        public JobSchema(String jobTable, String detailTable, boolean limitWithTop, boolean storeOwnerASCII)
+        {
+            this(jobTable, detailTable, limitWithTop, storeOwnerASCII, null, null);
+        }
+        
         public JobSchema(String jobTable, String detailTable, boolean limitWithTop,
+                Map<String,Integer> jobColumnLimits, Map<String,Integer> detailColumnLimits)
+        {
+            this(jobTable, detailTable, limitWithTop, false, jobColumnLimits, detailColumnLimits);
+        }
+        
+        public JobSchema(String jobTable, String detailTable, boolean limitWithTop, boolean storeOwnerASCII,
                 Map<String,Integer> jobColumnLimits, Map<String,Integer> detailColumnLimits)
         {
             this.jobTable = jobTable;
             this.detailTable = detailTable;
             this.limitWithTop = limitWithTop;
+            this.storeOwnerASCII = storeOwnerASCII;
             this.jobColumnLimits = jobColumnLimits;
             this.detailColumnLimits = detailColumnLimits;
 
@@ -1099,9 +1114,15 @@ public class JobDAO
 
             log.debug("owner: " + col);
             int ownerType = identManager.getOwnerType();
+            if (jobSchema.storeOwnerASCII) {
+                ownerType = Types.VARCHAR;
+            }
             if (job.appData != null)
             {
                 Object ownerObject  = job.appData;
+                if (jobSchema.storeOwnerASCII) {
+                    ownerObject = ownerObject.toString();
+                }
                 ps.setObject(col++, ownerObject, ownerType);
                 sb.append(ownerObject);
                 sb.append(",");
@@ -1117,14 +1138,8 @@ public class JobDAO
             sb.append(job.getRunID());
             sb.append(",");
 
-            //ps.setString(col++, job.getRequestPath());
-            //sb.append(job.getRequestPath());
-            //sb.append(",");
             col += setString(ps, col, jobSchema.jobTable, "requestPath", job.getRequestPath(), sb);
 
-            //ps.setString(col++, job.getRequesterIp());
-            //sb.append(job.getRequesterIp());
-            //sb.append(",");
             col += setString(ps, col, jobSchema.jobTable, "remoteIP", job.getRemoteIP(), sb);
 
             log.debug("jobInfo: " + col);

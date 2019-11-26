@@ -65,65 +65,54 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.uws.server.impl;
+package ca.nrc.cadc.uws.server;
 
-import ca.nrc.cadc.auth.IdentityManager;
-import ca.nrc.cadc.db.DBUtil;
-import ca.nrc.cadc.uws.server.DatabaseJobPersistence;
-import ca.nrc.cadc.uws.server.JobDAO.JobSchema;
-import ca.nrc.cadc.uws.server.RandomStringGenerator;
-import ca.nrc.cadc.uws.server.StringIDGenerator;
-import javax.naming.NamingException;
-import javax.sql.DataSource;
+import java.io.File;
+import java.io.FileReader;
+import java.util.Properties;
+import org.apache.log4j.Logger;
 
 /**
- * Basic JobPersistence implementation that uses the standard postgresql
- * database schema setup. See also InitDatabaseUWS to automate creating
- * and upgrading UWS tables.
  *
  * @author pdowler
  */
-public class PostgresJobPersistence extends DatabaseJobPersistence {
+public class TestUtil {
+    private static final Logger log = Logger.getLogger(TestUtil.class);
 
-    public static final String DEFAULT_DS_NAME = "jdbc/uws";
+    public static String SERVER = "UWS_TEST";
+    public static String DATABASE = "cadctest";
+    public static String SCHEMA = "uws";
+    public static String TABLE_PREFIX = null;
     
-    private boolean storeOwnerASCII = false;
-
-    public PostgresJobPersistence(IdentityManager im) {
-        this(new RandomStringGenerator(16), im);
+    static {
+        try {
+            File opt = new File("intTest.properties");
+            if (opt.exists()) {
+                Properties props = new Properties();
+                props.load(new FileReader(opt));
+                String s = props.getProperty("server");
+                if (s != null) {
+                    SERVER = s;
+                }
+                s = props.getProperty("database");
+                if (s != null) {
+                    DATABASE = s;
+                }
+                s = props.getProperty("schema");
+                if (s != null) {
+                    SCHEMA = s;
+                }
+                s = props.getProperty("tablePrefix");
+                if (s != null) {
+                    TABLE_PREFIX = s;
+                }
+            }
+            log.info("intTest database config: " + SERVER + " " + DATABASE + " " + SCHEMA + " " + TABLE_PREFIX);
+        } catch (Exception oops) {
+            log.debug("failed to load/read optional db config", oops);
+        }
     }
-
-    public PostgresJobPersistence(StringIDGenerator idg, IdentityManager im) {
-        this(idg, im, false);
+    
+    private TestUtil() { 
     }
-
-    public PostgresJobPersistence(StringIDGenerator idg, IdentityManager im, boolean storeOwnerASCII) {
-        super(idg, im);
-        this.storeOwnerASCII = storeOwnerASCII;
-    }
-
-    /**
-     * Find a JNDI DataSource with the default name (jdbc/uws) and return it.
-     *
-     * @return a JNDI DataSource
-     * @throws NamingException
-     */
-    @Override
-    protected DataSource getDataSource()
-            throws NamingException {
-        return DBUtil.findJNDIDataSource(DEFAULT_DS_NAME);
-    }
-
-    /**
-     * The standard postgresql database configuration. Jobs are stored in a
-     * table named uws.Jobs, parameters and results are stored in a
-     * table named uws.JobDetail.
-     *
-     * @return
-     */
-    @Override
-    protected JobSchema getJobSchema() {
-        return new JobSchema("uws.Job", "uws.JobDetail", false, storeOwnerASCII);
-    }
-
 }
