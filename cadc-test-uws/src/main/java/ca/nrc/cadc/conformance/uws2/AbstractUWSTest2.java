@@ -249,8 +249,8 @@ public abstract class AbstractUWSTest2 {
             ret.job = null; // no formal way to get jobID
             ret.throwable = doit.getThrowable();
             ret.responseCode = doit.getResponseCode();
-            ret.contentType = doit.getResponseContentType();
-            ret.contentEncoding = doit.getResponseContentEncoding();
+            ret.contentType = doit.getContentType();
+            ret.contentEncoding = doit.getContentEncoding();
             ret.syncOutput = bos.toByteArray();
         } finally {
         }
