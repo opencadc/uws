@@ -1,16 +1,14 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
-<!--
+/*
 ************************************************************************
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -33,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -46,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -56,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -64,91 +62,57 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
-*
 ************************************************************************
--->
-	
-<!DOCTYPE web-app
-    PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.2//EN"
-    "http://java.sun.com/j2ee/dtds/web-app_2_2.dtd">
+*/
 
-<web-app>
-    <display-name>cadcSampleUWS</display-name>
+package ca.nrc.cadc.uws.server;
+
+import java.io.File;
+import java.io.FileReader;
+import java.util.Properties;
+import org.apache.log4j.Logger;
+
+/**
+ *
+ * @author pdowler
+ */
+public class TestUtil {
+    private static final Logger log = Logger.getLogger(TestUtil.class);
+
+    public static String SERVER = "UWS_TEST";
+    public static String DATABASE = "cadctest";
+    public static String SCHEMA = "uws";
+    public static String TABLE_PREFIX = null;
     
-    <welcome-file-list>index.jsp</welcome-file-list>
-
-     <servlet>
-        <servlet-name>logControl</servlet-name>
-        <servlet-class>ca.nrc.cadc.log.LogControlServlet</servlet-class>
-        <init-param>
-            <param-name>logLevel</param-name>
-            <param-value>info</param-value>
-        </init-param>
-        <init-param>
-            <param-name>logLevelPackages</param-name>
-            <param-value>
-                ca.nrc.cadc.uws
-            </param-value>
-        </init-param>
-      <load-on-startup>1</load-on-startup>
-    </servlet>
-
-    <!-- synchronous access to JobManager service -->
-    <servlet>
-        <load-on-startup>2</load-on-startup>
-      <servlet-name>SyncServlet</servlet-name>
-      <servlet-class>ca.nrc.cadc.uws.server.SyncServlet</servlet-class>
-      <init-param>
-          <param-name>ca.nrc.cadc.uws.server.JobManager</param-name>
-          <param-value>ca.nrc.cadc.uws.sample.SampleJobManager</param-value>
-      </init-param>
-      <init-param>
-          <param-name>ca.nrc.cadc.uws.server.SyncServlet.execOnGET</param-name>
-          <param-value>true</param-value>
-      </init-param>
-      <init-param>
-          <param-name>ca.nrc.cadc.uws.server.SyncServlet.execOnPOST</param-name>
-          <param-value>false</param-value>
-      </init-param>
-      <init-param>
-          <param-name>ca.nrc.cadc.uws.web.InlineContentHandler</param-name>
-          <param-value>ca.nrc.cadc.uws.sample.SampleInlineContentHandler</param-value>
-      </init-param>
-    </servlet>
-
-    <!-- asynchronous access to JobManager service -->
-    <servlet>
-        <load-on-startup>2</load-on-startup>
-        <servlet-name>AsyncServlet</servlet-name>
-        <servlet-class>org.restlet.ext.servlet.ServerServlet</servlet-class>
-        <init-param>
-            <param-name>org.restlet.application</param-name>
-            <param-value>ca.nrc.cadc.uws.web.restlet.UWSAsyncApplication</param-value>
-        </init-param>
-        <init-param>
-            <param-name>ca.nrc.cadc.uws.server.JobManager</param-name>
-            <param-value>ca.nrc.cadc.uws.sample.SampleJobManager</param-value>
-        </init-param>
-        <init-param>
-            <param-name>ca.nrc.cadc.uws.web.InlineContentHandler</param-name>
-            <param-value>ca.nrc.cadc.uws.sample.SampleInlineContentHandler</param-value>
-      </init-param>
-    </servlet>
-
-
-    <servlet-mapping>
-            <servlet-name>SyncServlet</servlet-name>
-            <url-pattern>/sync/*</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-            <servlet-name>AsyncServlet</servlet-name>
-            <url-pattern>/async/*</url-pattern>
-    </servlet-mapping>
-	
-    <servlet-mapping>
-        <servlet-name>logControl</servlet-name>
-        <url-pattern>/logControl</url-pattern>
-    </servlet-mapping>
-
-</web-app>
+    static {
+        try {
+            File opt = new File("intTest.properties");
+            if (opt.exists()) {
+                Properties props = new Properties();
+                props.load(new FileReader(opt));
+                String s = props.getProperty("server");
+                if (s != null) {
+                    SERVER = s;
+                }
+                s = props.getProperty("database");
+                if (s != null) {
+                    DATABASE = s;
+                }
+                s = props.getProperty("schema");
+                if (s != null) {
+                    SCHEMA = s;
+                }
+                s = props.getProperty("tablePrefix");
+                if (s != null) {
+                    TABLE_PREFIX = s;
+                }
+            }
+            log.info("intTest database config: " + SERVER + " " + DATABASE + " " + SCHEMA + " " + TABLE_PREFIX);
+        } catch (Exception oops) {
+            log.debug("failed to load/read optional db config", oops);
+        }
+    }
+    
+    private TestUtil() { 
+    }
+}

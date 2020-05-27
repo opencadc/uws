@@ -106,6 +106,7 @@ public abstract class JobAction extends RestAction {
         CHILD_RESOURCE_NAMES.put("quote", JobAttribute.QUOTE);
         CHILD_RESOURCE_NAMES.put("owner", JobAttribute.OWNER_ID); 
         CHILD_RESOURCE_NAMES.put("parameters", JobAttribute.PARAMETERS);
+        CHILD_RESOURCE_NAMES.put("error", JobAttribute.ERROR);
         
         CHILD_PARAM_NAMES.put(JobAttribute.EXECUTION_PHASE, JobAttribute.EXECUTION_PHASE.getValue().toUpperCase());
         CHILD_PARAM_NAMES.put(JobAttribute.EXECUTION_DURATION, JobAttribute.EXECUTION_DURATION.getValue().toUpperCase());

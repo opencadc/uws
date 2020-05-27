@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2018.                            (c) 2018.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,46 +62,79 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
-*
 ************************************************************************
  */
 
-package ca.nrc.cadc.uws.sample;
+package ca.nrc.cadc.uws.server.impl;
 
-import ca.nrc.cadc.conformance.uws.DestructionTest;
-import ca.nrc.cadc.conformance.uws.ExecutionDurationTest;
-import ca.nrc.cadc.conformance.uws.GetPhaseTest;
-import ca.nrc.cadc.conformance.uws.JobIdTest;
-import ca.nrc.cadc.conformance.uws.JobInfoTest;
-import ca.nrc.cadc.conformance.uws.JobTest;
-import ca.nrc.cadc.conformance.uws.OwnerTest;
-import ca.nrc.cadc.conformance.uws.ParametersTest;
-import ca.nrc.cadc.conformance.uws.QuoteTest;
-import ca.nrc.cadc.conformance.uws.SchemaTest;
+import ca.nrc.cadc.db.ConnectionConfig;
+import ca.nrc.cadc.db.DBConfig;
+import ca.nrc.cadc.db.DBUtil;
+import ca.nrc.cadc.db.version.InitDatabase;
 import ca.nrc.cadc.util.Log4jInit;
+import ca.nrc.cadc.uws.server.TestUtil;
+import javax.sql.DataSource;
 import org.apache.log4j.Level;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-        JobIdTest.class,
-        JobTest.class,
-        SchemaTest.class, 
-        GetPhaseTest.class,
-        DestructionTest.class,
-        ExecutionDurationTest.class,
-        QuoteTest.class,
-        OwnerTest.class,
-        JobInfoTest.class,
-        ParametersTest.class
-    })
+/**
+ *
+ * @author pdowler
+ */
+public class InitDatabaseUWSTest {
 
-public class UWSTestSuite {
+    private static final Logger log = Logger.getLogger(InitDatabaseUWSTest.class);
 
     static {
-        Log4jInit.setLevel("ca.nrc.cadc.rest", Level.DEBUG);
-        Log4jInit.setLevel("ca.nrc.cadc.uws", Level.DEBUG);
+        Log4jInit.setLevel("ca.nrc.cadc.uws.server.impl", Level.INFO);
+        Log4jInit.setLevel("ca.nrc.cadc.db.version", Level.INFO);
     }
+
+    private DataSource dataSource;
+
+    public InitDatabaseUWSTest() {
+        try {
+            DBConfig dbrc = new DBConfig();
+            ConnectionConfig cc = dbrc.getConnectionConfig(TestUtil.SERVER, TestUtil.DATABASE);
+            dataSource = DBUtil.getDataSource(cc);
+        } catch (Exception ex) {
+            log.error("failed to init DataSource", ex);
+        }
+    }
+
+    @Test
+    public void testNewInstall() {
+        try {
+            // TODO: nuke all tables and re-create
+            // for now: create || upgrade || idempotent
+            InitDatabase init = new InitDatabaseUWS(dataSource, TestUtil.DATABASE, TestUtil.SCHEMA);
+            init.doInit();
+
+            // TODO: verify that tables were created with test queries
+            // TODO: verify that init is idempotent
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+
+    @Test
+    public void testUpgradeInstall() {
+        try {
+            // TODO: create previous version  of tables and upgrade... sounds complicated
+            // for now: create || upgrade || idempotent
+            InitDatabase init = new InitDatabaseUWS(dataSource, TestUtil.DATABASE, TestUtil.SCHEMA);
+            init.doInit();
+
+            // TODO: verify that tables were created with test queries
+            // TODO: verify that init is idempotent
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+
+    
 }

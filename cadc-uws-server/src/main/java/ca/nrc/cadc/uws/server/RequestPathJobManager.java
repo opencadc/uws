@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2018.                            (c) 2018.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -69,24 +69,8 @@
 
 package ca.nrc.cadc.uws.server;
 
-import ca.nrc.cadc.auth.AuthenticationUtil;
-import ca.nrc.cadc.net.TransientException;
-import ca.nrc.cadc.rest.SyncOutput;
-import ca.nrc.cadc.uws.ExecutionPhase;
-import ca.nrc.cadc.uws.Job;
-import ca.nrc.cadc.uws.JobRef;
-import ca.nrc.cadc.uws.Parameter;
-import java.security.AccessControlContext;
-import java.security.AccessControlException;
-import java.security.AccessController;
-import java.security.Principal;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
-import javax.security.auth.Subject;
 import org.apache.log4j.Logger;
 
 /**
@@ -140,9 +124,10 @@ public class RequestPathJobManager extends SimpleJobManager {
      * for one or more sub-paths.
      * 
      * @param requestPath
+     * @param jobUpdater
      * @return a JobExecutor instance
      */
-    protected JobExecutor createJobExecutor(String requestPath) {
+    protected JobExecutor createJobExecutor(String requestPath, JobUpdater jobUpdater) {
         return null;
     }
     
@@ -160,12 +145,12 @@ public class RequestPathJobManager extends SimpleJobManager {
     }
     
     @Override
-    protected JobExecutor getJobExecutor(String requestPath) {
-        JobExecutor ret = super.getJobExecutor(requestPath);
+    protected JobExecutor getJobExecutor(String requestPath, JobUpdater jobUpdater) {
+        JobExecutor ret = super.getJobExecutor(requestPath, jobUpdater);
         if (ret == null) {
             ret = jobExecutorMap.get(requestPath);
             if (ret == null) {
-                ret = createJobExecutor(requestPath);
+                ret = createJobExecutor(requestPath, jobUpdater);
                 jobExecutorMap.put(requestPath, ret);
             }
         }

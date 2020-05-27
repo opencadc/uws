@@ -69,9 +69,8 @@
 
 package ca.nrc.cadc.conformance.uws2;
 
-
-import ca.nrc.cadc.auth.AuthMethod;
 import ca.nrc.cadc.conformance.uws.TestProperties;
+import ca.nrc.cadc.reg.Standards;
 import java.net.URI;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -98,12 +97,25 @@ public class SyncUWSTest extends AbstractUWSTest2
      */
     public SyncUWSTest(URI resourceID, URI standardID) 
     { 
-        super(resourceID, standardID);
+        this(resourceID, standardID, Standards.INTERFACE_PARAM_HTTP);
     }
     
     public SyncUWSTest(URI resourceID, URI standardID, URI interfaceType) 
     { 
-        super(resourceID, standardID, interfaceType);
+        this(resourceID, standardID, interfaceType, null);
+    }
+    
+    /**
+     * Specify an endpoint name for cases where the standardID corresponds to the baseURL (e.g. TAP).
+     * 
+     * @param resourceID
+     * @param standardID
+     * @param interfaceType
+     * @param endpointName 
+     */
+    public SyncUWSTest(URI resourceID, URI standardID, URI interfaceType, String endpointName) 
+    { 
+        super(resourceID, standardID, interfaceType, endpointName);
     }
 
     /**

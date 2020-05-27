@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,52 +62,97 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
-*
 ************************************************************************
- */
+*/
 
-package ca.nrc.cadc.uws.sample;
+package ca.nrc.cadc.uws.server.impl;
 
-import ca.nrc.cadc.uws.JobInfo;
-import ca.nrc.cadc.uws.web.InlineContentException;
-import ca.nrc.cadc.uws.web.UWSInlineContentHandler;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import ca.nrc.cadc.db.version.InitDatabase;
+import ca.nrc.cadc.util.Log4jInit;
+import java.util.List;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
-public class SampleInlineContentHandler implements UWSInlineContentHandler {
-
-    private static Logger log = Logger.getLogger(SampleInlineContentHandler.class);
-
-    private static final String TEXT_XML = "text/xml";
-
-    public SampleInlineContentHandler() {
+/**
+ *
+ * @author pdowler
+ */
+public class InitDatabaseUWSTest {
+    private static final Logger log = Logger.getLogger(InitDatabaseUWSTest.class);
+    
+    static {
+        Log4jInit.setLevel("ca.nrc.cadc.uws.server.impl", Level.INFO);
+        Log4jInit.setLevel("ca.nrc.cadc.db.version", Level.INFO);
+    }
+    
+    public InitDatabaseUWSTest() { 
+    }
+    
+    @Test
+    public void testParseCreateDDL() {
+        try {
+            InitDatabaseUWS init = new InitDatabaseUWS(null, null, "uws");
+            for (String fname : InitDatabaseUWS.CREATE_SQL) {
+                log.info("process file: " + fname);
+                List<String> statements = init.parseDDL(fname, "uws");
+                Assert.assertNotNull(statements);
+                Assert.assertFalse(statements.isEmpty());
+                /*
+                // sanity check statements
+                for (String s : statements) {
+                    String[] tokens = s.split(" ");
+                    String cmd = tokens[0];
+                    String type = tokens[1];
+                    String next = tokens[2];
+                    if ("create".equalsIgnoreCase(cmd)) {
+                        if ("table".equalsIgnoreCase(type) || "view".equalsIgnoreCase(type) 
+                                || "index".equalsIgnoreCase(type) || 
+                                ("unique".equalsIgnoreCase(type) && "index".equalsIgnoreCase(next))) {
+                            // OK
+                        } else {
+                            Assert.fail("[create] unexpected type: " + s);
+                        }
+                    } else if ("drop".equalsIgnoreCase(cmd)) {
+                        if ("view".equalsIgnoreCase(type)) {
+                            // OK
+                        } else {
+                            Assert.fail("[drop] dangerous drop: " + s);
+                        }
+                    } else if ("cluster".equalsIgnoreCase(cmd)) {
+                        // OK
+                    } else if ("grant".equalsIgnoreCase(cmd)) {
+                        if ("select".equalsIgnoreCase(type) || "usage".equalsIgnoreCase(type)) {
+                            // OK
+                        } else {
+                            Assert.fail("[grant] unexpected type: " + s);
+                        }
+                    } else {
+                        Assert.fail("unexpected command: " + cmd + " [" + s + "]");
+                    }
+                }
+                */
+            }
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
     }
 
-    @Override
-    public Content accept(String name, String contentType, InputStream inputStream)
-            throws InlineContentException, IOException {
-        if (inputStream == null) {
-            throw new IOException("The InputStream is closed");
-        }
-
-        log.debug("Content-Type: " + contentType);
-        if (contentType != null && contentType.equals(TEXT_XML)) {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-            StringBuilder sb = new StringBuilder();
-            String line = null;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line).append("\n");
+    @Test
+    public void testParseUpgradeDDL() {
+        try {
+            InitDatabaseUWS init = new InitDatabaseUWS(null, null, "uws");
+            for (String fname : InitDatabaseUWS.UPGRADE_SQL) {
+                log.info("process file: " + fname);
+                List<String> statements = init.parseDDL(fname, "uws");
+                Assert.assertNotNull(statements);
+                Assert.assertFalse(statements.isEmpty());
             }
-
-            Content ret = new Content();
-            ret.name = UWSInlineContentHandler.CONTENT_JOBINFO;
-            ret.value = new JobInfo(sb.toString(), contentType, true);
-            return ret;
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
         }
-        throw new UnsupportedOperationException("unexpected content type: " + contentType);
     }
 }

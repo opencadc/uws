@@ -74,6 +74,7 @@ import ca.nrc.cadc.io.ByteCountOutputStream;
 import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.rest.RestAction;
+import ca.nrc.cadc.uws.ErrorSummary;
 import ca.nrc.cadc.uws.ExecutionPhase;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobAttribute;
@@ -244,7 +245,7 @@ public class GetAction extends JobAction {
         logInfo.setBytes(bc.getByteCount());
     }
 
-    private void handleGetJobField(Job job, String field) throws IOException {
+    private void handleGetJobField(Job job, String field) throws IOException, ResourceNotFoundException {
         String value = null;
         DateFormat df = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
         JobAttribute ja = CHILD_RESOURCE_NAMES.get(field);
@@ -263,6 +264,14 @@ public class GetAction extends JobAction {
                 break;
             case OWNER_ID:
                 value = job.getOwnerID();
+                break;
+            case ERROR:
+                ErrorSummary es = job.getErrorSummary();
+                if (es != null) {
+                    value = es.getSummaryMessage();
+                } else {
+                    throw new ResourceNotFoundException(job.getID() + "/error");
+                }
                 break;
             default:
                 throw new UnsupportedOperationException("get " + field);
