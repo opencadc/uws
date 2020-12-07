@@ -267,10 +267,14 @@ public class GetAction extends JobAction {
                 break;
             case ERROR:
                 ErrorSummary es = job.getErrorSummary();
-                if (es != null) {
-                    value = es.getSummaryMessage();
-                } else {
+                if (es == null) {
                     throw new ResourceNotFoundException(job.getID() + "/error");
+                }
+                if (es.getDocumentURL() != null) {
+                    syncOutput.setHeader("Location", es.getDocumentURL());
+                    syncOutput.setCode(303);
+                } else {
+                    value = es.getSummaryMessage();
                 }
                 break;
             default:
