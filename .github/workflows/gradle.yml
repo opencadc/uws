@@ -1,4 +1,4 @@
-name: Java CI with Gradle
+name: Java CI
 
 on:
   pull_request:
@@ -17,10 +17,10 @@ jobs:
         java-version: 1.8
     
     - name: buld and test cadc-uws
-      run: cd cadc-uws && gradle clean build javadoc install
+      run: cd cadc-uws && ../gradlew clean build javadoc install
     
     - name: buld and test cadc-uws-server
-      run: cd cadc-uws-server && gradle clean build javadoc install
+      run: cd cadc-uws-server && ../gradlew clean build javadoc install
 
     - name: buld and test cadc-test-uws
-      run: cd cadc-test-uws && gradle clean build javadoc install
+      run: cd cadc-test-uws && ../gradlew clean build javadoc install
