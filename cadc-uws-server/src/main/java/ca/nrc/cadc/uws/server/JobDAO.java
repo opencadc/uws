@@ -1256,8 +1256,14 @@ public class JobDAO
             int arg = 1;
             if (owner != null)
             {
+                int otype = identManager.getOwnerType();
+                Object oval = owner;
+                if (jobSchema.storeOwnerASCII) {
+                    otype = Types.VARCHAR;
+                    oval = owner.toString();
+                }
                 log.debug(arg + " : " + owner);
-                ret.setObject(arg++, owner);
+                ret.setObject(arg++, owner, otype);
             }
 
             if (phases != null && !phases.isEmpty())
