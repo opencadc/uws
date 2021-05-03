@@ -95,13 +95,13 @@ public interface JobManager {
     Job get(String requestPath, String jobID) 
         throws JobNotFoundException, JobPersistenceException, TransientException;
 
-    Iterator<JobRef> iterator(String requestPath, String appname) 
+    Iterator<JobRef> iterator(String requestPath) 
         throws JobPersistenceException, TransientException;
 
-    Iterator<JobRef> iterator(String requestPath, String appname, List<ExecutionPhase> phases) 
+    Iterator<JobRef> iterator(String requestPath, List<ExecutionPhase> phases) 
         throws JobPersistenceException, TransientException;
 
-    Iterator<JobRef> iterator(String requestPath, String appname, List<ExecutionPhase> phases, Date after, Integer last) 
+    Iterator<JobRef> iterator(String requestPath, List<ExecutionPhase> phases, Date after, Integer last) 
         throws JobPersistenceException, TransientException;
     
     void update(String requestPath, String jobID, Date destruction, Long duration, Date quote) 

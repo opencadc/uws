@@ -250,24 +250,24 @@ public class SimpleJobManager implements JobManager {
     }
 
     @Override
-    public Iterator<JobRef> iterator(String requestPath, String appname)
+    public Iterator<JobRef> iterator(String requestPath)
             throws JobPersistenceException, TransientException {
         JobPersistence jobPersistence = getJobPersistence(requestPath);
-        return jobPersistence.iterator(appname);
+        return jobPersistence.iterator(requestPath);
     }
 
     @Override
-    public Iterator<JobRef> iterator(String requestPath, String appname, List<ExecutionPhase> phases)
+    public Iterator<JobRef> iterator(String requestPath, List<ExecutionPhase> phases)
             throws JobPersistenceException, TransientException {
         JobPersistence jobPersistence = getJobPersistence(requestPath);
-        return jobPersistence.iterator(appname, phases);
+        return jobPersistence.iterator(requestPath, phases);
     }
 
     @Override
-    public Iterator<JobRef> iterator(String requestPath, String appname, List<ExecutionPhase> phases, Date after, Integer last)
+    public Iterator<JobRef> iterator(String requestPath, List<ExecutionPhase> phases, Date after, Integer last)
             throws JobPersistenceException, TransientException {
         JobPersistence jobPersistence = getJobPersistence(requestPath);
-        return jobPersistence.iterator(appname, phases, after, last);
+        return jobPersistence.iterator(requestPath, phases, after, last);
     }
 
     @Override
