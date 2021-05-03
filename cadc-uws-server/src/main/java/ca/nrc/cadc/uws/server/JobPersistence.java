@@ -149,7 +149,7 @@ public interface JobPersistence extends JobUpdater {
     /**
      * Obtain a listing of JobRef instances in the specified phase.
      *
-     * @param appname
+     * @param requestPath
      * @param phases
      * @return iterator over visible jobs
      * @throws ca.nrc.cadc.uws.server.JobPersistenceException

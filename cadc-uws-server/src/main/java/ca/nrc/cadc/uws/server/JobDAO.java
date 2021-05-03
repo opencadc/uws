@@ -1838,17 +1838,17 @@ public class JobDAO
         private String lastJobID = null;
         private Date lastCreationTime = null;
         private Object owner;
-        private String appname;
+        private String requestPath;
         private List<ExecutionPhase> phases;
         private Date after;
         private Integer last;
         private long count = 0;
 
-        JobListIterator(JdbcTemplate jdbc, Object owner, String appname, List<ExecutionPhase> phases, Date after, Integer last)
+        JobListIterator(JdbcTemplate jdbc, Object owner, String requestPath, List<ExecutionPhase> phases, Date after, Integer last)
         {
             this.jdbcTemplate = jdbc;
             this.owner = owner;
-            this.appname = appname;
+            this.requestPath = requestPath;
             this.phases = phases;
             this.after = after;
             this.last = last;
@@ -1878,7 +1878,7 @@ public class JobDAO
         @SuppressWarnings("unchecked")
         private Iterator<JobRef> getNextBatchIterator()
         {
-            JobListStatementCreator sc = new JobListStatementCreator(lastJobID, lastCreationTime, owner, appname, phases, after, last);
+            JobListStatementCreator sc = new JobListStatementCreator(lastJobID, lastCreationTime, owner, requestPath, phases, after, last);
             List<JobRef> jobs = this.jdbcTemplate.query(sc, new RowMapper()
                 {
             	    // mapRow is required to preserve the order of the ResultSet
