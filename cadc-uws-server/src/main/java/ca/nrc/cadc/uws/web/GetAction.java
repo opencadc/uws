@@ -108,7 +108,7 @@ public class GetAction extends JobAction {
     private static final Logger log = Logger.getLogger(GetAction.class);
 
     private static final long MAX_WAIT = 60L;
-    private static final long POLL_INTERVAL[] = {1L, 2L, 4L, 8L};
+    private static final long[] POLL_INTERVAL = new long[] { 1L, 2L, 4L, 8L };
 
     public GetAction() {
     }
@@ -212,11 +212,8 @@ public class GetAction extends JobAction {
                 throw new IllegalArgumentException("invalid IVOA timestamp: AFTER=" + afterParam);
             }
         }
-        String rp = syncInput.getRequestPath();
-        int i = rp.lastIndexOf("/");
-        rp = rp.substring(0, i);
-        log.debug("job requestPath to match: " + rp);
-        Iterator<JobRef> jobs = jobManager.iterator(syncInput.getRequestPath(), rp, phaseList, afterDate, lastInt);
+
+        Iterator<JobRef> jobs = jobManager.iterator(syncInput.getRequestPath(), phaseList, afterDate, lastInt);
         JobListWriter w = new JobListWriter();
         syncOutput.setHeader("Content-Type", "text/xml");
         OutputStream os = syncOutput.getOutputStream();

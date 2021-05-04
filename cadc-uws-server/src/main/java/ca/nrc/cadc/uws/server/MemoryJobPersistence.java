@@ -264,14 +264,14 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
      *
      * @return
      */
-    public Iterator<JobRef> iterator(String appname)
+    public Iterator<JobRef> iterator(String requestPath)
     {
-        return iterator(appname);
+        return iterator(requestPath);
     }
 
-    public Iterator<JobRef> iterator(String appName, List<ExecutionPhase> phases)
+    public Iterator<JobRef> iterator(String requestPath, List<ExecutionPhase> phases)
     {
-        return iterator(appName, phases, null, null);
+        return iterator(requestPath, phases, null, null);
     }
 
     /**
@@ -280,7 +280,7 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
      *
      * @return
      */
-    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases, Date after, Integer last)
+    public Iterator<JobRef> iterator(String requestPath, List<ExecutionPhase> phases, Date after, Integer last)
     {
         //List<JobRef> tmp = new ArrayList<JobRef>();
 
@@ -294,7 +294,7 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
         {
             for (Job j : jobs.values())
             {
-                if (appname == null || j.getRequestPath().startsWith(appname))
+                if (requestPath == null || j.getRequestPath().startsWith(requestPath))
                 {
                     if ( (skipArchived && !ExecutionPhase.ARCHIVED.equals(j.getExecutionPhase()))
                         || (filterOnPhase && phases.contains(j.getExecutionPhase())) )

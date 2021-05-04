@@ -138,31 +138,31 @@ public interface JobPersistence extends JobUpdater {
     /**
      * Obtain a listing of JobRef instances.
      *
-     * @param appname
+     * @param requestPath
      * @return iterator over visible jobs
      * @throws ca.nrc.cadc.uws.server.JobPersistenceException
      * @throws ca.nrc.cadc.net.TransientException
      */
-    public Iterator<JobRef> iterator(String appname)
+    public Iterator<JobRef> iterator(String requestPath)
         throws JobPersistenceException, TransientException;
 
     /**
      * Obtain a listing of JobRef instances in the specified phase.
      *
-     * @param appname
+     * @param requestPath
      * @param phases
      * @return iterator over visible jobs
      * @throws ca.nrc.cadc.uws.server.JobPersistenceException
      * @throws ca.nrc.cadc.net.TransientException
      */
-    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases)
+    public Iterator<JobRef> iterator(String requestPath, List<ExecutionPhase> phases)
         throws JobPersistenceException, TransientException;
 
     /**
      * Obtain a listing of the last 'last' JobRef instances in the specified
      * phase with a start date after 'after'.
      *
-     * @param appname
+     * @param requestPath
      * @param phases
      * @param after
      * @param last
@@ -170,7 +170,7 @@ public interface JobPersistence extends JobUpdater {
      * @throws ca.nrc.cadc.uws.server.JobPersistenceException
      * @throws ca.nrc.cadc.net.TransientException
      */
-    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases, Date after, Integer last)
+    public Iterator<JobRef> iterator(String requestPath, List<ExecutionPhase> phases, Date after, Integer last)
         throws JobPersistenceException, TransientException;
 
     // optimised access methods

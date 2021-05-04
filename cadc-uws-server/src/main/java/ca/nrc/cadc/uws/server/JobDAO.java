@@ -632,8 +632,6 @@ public class JobDAO
         }
     }
 
-
-
     /**
      * Iterate over the jobs owned by the user in the subject contained in the
      * access control context.
@@ -645,12 +643,12 @@ public class JobDAO
      * @throws JobPersistenceException
      * @throws TransientException
      */
-    public Iterator<JobRef> iterator(String appname, List<ExecutionPhase> phases, Date after, Integer last)
+    public Iterator<JobRef> iterator(String requestPath, List<ExecutionPhase> phases, Date after, Integer last)
         throws TransientException, JobPersistenceException
     {
         AccessControlContext acContext = AccessController.getContext();
         Subject subject = Subject.getSubject(acContext);
-        return iterator(subject, appname, phases, after, last);
+        return iterator(subject, requestPath, phases, after, last);
     }
 
     /**
@@ -662,7 +660,7 @@ public class JobDAO
      * @param last Show the last <i>last</i> jobs, ordererd by startTime ascending
      * @return job iterator
      */
-    public Iterator<JobRef> iterator(Subject subject, String appname, List<ExecutionPhase> phases, Date after, Integer last)
+    public Iterator<JobRef> iterator(Subject subject, String requestPath, List<ExecutionPhase> phases, Date after, Integer last)
         throws TransientException, JobPersistenceException
     {
         Object owner = identManager.toOwner(subject);
@@ -670,7 +668,7 @@ public class JobDAO
 
         try
         {
-            JobListIterator jobListIterator = new JobListIterator(jdbc, owner, appname, phases, after, last);
+            JobListIterator jobListIterator = new JobListIterator(jdbc, owner, requestPath, phases, after, last);
             prof.checkpoint("JobListStatementCreator");
             return jobListIterator;
         }
@@ -1230,18 +1228,18 @@ public class JobDAO
     class JobListStatementCreator implements PreparedStatementCreator
     {
         private Object owner;
-        private String appname;
+        private String requestPath;
         private List<ExecutionPhase> phases;
         private Date after;
         private Integer last;
         private String lastJobID;
         private Date lastCreationTime;
 
-        public JobListStatementCreator(String lastJobID, Date lastCreationTime, Object owner, String appname, List<ExecutionPhase> phases, Date after, Integer last)
+        public JobListStatementCreator(String lastJobID, Date lastCreationTime, Object owner, String requestPath, List<ExecutionPhase> phases, Date after, Integer last)
         {
             this.lastJobID = lastJobID;
             this.lastCreationTime = lastCreationTime;
-            this.appname = appname;
+            this.requestPath = requestPath;
             this.owner = owner;
             this.phases = phases;
             this.after = after;
@@ -1286,11 +1284,10 @@ public class JobDAO
                 ret.setString(arg++, lastJobID);
             }
 
-            if (appname != null)
+            if (requestPath != null)
             {
-                appname += "%"; // like
-                log.debug(arg + " : " + appname);
-                ret.setString(arg++, appname);
+                log.debug(arg + " : " + requestPath);
+                ret.setString(arg++, requestPath);
             }
             if (after != null)
             {
@@ -1341,8 +1338,9 @@ public class JobDAO
                 log.debug("lastCreationTime: " + lastStartStr);
                 sb.append(" AND creationTime < '" + lastStartStr + "'");
             }
-            if (appname != null)
-                sb.append(" AND requestPath LIKE ?");
+            if (requestPath != null) {
+                sb.append(" AND requestPath = ?");
+            }
             if (after != null)
             {
                 // need to set the value here in quotes
@@ -1840,17 +1838,17 @@ public class JobDAO
         private String lastJobID = null;
         private Date lastCreationTime = null;
         private Object owner;
-        private String appname;
+        private String requestPath;
         private List<ExecutionPhase> phases;
         private Date after;
         private Integer last;
         private long count = 0;
 
-        JobListIterator(JdbcTemplate jdbc, Object owner, String appname, List<ExecutionPhase> phases, Date after, Integer last)
+        JobListIterator(JdbcTemplate jdbc, Object owner, String requestPath, List<ExecutionPhase> phases, Date after, Integer last)
         {
             this.jdbcTemplate = jdbc;
             this.owner = owner;
-            this.appname = appname;
+            this.requestPath = requestPath;
             this.phases = phases;
             this.after = after;
             this.last = last;
@@ -1880,7 +1878,7 @@ public class JobDAO
         @SuppressWarnings("unchecked")
         private Iterator<JobRef> getNextBatchIterator()
         {
-            JobListStatementCreator sc = new JobListStatementCreator(lastJobID, lastCreationTime, owner, appname, phases, after, last);
+            JobListStatementCreator sc = new JobListStatementCreator(lastJobID, lastCreationTime, owner, requestPath, phases, after, last);
             List<JobRef> jobs = this.jdbcTemplate.query(sc, new RowMapper()
                 {
             	    // mapRow is required to preserve the order of the ResultSet
