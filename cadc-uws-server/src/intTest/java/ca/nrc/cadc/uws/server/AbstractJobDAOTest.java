@@ -135,7 +135,7 @@ public abstract class AbstractJobDAOTest
 
     static
     {
-	Log4jInit.setLevel("ca.nrc.cadc.uws.server", Level.INFO);
+	//Log4jInit.setLevel("ca.nrc.cadc.uws.server", Level.DEBUG);
         idGenerator = new RandomStringGenerator(16);
         identManager = new X500IdentityManager();
     }
@@ -537,7 +537,7 @@ public abstract class AbstractJobDAOTest
                         ret = dao.put(job3, subject);
                         id3 = ret.getID();
 
-                        Iterator<JobRef> it = dao.iterator("/foo", null, null, null);
+                        Iterator<JobRef> it = dao.iterator(REQUEST_PATH, null, null, null);
                         boolean found1 = false, found2 = false, found3 = false;
                         String next = null;
                         while (it.hasNext())
@@ -595,7 +595,7 @@ public abstract class AbstractJobDAOTest
 
                         List<ExecutionPhase> phases = new ArrayList<ExecutionPhase>(1);
                         phases.add(ExecutionPhase.EXECUTING);
-                        Iterator<JobRef> it = dao.iterator("/foo", phases, null, null);
+                        Iterator<JobRef> it = dao.iterator(REQUEST_PATH, phases, null, null);
                         boolean found1 = false, found2 = false, found3 = false;
                         String next = null;
                         while (it.hasNext())
@@ -654,7 +654,7 @@ public abstract class AbstractJobDAOTest
 
                         Date now = new Date();
 
-                        Iterator<JobRef> it = dao.iterator("/foo", null, new Date(now.getTime() - 1000), null);
+                        Iterator<JobRef> it = dao.iterator(REQUEST_PATH, null, new Date(now.getTime() - 1000), null);
                         log.debug("testPutListFilterAfter jobs start...");
                         boolean found1 = false, found2 = false, found3 = false;
                         String next = null;
@@ -715,7 +715,7 @@ public abstract class AbstractJobDAOTest
                         ret = dao.put(job3, subject);
                         id3 = ret.getID();
 
-                        Iterator<JobRef> it = dao.iterator("/foo", null, null, 2);
+                        Iterator<JobRef> it = dao.iterator(REQUEST_PATH, null, null, 2);
                         log.debug("testPutListFilterLast jobs start...");
                         boolean found1 = false, found2 = false, found3 = false;
                         String next = null;
@@ -736,7 +736,7 @@ public abstract class AbstractJobDAOTest
                                 + found1 + ", " + found2 + ", " + found3);
                         Assert.assertTrue("Job list incorrect", (!found1) && found2 && found3);
 
-                        it = dao.iterator("/foo", null, null, 2);
+                        it = dao.iterator(REQUEST_PATH, null, null, 2);
                         log.debug("testPutListFilterLast jobs start...");
                         found1 = false;
                         found2 = false;
@@ -757,7 +757,7 @@ public abstract class AbstractJobDAOTest
                         log.debug("testPutListFilterLast jobs end");
                         Assert.assertTrue("Job list incorrect", !found1 && found2 && found3);
 
-                        it = dao.iterator("/foo", null, null, 3);
+                        it = dao.iterator(REQUEST_PATH, null, null, 3);
                         log.debug("testPutListFilterLast jobs start...");
                         found1 = false;
                         found2 = false;
