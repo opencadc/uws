@@ -715,7 +715,21 @@ public class JobDAO
 
             JobPutStatementCreator npsc = new JobPutStatementCreator(update);
             npsc.setValues(job);
-            jdbc.update(npsc);
+            while (true)
+            {
+                try
+                {
+                    jdbc.update(npsc);
+                    break;
+                }
+                catch (org.springframework.dao.DuplicateKeyException e)
+                {
+                    log.warn("Re-try on job ID collision: " + job.getID());
+                    JobPersistenceUtil.assignID(job, idGenerator.getID());
+                    npsc.setValues(job);
+                }
+            }
+
             prof.checkpoint("JobPutStatementCreator");
 
             int numP = 0;
