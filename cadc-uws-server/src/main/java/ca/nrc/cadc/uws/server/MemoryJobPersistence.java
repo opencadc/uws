@@ -339,7 +339,7 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
             ownerID = identityManager.toOwnerString(caller);
         job.setOwnerID(ownerID);
         if (job.getID() == null)
-            JobPersistenceUtil.assignID(job, idGenerator.getID());
+            JobPersistenceUtil.assignID(job, generateJobID());
         Job keep = JobPersistenceUtil.deepCopy(job);
         if (ownerID != null)
             keep.ownerSubject = caller;
@@ -378,6 +378,17 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
         throws JobNotFoundException
     {
         return setPhase(jobID, start, end, null, error, date);
+    }
+
+    private String generateJobID() {
+        while (true) {
+            String id = idGenerator.getID();
+            if (jobs.containsKey(id)) {
+                log.warn("Collision of job IDs detected: " + id);
+                continue;
+            }
+            return id;
+        }
     }
 
     private ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end,
