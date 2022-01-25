@@ -161,6 +161,8 @@ public class JobPersistenceUtil
                 return;
             if (ExecutionPhase.ABORTED.equals(end))
                 return;
+            if (ExecutionPhase.PENDING.equals(end))
+                return;
             throw new IllegalArgumentException("cannot change from " + start +  " -> " + end);
         }
         if (ExecutionPhase.ERROR.equals(start))

@@ -29,5 +29,6 @@ public class JobPersistenceUtilTest
         JobPersistenceUtil.constraintPhaseTransition(ExecutionPhase.EXECUTING, ExecutionPhase.ABORTED);
         JobPersistenceUtil.constraintPhaseTransition(ExecutionPhase.EXECUTING, ExecutionPhase.COMPLETED);
         JobPersistenceUtil.constraintPhaseTransition(ExecutionPhase.EXECUTING, ExecutionPhase.ERROR);
+        JobPersistenceUtil.constraintPhaseTransition(ExecutionPhase.EXECUTING, ExecutionPhase.PENDING);
     }
 }
