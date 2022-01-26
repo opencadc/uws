@@ -722,9 +722,21 @@ public class JobDAO
                     jdbc.update(npsc);
                     break;
                 }
-                catch (org.springframework.jdbc.UncategorizedSQLException e)
+                catch (org.springframework.dao.DuplicateKeyException e)
                 {
                     log.warn("Re-try on job ID collision: " + job.getID());
+                    try
+                    {
+                        rollbackTransaction();
+                        prof.checkpoint("rollback.JobPutStatementCreator");
+                    }
+                    catch(Throwable oops)
+                    {
+                        log.error("failed to rollback transaction", oops);
+                        throw e;
+                    }
+                    log.debug("Start new transaction");
+                    startTransaction();
                     JobPersistenceUtil.assignID(job, idGenerator.getID());
                     npsc.setValues(job);
                 }
