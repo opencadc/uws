@@ -722,7 +722,7 @@ public class JobDAO
                     jdbc.update(npsc);
                     break;
                 }
-                catch (org.springframework.dao.DuplicateKeyException e)
+                catch (org.springframework.jdbc.UncategorizedSQLException e)
                 {
                     log.warn("Re-try on job ID collision: " + job.getID());
                     JobPersistenceUtil.assignID(job, idGenerator.getID());
