@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2022.                            (c) 2022.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -74,6 +74,7 @@ import ca.nrc.cadc.util.Log4jInit;
 import ca.nrc.cadc.uws.ErrorSummary;
 import ca.nrc.cadc.uws.ExecutionPhase;
 import ca.nrc.cadc.uws.Job;
+import ca.nrc.cadc.uws.Parameter;
 import ca.nrc.cadc.uws.Result;
 import java.util.Date;
 import java.util.HashMap;
@@ -267,6 +268,11 @@ public class ThreadExecutorTest
         public ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end, ErrorSummary error, Date date) throws JobNotFoundException, JobPersistenceException
         {
             return setPhase(jobID, start, end);
+        }
+
+        public void addParameters(String jobID, List<Parameter> params) throws JobNotFoundException
+        {
+            throw new UnsupportedOperationException("addParameters() not implemented in TestJobUpdater");
         }
     }
     
