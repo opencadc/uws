@@ -70,6 +70,7 @@
 package ca.nrc.cadc.uws.server;
 
 import ca.nrc.cadc.net.HttpDownload;
+import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.util.Base64;
 import ca.nrc.cadc.uws.ErrorSummary;
 import ca.nrc.cadc.uws.ExecutionPhase;
@@ -260,7 +261,7 @@ public class RemoteJobUpdater implements JobUpdater
      * @throws TransientException
      */
     public void addParameters(String jobID, List<Parameter> params)
-        throws JobNotFoundException
+        throws JobNotFoundException, JobPersistenceException, TransientException
     {
         throw new UnsupportedOperationException("addParameters() not implemented in RemoteJobUpdater.");
     }
