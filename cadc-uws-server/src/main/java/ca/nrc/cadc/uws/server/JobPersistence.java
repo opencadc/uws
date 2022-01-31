@@ -73,7 +73,6 @@ import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.uws.ExecutionPhase;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobRef;
-import ca.nrc.cadc.uws.Parameter;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -173,17 +172,4 @@ public interface JobPersistence extends JobUpdater {
     public Iterator<JobRef> iterator(String requestPath, List<ExecutionPhase> phases, Date after, Integer last)
         throws JobPersistenceException, TransientException;
 
-    // optimised access methods
-
-    /**
-     * Add parameters to the specified job.
-     *
-     * @param jobID
-     * @param params
-     * @throws JobNotFoundException
-     * @throws JobPersistenceException
-     * @throws TransientException
-     */
-    public void addParameters(String jobID, List<Parameter> params)
-        throws JobNotFoundException, JobPersistenceException, TransientException;
 }
