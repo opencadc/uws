@@ -244,7 +244,7 @@ public class GetAction extends JobAction {
 
     private void handleGetJobField(Job job, String field) throws IOException, ResourceNotFoundException {
         String value = null;
-        DateFormat df = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
+        DateFormat df = DateUtil.getDateFormat(DateUtil.ISO8601_DATE_FORMAT_MSZ, DateUtil.UTC);
         JobAttribute ja = CHILD_RESOURCE_NAMES.get(field);
         switch (ja) {
             case DESTRUCTION_TIME:

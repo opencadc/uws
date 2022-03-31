@@ -99,7 +99,7 @@ public class JobWriter
 
     public JobWriter()
     {
-        this.dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
+        this.dateFormat = DateUtil.getDateFormat(DateUtil.ISO8601_DATE_FORMAT_MSZ, DateUtil.UTC);
     }
 
     /**
