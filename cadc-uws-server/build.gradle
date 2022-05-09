@@ -15,7 +15,7 @@ sourceCompatibility = 1.8
 
 group = 'org.opencadc'
 
-version = '1.2.12'
+version = '1.2.13'
 
 description = 'OpenCADC UWS server library'
 def git_url = 'https://github.com/opencadc/uws'
@@ -26,12 +26,11 @@ test {
 }
 
 dependencies {
-    compile 'log4j:log4j:[1.2,2.0)'
     compile 'javax.servlet:javax.servlet-api:[3.1,)'
     compile 'org.jdom:jdom2:[2.0,)'
     compile 'org.springframework:spring-jdbc:5.2.9.RELEASE'
 
-    compile 'org.opencadc:cadc-util:[1.4,2.0)'
+    compile 'org.opencadc:cadc-util:[1.6,2.0)'
     compile 'org.opencadc:cadc-vosi:[1.3.1,2.0)'
     compile 'org.opencadc:cadc-uws:[1.0.3,2.0)'
     compile 'org.opencadc:cadc-rest:[1.3,2.0)'
