@@ -166,7 +166,7 @@ public class JobDAO
     private TransactionStatus transactionStatus;
     private boolean inTransaction = false;
 
-    private DateFormat idFormat = DateUtil.getDateFormat("yyyy-MM-dd", DateUtil.UTC);
+    // ugh: mix of formatting debug and SQL values
     private DateFormat dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
     private DateFormat isoDateFormat = DateUtil.getDateFormat(DateUtil.ISO_DATE_FORMAT, DateUtil.UTC);
     private Calendar cal = Calendar.getInstance(DateUtil.UTC);

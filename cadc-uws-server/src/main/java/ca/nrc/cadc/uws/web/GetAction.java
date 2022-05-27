@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2018.                            (c) 2018.
+*  (c) 2022.                            (c) 2022.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -83,6 +83,7 @@ import ca.nrc.cadc.uws.JobRef;
 import ca.nrc.cadc.uws.JobWriter;
 import ca.nrc.cadc.uws.Parameter;
 import ca.nrc.cadc.uws.Result;
+import ca.nrc.cadc.uws.UWS;
 import ca.nrc.cadc.uws.server.JobNotFoundException;
 import ca.nrc.cadc.uws.server.JobPersistenceException;
 import java.io.IOException;
@@ -205,7 +206,7 @@ public class GetAction extends JobAction {
         String afterParam = syncInput.getParameter("AFTER");
         Date afterDate = null;
         if (afterParam != null) {
-            DateFormat df = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
+            DateFormat df = UWS.getDateFormat();
             try {
                 afterDate = df.parse(afterParam);
             } catch (ParseException e) {
@@ -244,7 +245,7 @@ public class GetAction extends JobAction {
 
     private void handleGetJobField(Job job, String field) throws IOException, ResourceNotFoundException {
         String value = null;
-        DateFormat df = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
+        DateFormat df = UWS.getDateFormat();
         JobAttribute ja = CHILD_RESOURCE_NAMES.get(field);
         switch (ja) {
             case DESTRUCTION_TIME:

@@ -69,9 +69,16 @@
 
 package ca.nrc.cadc.uws.server;
 
+import ca.nrc.cadc.auth.IdentityManager;
+import ca.nrc.cadc.auth.X500IdentityManager;
+import ca.nrc.cadc.uws.ErrorSummary;
+import ca.nrc.cadc.uws.ExecutionPhase;
+import ca.nrc.cadc.uws.Job;
+import ca.nrc.cadc.uws.JobRef;
+import ca.nrc.cadc.uws.Parameter;
+import ca.nrc.cadc.uws.Result;
 import java.security.AccessControlContext;
 import java.security.AccessController;
-import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.Date;
@@ -80,20 +87,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
 import javax.security.auth.Subject;
-
 import org.apache.log4j.Logger;
-
-import ca.nrc.cadc.auth.IdentityManager;
-import ca.nrc.cadc.auth.X500IdentityManager;
-import ca.nrc.cadc.date.DateUtil;
-import ca.nrc.cadc.uws.ErrorSummary;
-import ca.nrc.cadc.uws.ExecutionPhase;
-import ca.nrc.cadc.uws.Job;
-import ca.nrc.cadc.uws.JobRef;
-import ca.nrc.cadc.uws.Parameter;
-import ca.nrc.cadc.uws.Result;
 
 /**
  *
@@ -106,7 +101,6 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
     protected StringIDGenerator idGenerator;
     protected IdentityManager identityManager;
     private Thread jobCleaner;
-    private DateFormat dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
 
     protected final Map<String,Job> jobs = new HashMap<String,Job>();
 

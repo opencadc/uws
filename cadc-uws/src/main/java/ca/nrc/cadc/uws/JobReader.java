@@ -69,6 +69,8 @@
 
 package ca.nrc.cadc.uws;
 
+import ca.nrc.cadc.date.DateUtil;
+import ca.nrc.cadc.xml.XmlUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -86,7 +88,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
 import org.apache.log4j.Logger;
 import org.jdom2.Attribute;
 import org.jdom2.DataConversionException;
@@ -95,9 +96,6 @@ import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.XMLOutputter;
-
-import ca.nrc.cadc.date.DateUtil;
-import ca.nrc.cadc.xml.XmlUtil;
 
 /**
  * Constructs a Job from an XML source. This class is not thread safe but it is
@@ -109,24 +107,21 @@ public class JobReader
     @SuppressWarnings("unused")
     private static Logger log = Logger.getLogger(JobReader.class);
 
-    private static final String UWS_SCHEMA_URL = "http://www.ivoa.net/xml/UWS/v1.0";
-    private static final String UWS_SCHEMA_RESOURCE = "UWS-v1.0.xsd";
-    private static final String XLINK_SCHEMA_URL = "http://www.w3.org/1999/xlink";
-    private static final String XLINK_SCHEMA_RESOURCE = "XLINK.xsd";
+    
 
     private static final String uwsSchemaUrl;
     private static final String xlinkSchemaUrl;
     static
     {
-        uwsSchemaUrl = XmlUtil.getResourceUrlString(UWS_SCHEMA_RESOURCE, JobReader.class);
+        uwsSchemaUrl = XmlUtil.getResourceUrlString(UWS.UWS_XSD_FILE, JobReader.class);
         log.debug("uwsSchemaUrl: " + uwsSchemaUrl);
 
-        xlinkSchemaUrl = XmlUtil.getResourceUrlString(XLINK_SCHEMA_RESOURCE, JobReader.class);
+        xlinkSchemaUrl = XmlUtil.getResourceUrlString(UWS.XLINK_XSD_FILE, JobReader.class);
         log.debug("xlinkSchemaUrl: " + xlinkSchemaUrl);
     }
 
     private Map<String, String> schemaMap;
-    private DateFormat dateFormat;
+    private final DateFormat dateFormat;
     private SAXBuilder docBuilder;
 
     /**
@@ -146,8 +141,8 @@ public class JobReader
         if (enableSchemaValidation)
         {
             schemaMap = new HashMap<String, String>();
-            schemaMap.put(UWS_SCHEMA_URL, uwsSchemaUrl);
-            schemaMap.put(XLINK_SCHEMA_URL, xlinkSchemaUrl);
+            schemaMap.put(UWS.UWS_NAMESPACE, uwsSchemaUrl);
+            schemaMap.put(UWS.XLINK_NAMESPACE, xlinkSchemaUrl);
             log.debug("schema validation enabled");
         }
         else
@@ -156,7 +151,7 @@ public class JobReader
         }
 
         this.docBuilder = XmlUtil.createBuilder(schemaMap);
-        this.dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
+        this.dateFormat = UWS.getDateFormat();
     }
 
     /**
@@ -175,8 +170,8 @@ public class JobReader
             throw new IllegalArgumentException("Map of schema namespace to resource cannot be null");
         }
         schemaMap = new HashMap<String, String>();
-        schemaMap.put(UWS_SCHEMA_URL, uwsSchemaUrl);
-        schemaMap.put(XLINK_SCHEMA_URL, xlinkSchemaUrl);
+        schemaMap.put(UWS.UWS_NAMESPACE, uwsSchemaUrl);
+        schemaMap.put(UWS.XLINK_NAMESPACE, xlinkSchemaUrl);
         if (!schemas.isEmpty())
         {
             Set<Entry<String, String>> entries = schemas.entrySet();
@@ -189,7 +184,7 @@ public class JobReader
         log.debug("schema validation enabled");
 
         this.docBuilder = XmlUtil.createBuilder(schemaMap);
-        this.dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
+        this.dateFormat = UWS.getDateFormat();
     }
 
     public Job read(InputStream in)

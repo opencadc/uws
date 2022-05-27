@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2022.                            (c) 2022.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -96,11 +96,11 @@ public class JobListWriter
 {
     private static Logger log = Logger.getLogger(JobListWriter.class);
 
-    private DateFormat dateFormat;
+    private final DateFormat dateFormat;
 
     public JobListWriter()
     {
-        this.dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
+        this.dateFormat = UWS.getDateFormat();
     }
 
     /**
@@ -164,7 +164,7 @@ public class JobListWriter
         Element root = new IterableContent<Element, JobRef>(JobAttribute.JOBS.getAttributeName(), UWS.NS, jobs, contentConverter);
         root.addNamespaceDeclaration(UWS.NS);
         root.addNamespaceDeclaration(UWS.XLINK_NS);
-        root.setAttribute(JobAttribute.VERSION.getAttributeName(), UWS.XSD_VERSION);
+        root.setAttribute(JobAttribute.VERSION.getAttributeName(), UWS.UWS_VERSION);
         return root;
     }
 
