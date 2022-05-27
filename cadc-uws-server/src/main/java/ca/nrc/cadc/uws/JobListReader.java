@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2022.                            (c) 2022.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -109,25 +109,20 @@ public class JobListReader
 
     private static Logger log = Logger.getLogger(JobListReader.class);
 
-    private static final String UWS_SCHEMA_URL = "http://www.ivoa.net/xml/UWS/v1.0";
-    private static final String UWS_SCHEMA_RESOURCE = "UWS-v1.0.xsd";
-    private static final String XLINK_SCHEMA_URL = "http://www.w3.org/1999/xlink";
-    private static final String XLINK_SCHEMA_RESOURCE = "XLINK.xsd";
-
     private static final String uwsSchemaUrl;
     private static final String xlinkSchemaUrl;
     static
     {
-        uwsSchemaUrl = XmlUtil.getResourceUrlString(UWS_SCHEMA_RESOURCE, JobListReader.class);
+        uwsSchemaUrl = XmlUtil.getResourceUrlString(UWS.UWS_XSD_FILE, JobListReader.class);
         log.debug("uwsSchemaUrl: " + uwsSchemaUrl);
 
-        xlinkSchemaUrl = XmlUtil.getResourceUrlString(XLINK_SCHEMA_RESOURCE, JobListReader.class);
+        xlinkSchemaUrl = XmlUtil.getResourceUrlString(UWS.XLINK_XSD_FILE, JobListReader.class);
         log.debug("xlinkSchemaUrl: " + xlinkSchemaUrl);
     }
 
     private Map<String, String> schemaMap;
     private SAXBuilder docBuilder;
-    private DateFormat dateFormat;
+    private final DateFormat dateFormat;
 
     /**
      * Constructor. XML Schema validation is enabled by default.
@@ -146,8 +141,8 @@ public class JobListReader
         if (enableSchemaValidation)
         {
             schemaMap = new HashMap<String, String>();
-            schemaMap.put(UWS_SCHEMA_URL, uwsSchemaUrl);
-            schemaMap.put(XLINK_SCHEMA_URL, xlinkSchemaUrl);
+            schemaMap.put(UWS.UWS_NAMESPACE, uwsSchemaUrl);
+            schemaMap.put(UWS.XLINK_NAMESPACE, xlinkSchemaUrl);
             log.debug("schema validation enabled");
         }
         else
@@ -156,7 +151,7 @@ public class JobListReader
         }
 
         this.docBuilder = XmlUtil.createBuilder(schemaMap);
-        this.dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
+        this.dateFormat = UWS.getDateFormat();
     }
 
     /**
@@ -175,8 +170,8 @@ public class JobListReader
             throw new IllegalArgumentException("Map of schema namespace to resource cannot be null");
         }
         schemaMap = new HashMap<String, String>();
-        schemaMap.put(UWS_SCHEMA_URL, uwsSchemaUrl);
-        schemaMap.put(XLINK_SCHEMA_URL, xlinkSchemaUrl);
+        schemaMap.put(UWS.UWS_NAMESPACE, uwsSchemaUrl);
+        schemaMap.put(UWS.XLINK_NAMESPACE, xlinkSchemaUrl);
         if (!schemas.isEmpty())
         {
             Set<Entry<String, String>> entries = schemas.entrySet();
@@ -189,6 +184,7 @@ public class JobListReader
         log.debug("schema validation enabled");
 
         this.docBuilder = XmlUtil.createBuilder(schemaMap);
+        this.dateFormat = UWS.getDateFormat();
     }
 
     public List<JobRef> read(InputStream in)

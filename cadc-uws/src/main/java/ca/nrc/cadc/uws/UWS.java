@@ -69,6 +69,13 @@
 
 package ca.nrc.cadc.uws;
 
+import ca.nrc.cadc.date.DateUtil;
+import java.text.DateFormat;
+import java.text.FieldPosition;
+import java.text.ParsePosition;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import org.jdom2.Namespace;
 
 /**
@@ -77,15 +84,50 @@ import org.jdom2.Namespace;
  * @author zhangsa
  *
  */
-public class UWS
+public abstract class UWS
 {
-    public static final String XSD_FILE_NAME = "UWS-v1.0.xsd"; // local xsd file name
-    public static final String XSD_KEY = "http://www.ivoa.net/xml/UWS/v1.0";
-    public static final String XSD_VERSION = "1.1";
+    public static final String UWS_XSD_FILE = "UWS-v1.1.xsd"; // local xsd file name
+    public static final String UWS_NAMESPACE = "http://www.ivoa.net/xml/UWS/v1.0";
+    public static final String UWS_VERSION = "1.1";
+    
+    public static final String XLINK_NAMESPACE = "http://www.w3.org/1999/xlink";
+    public static final String XLINK_XSD_FILE = "XLINK.xsd";
 
-    public static final Namespace NS = Namespace.getNamespace("uws", "http://www.ivoa.net/xml/UWS/v1.0");
+    public static final Namespace NS = Namespace.getNamespace("uws", UWS_NAMESPACE);
     public static final Namespace XLINK_NS = Namespace.getNamespace("xlink", "http://www.w3.org/1999/xlink");
     public static final Namespace XSI_NS = Namespace.getNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance");
 
+    public static final String UWS_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
+    
+    public static final DateFormat getDateFormat() {
+        return new MultiDateFormat();
+    }
+    
+    // possibly temporary class to support multiple input formats for backwards compatibility
+    private static class MultiDateFormat extends DateFormat {
+        
+        final DateFormat outputFmt = DateUtil.getDateFormat(UWS_DATE_FORMAT, DateUtil.UTC);
+        final List<DateFormat> inputFmts = new ArrayList<>();
+        
+        MultiDateFormat() {
+            inputFmts.add(outputFmt);
+            inputFmts.add(DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC));
+        }
 
+        @Override
+        public StringBuffer format(Date date, StringBuffer sb, FieldPosition fp) {
+            return outputFmt.format(date, sb, fp);
+        }
+
+        @Override
+        public Date parse(String string, ParsePosition pp) {
+            for (DateFormat df : inputFmts) {
+                Date ret = df.parse(string, pp);
+                if (ret != null) {
+                    return ret;
+                }
+            }
+            return null;
+        }
+    }
 }

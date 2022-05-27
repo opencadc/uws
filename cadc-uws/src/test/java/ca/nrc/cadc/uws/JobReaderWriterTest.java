@@ -65,10 +65,13 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws;
 
+import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.date.DateUtil;
+import ca.nrc.cadc.util.Log4jInit;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -76,60 +79,62 @@ import java.net.URI;
 import java.net.URL;
 import java.security.Principal;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import javax.security.auth.Subject;
-
-import junit.framework.Assert;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.Before;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import ca.nrc.cadc.auth.AuthenticationUtil;
-import ca.nrc.cadc.date.DateUtil;
-import ca.nrc.cadc.util.Log4jInit;
 
 /**
  * @author zhangsa
  *
  */
-public class JobReaderWriterTest
-{
+public class JobReaderWriterTest {
+
     static Logger log = Logger.getLogger(JobReaderWriterTest.class);
 
     private String JOB_ID = "someJobID";
     private String RUN_ID = "someRunID";
-    private String TEST_DATE = "2001-01-01T12:34:56.000";
 
-    private DateFormat dateFormat;
-    private Date baseDate;
+    private Date baseDate = new Date();
 
     @BeforeClass
     public static void setUpBeforeClass()
-        throws Exception
-    {
+            throws Exception {
         Log4jInit.setLevel("ca.nrc.cadc", Level.INFO);
     }
 
-    @Before
-    public void setUp()
-        throws Exception
-    {
-        this.dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
-        this.baseDate = dateFormat.parse(TEST_DATE);
+    @Test
+    public void testDateRoundTripCompat() throws Exception {
+        Date orig = new Date();
+        DateFormat ivoaFmt = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
+        String ivoaStr = ivoaFmt.format(orig);
+        
+        DateFormat uwsFmt = DateUtil.getDateFormat(UWS.UWS_DATE_FORMAT, DateUtil.UTC);
+        String uwsStr = uwsFmt.format(orig);
+        
+        DateFormat flexFormat = UWS.getDateFormat();
+        for (String val : new String[] { uwsStr, ivoaStr }) {
+            try {
+                Date dd = flexFormat.parse(val);
+                Assert.assertEquals(orig, dd);
+                log.info("flexFmt can parse value: " + val);
+            } catch (ParseException ex) {
+                Assert.fail("flexFmt cannot parse value: " + val + "\n\t" + ex);
+            }
+        }
     }
 
     Job createPendingJob()
-        throws Exception
-    {
+            throws Exception {
         Job ret = new Job(JOB_ID);
         ret.setExecutionPhase(ExecutionPhase.PENDING);
         ret.setRunID(RUN_ID);
@@ -139,28 +144,24 @@ public class JobReaderWriterTest
         return ret;
     }
 
-    void setup(Job j)
-    {
+    void setup(Job j) {
         final List<Parameter> parameters = new ArrayList<Parameter>();
         parameters.add(new Parameter("parName1", "parV1"));
         parameters.add(new Parameter("parName2", "parV2"));
         j.setParameterList(parameters);
     }
 
-    void queue(Job j)
-    {
+    void queue(Job j) {
         j.setExecutionPhase(ExecutionPhase.QUEUED);
     }
 
-    void execute(Job j)
-    {
+    void execute(Job j) {
         j.setStartTime(new Date(baseDate.getTime() + 300L));
         j.setExecutionPhase(ExecutionPhase.EXECUTING);
     }
 
     void complete(Job j)
-        throws Exception
-    {
+            throws Exception {
         j.setExecutionPhase(ExecutionPhase.COMPLETED);
         List<Result> results = new ArrayList<Result>();
         results.add(new Result("rsName1", new URI("http://www.ivoa.net/url1"), true));
@@ -172,8 +173,7 @@ public class JobReaderWriterTest
     }
 
     void fail(Job j)
-        throws Exception
-    {
+            throws Exception {
         j.setExecutionPhase(ExecutionPhase.ERROR);
         j.setErrorSummary(new ErrorSummary("oops", ErrorType.FATAL, new URL("http://www.ivoa.net/oops")));
         j.setStartTime(new Date(baseDate.getTime() + 300L));
@@ -182,19 +182,16 @@ public class JobReaderWriterTest
     }
 
     private String toXML(Job j)
-        throws IOException
-    {
+            throws IOException {
         JobWriter w = new JobWriter();
         StringWriter sw = new StringWriter();
         w.write(j, sw);
         sw.close();
         String ret = sw.toString();
-        log.debug("\n"+ret);
         return ret;
     }
 
-    private void assertEquals(Job exp, Job act)
-    {
+    private void assertEquals(Job exp, Job act) {
         Assert.assertEquals("jobID", exp.getID(), act.getID());
         Assert.assertEquals("runID", exp.getRunID(), act.getRunID());
         Assert.assertEquals("phase", exp.getExecutionPhase(), act.getExecutionPhase());
@@ -215,12 +212,10 @@ public class JobReaderWriterTest
         assertEqualJobInfo(exp.getJobInfo(), act.getJobInfo());
     }
 
-    private void assertEqualJobInfo(JobInfo exp, JobInfo act)
-    {
+    private void assertEqualJobInfo(JobInfo exp, JobInfo act) {
         log.debug("expect: " + exp);
         log.debug("actual: " + act);
-        if (exp == null || !exp.getValid())
-        {
+        if (exp == null || !exp.getValid()) {
             Assert.assertNull("expect null jobInfo", act);
             return;
         }
@@ -230,48 +225,44 @@ public class JobReaderWriterTest
         //Assert.assertEquals("jobInfo content", exp.getContent(), act.getContent());
     }
 
-    private void assertEqualSubject(Subject exp, Subject act)
-    {
-        if (exp == null)
-        {
+    private void assertEqualSubject(Subject exp, Subject act) {
+        if (exp == null) {
             Assert.assertNull("owner", act);
             return;
         }
 
-        if (exp == null)
-        {
-            if (act != null && act.getPrincipals().size() > 0)
+        if (exp == null) {
+            if (act != null && act.getPrincipals().size() > 0) {
                 throw new AssertionError("expected Subject with no Principals, found "
                         + act.getPrincipals().size());
+            }
             return;
         }
-        if (act == null)
-        {
-            if (exp != null && exp.getPrincipals().size() > 0)
+        if (act == null) {
+            if (exp != null && exp.getPrincipals().size() > 0) {
                 throw new AssertionError("expected Subject with " + exp.getPrincipals().size()
                         + " Principals, found null Subject");
+            }
             return;
         }
 
         Assert.assertEquals(exp.getPrincipals().size(), act.getPrincipals().size());
-        for (Principal p : exp.getPrincipals())
-        {
+        for (Principal p : exp.getPrincipals()) {
             Assert.assertTrue("found principal", checkContains(p, act.getPrincipals()));
         }
     }
 
-    private boolean checkContains(Principal p, Set<Principal> set)
-    {
-        for (Principal op : set)
-            if ( AuthenticationUtil.equals(p, op) )
+    private boolean checkContains(Principal p, Set<Principal> set) {
+        for (Principal op : set) {
+            if (AuthenticationUtil.equals(p, op)) {
                 return true;
+            }
+        }
         return false;
     }
 
-    private void assertEqualError(ErrorSummary exp, ErrorSummary act)
-    {
-        if (exp == null)
-        {
+    private void assertEqualError(ErrorSummary exp, ErrorSummary act) {
+        if (exp == null) {
             Assert.assertNull("error", act);
             return;
         }
@@ -282,20 +273,17 @@ public class JobReaderWriterTest
         // the XML serialisation
     }
 
-    private void assertEqualParameters(List<Parameter> exp, List<Parameter> act)
-    {
-        if (exp == null)
-        {
+    private void assertEqualParameters(List<Parameter> exp, List<Parameter> act) {
+        if (exp == null) {
             Assert.assertNull("parameters", act);
             return;
         }
         Assert.assertEquals("number of parameters", exp.size(), act.size());
 
     }
-    private void assertEqualResults(List<Result> exp, List<Result> act)
-    {
-        if (exp == null)
-        {
+
+    private void assertEqualResults(List<Result> exp, List<Result> act) {
+        if (exp == null) {
             Assert.assertNull("results", act);
             return;
         }
@@ -303,163 +291,131 @@ public class JobReaderWriterTest
 
     }
 
-    public void test(Job job)
-        throws Exception
-    {
+    void roundTripVerify(Job job)
+            throws Exception {
+        log.info("before: " + job);
         String xml = toXML(job);
+        log.info(xml);
         JobReader r = new JobReader();
         Job job2 = r.read(new StringReader(xml));
+        log.info("after: " + job2);
         assertEquals(job, job2);
     }
 
     @Test
-    public void testPending()
-    {
+    public void testPending() {
         log.debug("testPending");
-        try
-        {
+        try {
             Job job = createPendingJob();
-            test(job);
+            roundTripVerify(job);
 
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
     @Test
-    public void testQueued()
-    {
+    public void testQueued() {
         log.debug("testQueued");
-        try
-        {
+        try {
             Job job = createPendingJob();
             queue(job);
-            test(job);
-        }
-        catch(Exception unexpected)
-        {
+            roundTripVerify(job);
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
     @Test
-    public void testExecuting()
-    {
+    public void testExecuting() {
         log.debug("testExecuting");
-        try
-        {
+        try {
             Job job = createPendingJob();
             execute(job);
-            test(job);
-        }
-        catch(Exception unexpected)
-        {
+            roundTripVerify(job);
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
     @Test
-    public void testCompleted()
-    {
+    public void testCompleted() {
         log.debug("testCompleted");
-        try
-        {
+        try {
             Job job = createPendingJob();
             complete(job);
-            test(job);
-        }
-        catch(Exception unexpected)
-        {
+            roundTripVerify(job);
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
     @Test
-    public void testWithOwnerID()
-    {
+    public void testWithOwnerID() {
         log.debug("testWithOwner");
-        try
-        {
+        try {
             Job job = createPendingJob();
             job.setOwnerID("CN=Duke, OU=JavaSoft, O=Sun Microsystems, C=US");
-            test(job);
-        }
-        catch(Exception unexpected)
-        {
+            roundTripVerify(job);
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
     @Test
-    public void testFailed()
-    {
+    public void testFailed() {
         log.debug("testFailed");
-        try
-        {
+        try {
             Job job = createPendingJob();
             fail(job);
-            test(job);
-        }
-        catch(Exception unexpected)
-        {
+            roundTripVerify(job);
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
     @Test
-    public void testWithValidJobInfo()
-    {
+    public void testWithValidJobInfo() {
         log.debug("testWithValidJobInfo");
-        try
-        {
+        try {
             Job job = createPendingJob();
             String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><foo />";
             String type = "text/xml";
             JobInfo info = new JobInfo(xml, type, true);
             job.setJobInfo(info);
-            test(job);
-        }
-        catch(Exception unexpected)
-        {
+            roundTripVerify(job);
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
     @Test
-    public void testWithInvalidJobInfo()
-    {
+    public void testWithInvalidJobInfo() {
         log.debug("testWithInvalidJobInfo");
-        try
-        {
+        try {
             Job job = createPendingJob();
             String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><foo>";
             String type = "text/xml";
             JobInfo info = new JobInfo(xml, type, Boolean.FALSE);
             job.setJobInfo(info);
-            test(job);
-        }
-        catch(Exception unexpected)
-        {
+            roundTripVerify(job);
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
     @Test
-    public void testWithEmptyJobParameter()
-    {
+    public void testWithEmptyJobParameter() {
         log.debug("testWithEmptyJobParameter");
-        try
-        {
+        try {
             Job job = new Job(JOB_ID);
             job.setExecutionPhase(ExecutionPhase.PENDING);
             job.setRunID(RUN_ID);
@@ -470,21 +426,17 @@ public class JobReaderWriterTest
             job.setParameterList(new ArrayList<Parameter>());
             job.getParameterList().add(new Parameter("empty parameter", ""));
             job.setOwnerID(null);
-            test(job);
-        }
-        catch(Exception unexpected)
-        {
+            roundTripVerify(job);
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
     @Test
-    public void testJobReaderWithInvalidJobInfoDocument()
-    {
+    public void testJobReaderWithInvalidJobInfoDocument() {
         log.debug("testJobReaderWithInvalidJobInfoDocument");
-        try
-        {
+        try {
             // Create a Job.
             Job job = createPendingJob();
 
@@ -504,26 +456,21 @@ public class JobReaderWriterTest
             Map<String, String> map = new HashMap<String, String>();
             map.put("http://localhost/bar", "file:src/test/resources/bar.xsd");
             JobReader jobReader = new JobReader(map);
-            try
-            {
+            try {
                 jobReader.read(new StringReader(xml));
                 Assert.fail("JobReader should've thrown an exception for unknown schema in JobInfo");
+            } catch (Exception ignore) {
             }
-            catch (Exception ignore) { }
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
     @Test
-    public void testJobReaderWithValidJobInfoDocument()
-    {
+    public void testJobReaderWithValidJobInfoDocument() {
         log.debug("testJobReaderWithValidJobInfoDocument");
-        try
-        {
+        try {
             // Create a Job.
             Job job = createPendingJob();
 
@@ -543,17 +490,12 @@ public class JobReaderWriterTest
             Map<String, String> map = new HashMap<String, String>();
             map.put("http://localhost/foo.xsd", "file:test/src/resources/foo.xsd");
             JobReader jobReader = new JobReader(map);
-            try
-            {
+            try {
                 jobReader.read(new StringReader(xml));
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
                 Assert.fail("JobReader should not throw exception " + e.getMessage());
             }
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }

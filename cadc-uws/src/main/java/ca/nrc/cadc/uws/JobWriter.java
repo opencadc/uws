@@ -69,22 +69,20 @@
 
 package ca.nrc.cadc.uws;
 
+import ca.nrc.cadc.date.DateUtil;
+import ca.nrc.cadc.xml.XmlUtil;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.text.DateFormat;
 import java.util.Date;
-
+import java.util.List;
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
-
-import ca.nrc.cadc.date.DateUtil;
-import ca.nrc.cadc.xml.XmlUtil;
-import java.util.List;
 
 /**
  * Writes a Job as XML to an output.
@@ -99,7 +97,7 @@ public class JobWriter
 
     public JobWriter()
     {
-        this.dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
+        this.dateFormat = UWS.getDateFormat();
     }
 
     /**
@@ -194,7 +192,7 @@ public class JobWriter
         Element root = getParameters(params);
         root.addNamespaceDeclaration(UWS.NS);
         root.addNamespaceDeclaration(UWS.XLINK_NS);
-        root.setAttribute(JobAttribute.VERSION.getAttributeName(), UWS.XSD_VERSION);
+        root.setAttribute(JobAttribute.VERSION.getAttributeName(), UWS.UWS_VERSION);
         return root;
     }
     
@@ -202,7 +200,7 @@ public class JobWriter
         Element root = getResults(results);
         root.addNamespaceDeclaration(UWS.NS);
         root.addNamespaceDeclaration(UWS.XLINK_NS);
-        root.setAttribute(JobAttribute.VERSION.getAttributeName(), UWS.XSD_VERSION);
+        root.setAttribute(JobAttribute.VERSION.getAttributeName(), UWS.UWS_VERSION);
         return root;
     }
     
@@ -216,7 +214,7 @@ public class JobWriter
         Element root = new Element(JobAttribute.JOB.getAttributeName(), UWS.NS);
         root.addNamespaceDeclaration(UWS.NS);
         root.addNamespaceDeclaration(UWS.XLINK_NS);
-        root.setAttribute(JobAttribute.VERSION.getAttributeName(), UWS.XSD_VERSION);
+        root.setAttribute(JobAttribute.VERSION.getAttributeName(), UWS.UWS_VERSION);
 
         root.addContent(getJobId(job));
         root.addContent(getRunId(job));
