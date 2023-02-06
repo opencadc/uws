@@ -75,7 +75,7 @@ create table <schema>.Job
     jobID                   varchar(16)     not null primary key,
     runID                   varchar,
 
-    ownerID                 varchar(64),
+    ownerID                 varchar(128),
 
     executionPhase          varchar(16)     not null,
     executionDuration       bigint          not null,

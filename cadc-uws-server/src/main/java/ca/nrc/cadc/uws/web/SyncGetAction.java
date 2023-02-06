@@ -68,8 +68,12 @@
 package ca.nrc.cadc.uws.web;
 
 
+import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.rest.RestAction;
 import ca.nrc.cadc.uws.Job;
+import ca.nrc.cadc.uws.server.JobNotFoundException;
+import ca.nrc.cadc.uws.server.JobPersistenceException;
+import ca.nrc.cadc.uws.server.JobPhaseException;
 import java.security.AccessControlException;
 import org.apache.log4j.Logger;
 
@@ -96,23 +100,31 @@ public class SyncGetAction extends JobAction {
         Job job = null;
         boolean exec = false;
         
+        try {
         
-        if (getJobID() == null) {
-            // create
-            JobCreator jc = new JobCreator();
-            Job in = jc.create(syncInput);
-            job = jobManager.create(syncInput.getRequestPath(), in);
-            exec = true;
-        } else {
-            job = jobManager.get(syncInput.getRequestPath(), getJobID());
-        }
-        
-        String token = getJobField();
-        exec = exec || SyncPostAction.PRG_TOKEN.equals(token);
-        if (exec) {
-            jobManager.execute(syncInput.getRequestPath(), job, syncOutput);
-        } else {
-            writeJob(job);
+            if (getJobID() == null) {
+                // create
+                JobCreator jc = new JobCreator();
+                Job in = jc.create(syncInput);
+                job = jobManager.create(syncInput.getRequestPath(), in);
+                exec = true;
+            } else {
+                job = jobManager.get(syncInput.getRequestPath(), getJobID());
+            }
+
+            String token = getJobField();
+            exec = exec || SyncPostAction.PRG_TOKEN.equals(token);
+            if (exec) {
+                jobManager.execute(syncInput.getRequestPath(), job, syncOutput);
+            } else {
+                writeJob(job);
+            }
+        } catch (JobNotFoundException ex) {
+            throw new ResourceNotFoundException("not found: " + job.getID());
+        } catch (JobPhaseException ex) {
+            throw new IllegalArgumentException(ex.getMessage());
+        } catch (JobPersistenceException ex) {
+            throw new RuntimeException("failed to persist job: " + ex.getMessage());
         }
     }
 }
