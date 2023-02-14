@@ -84,8 +84,8 @@ public class InitDatabaseUWS extends InitDatabase {
     private static final Logger log = Logger.getLogger(InitDatabaseUWS.class);
     
     public static final String MODEL_NAME = "UWS";
-    public static final String MODEL_VERSION = "1.2.5";
-    public static final String PREV_MODEL_VERSION = "n/a";
+    public static final String MODEL_VERSION = "1.2.16";
+    public static final String PREV_MODEL_VERSION = "1.2.5";
 
     public static final String[] CREATE_SQL = new String[] {
         "uws.ModelVersion.sql",
@@ -96,7 +96,7 @@ public class InitDatabaseUWS extends InitDatabase {
     };
 
     public static final String[] UPGRADE_SQL = new String[]{
-        
+        "uws.upgrade-1.2.16.sql"
     };
 
     public InitDatabaseUWS(DataSource dataSource, String database, String schema) {

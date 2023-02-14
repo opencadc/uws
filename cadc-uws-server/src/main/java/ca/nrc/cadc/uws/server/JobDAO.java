@@ -118,6 +118,7 @@ import ca.nrc.cadc.uws.JobInfo;
 import ca.nrc.cadc.uws.JobRef;
 import ca.nrc.cadc.uws.Parameter;
 import ca.nrc.cadc.uws.Result;
+import java.util.UUID;
 
 /**
  * JobDAO class that stores the jobs in a RDBMS. This is an abstract class;
@@ -388,7 +389,7 @@ public class JobDAO
                 if (ret.appData != null)
                 {
                     Subject s = identManager.toSubject(ret.appData);
-                    ret.setOwnerID(identManager.toOwnerString(s));
+                    ret.setOwnerID(identManager.toDisplayString(s));
                     ret.ownerSubject = s; // for later authorization checks
                     ret.appData = null;
                     prof.checkpoint("IdentityManager.toSubject");
@@ -788,7 +789,7 @@ public class JobDAO
 
             // OK to modify the job now
             job.ownerSubject = owner;
-            job.setOwnerID( identManager.toOwnerString(owner) );
+            job.setOwnerID( identManager.toDisplayString(owner) );
             prof.checkpoint("IdentityManager.toOwnerString");
             return job;
         }
@@ -1137,23 +1138,33 @@ public class JobDAO
             col += setString(ps, col, jobSchema.jobTable, "error_documentURL", eURL, sb);
 
             log.debug("owner: " + col);
-            int ownerType = identManager.getOwnerType();
-            if (jobSchema.storeOwnerASCII) {
-                ownerType = Types.VARCHAR;
-            }
             if (job.appData != null)
             {
                 Object ownerObject  = job.appData;
+                //int otype = identManager.getOwnerType();
+                int otype = Types.VARCHAR;
+                Object oval = ownerObject;
                 if (jobSchema.storeOwnerASCII) {
-                    ownerObject = ownerObject.toString();
+                    otype = Types.VARCHAR;
+                    oval = ownerObject.toString();
+                } else if (oval instanceof String) {
+                    otype = Types.VARCHAR;
+                } else if (oval instanceof Integer) {
+                    otype = Types.INTEGER;
+                } else if (oval instanceof Long) {
+                    otype = Types.BIGINT;
+                } else {
+                    //throw new RuntimeException("BUG: cannot map " + oval.getClass().getName() + " to an SQL TYPE");
+                    otype = Types.OTHER; // hope the JDBC driver can handle it
                 }
-                ps.setObject(col++, ownerObject, ownerType);
-                sb.append(ownerObject);
+                
+                ps.setObject(col++, oval, otype);
+                sb.append(oval);
                 sb.append(",");
             }
             else // anonymous
             {
-                ps.setNull(col++, ownerType);
+                ps.setNull(col++, Types.OTHER); // hope the JDBC driver can handle it
                 sb.append("null,");
             }
 
@@ -1280,14 +1291,24 @@ public class JobDAO
             int arg = 1;
             if (owner != null)
             {
-                int otype = identManager.getOwnerType();
+                //int otype = identManager.getOwnerType();
+                int otype = Types.VARCHAR;
                 Object oval = owner;
                 if (jobSchema.storeOwnerASCII) {
                     otype = Types.VARCHAR;
                     oval = owner.toString();
+                } else if (oval instanceof String) {
+                    otype = Types.VARCHAR;
+                } else if (oval instanceof Integer) {
+                    otype = Types.INTEGER;
+                } else if (oval instanceof Long) {
+                    otype = Types.BIGINT;
+                } else {
+                    //throw new RuntimeException("BUG: cannot map " + oval.getClass().getName() + " to an SQL TYPE");
+                    otype = Types.OTHER; // hope the JDBC driver can handle it
                 }
-                log.debug(arg + " : " + owner);
-                ret.setObject(arg++, owner, otype);
+                log.debug(arg + " : " + oval);
+                ret.setObject(arg++, oval, otype);
             }
 
             if (phases != null && !phases.isEmpty())

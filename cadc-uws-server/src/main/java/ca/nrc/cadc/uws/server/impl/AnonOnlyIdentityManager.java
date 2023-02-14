@@ -67,8 +67,7 @@
 
 package ca.nrc.cadc.uws.server.impl;
 
-import ca.nrc.cadc.auth.IdentityManager;
-import javax.security.auth.Subject;
+import ca.nrc.cadc.auth.NoOpIdentityManager;
 
 /**
  * A special IdentityManager implementation for use in an anonymous-only 
@@ -76,29 +75,12 @@ import javax.security.auth.Subject;
  * null.
  * 
  * @author pdowler
+ * @deprecated use ca.nrc.cadc.auth.NoOpIdentityManager from the cadc-util library
  */
-public class AnonOnlyIdentityManager implements IdentityManager {
-
-    public AnonOnlyIdentityManager() { 
-    }
-
-    @Override
-    public Subject toSubject(Object owner) {
-        return null;
-    }
-
-    @Override
-    public Object toOwner(Subject subject) {
-        return null;
-    }
-
-    @Override
-    public int getOwnerType() {
-        return java.sql.Types.VARCHAR; // aka String
-    }
-
-    @Override
-    public String toOwnerString(Subject subject) {
-        return null;
+@Deprecated
+public class AnonOnlyIdentityManager extends NoOpIdentityManager {
+    
+    public AnonOnlyIdentityManager() {
+        super();
     }
 }
