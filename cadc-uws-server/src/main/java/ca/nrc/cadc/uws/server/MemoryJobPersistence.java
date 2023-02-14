@@ -330,7 +330,7 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
         Subject caller = Subject.getSubject(acContext);
         String ownerID = null;
         if (caller != null)
-            ownerID = identityManager.toOwnerString(caller);
+            ownerID = identityManager.toDisplayString(caller);
         job.setOwnerID(ownerID);
         if (job.getID() == null)
             JobPersistenceUtil.assignID(job, generateJobID());
