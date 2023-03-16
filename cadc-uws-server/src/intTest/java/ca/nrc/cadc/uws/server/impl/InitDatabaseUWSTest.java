@@ -73,10 +73,13 @@ import ca.nrc.cadc.db.DBUtil;
 import ca.nrc.cadc.db.version.InitDatabase;
 import ca.nrc.cadc.util.Log4jInit;
 import ca.nrc.cadc.uws.server.TestUtil;
+import java.sql.SQLException;
+import java.util.Date;
 import javax.sql.DataSource;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -89,10 +92,19 @@ public class InitDatabaseUWSTest {
 
     static {
         Log4jInit.setLevel("ca.nrc.cadc.uws.server.impl", Level.INFO);
-        Log4jInit.setLevel("ca.nrc.cadc.db.version", Level.INFO);
+        Log4jInit.setLevel("ca.nrc.cadc.db.version", Level.DEBUG);
     }
 
     private DataSource dataSource;
+    
+    private static final String[] TABLE_NAMES = {
+        TestUtil.SCHEMA + ".ModelVersion", 
+        TestUtil.SCHEMA + ".JobAvailability",
+        TestUtil.SCHEMA + ".JobDetail", // FK->Job
+        TestUtil.SCHEMA + ".Job",
+        TestUtil.SCHEMA + ".JobDetail_backup",
+        TestUtil.SCHEMA + ".Job_backup"
+    };
 
     public InitDatabaseUWSTest() {
         try {
@@ -104,6 +116,19 @@ public class InitDatabaseUWSTest {
         }
     }
 
+    @Before
+    public void cleanup() throws Exception {
+        for (String tn : TABLE_NAMES) {
+            String sql = "DROP TABLE " + tn;
+            log.info("cleanup: "  + sql);
+            try {
+                dataSource.getConnection().createStatement().execute(sql);
+            } catch (SQLException oops) {
+                log.warn("drop failed: " + oops);
+            }
+        }
+    }
+    
     @Test
     public void testNewInstall() {
         try {
@@ -136,5 +161,23 @@ public class InitDatabaseUWSTest {
         }
     }
 
-    
+    @Test
+    public void testRollover() {
+        try {
+            Date start = new Date();
+            Thread.sleep(10L);
+            
+            // TODO: create previous version  of tables and upgrade... sounds complicated
+            // for now: create || upgrade || idempotent
+            InitDatabase init = new InitDatabaseUWS(dataSource, TestUtil.DATABASE, TestUtil.SCHEMA);
+            init.doInit();
+
+            String tag = "backup";
+            boolean maint = init.doMaintenance(start, tag);
+            Assert.assertTrue(maint);
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
 }
