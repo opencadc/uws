@@ -11,3 +11,4 @@ alter table <schema>.Job rename to Job_<tag>;
 alter table <schema>.JobDetail rename to JobDetail_<tag>;
 
 -- the FK constraint in JobDetail->Job automatically follows the Job table rename
+
