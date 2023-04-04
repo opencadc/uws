@@ -69,6 +69,7 @@ package ca.nrc.cadc.uws.server.impl;
 
 import ca.nrc.cadc.db.version.InitDatabase;
 import java.net.URL;
+import java.util.Date;
 import javax.sql.DataSource;
 import org.apache.log4j.Logger;
 
@@ -84,8 +85,8 @@ public class InitDatabaseUWS extends InitDatabase {
     private static final Logger log = Logger.getLogger(InitDatabaseUWS.class);
     
     public static final String MODEL_NAME = "UWS";
-    public static final String MODEL_VERSION = "1.2.16";
-    public static final String PREV_MODEL_VERSION = "1.2.5";
+    public static final String MODEL_VERSION = "1.2.18";
+    public static final String PREV_MODEL_VERSION = "1.2.16";
 
     public static final String[] CREATE_SQL = new String[] {
         "uws.ModelVersion.sql",
@@ -96,7 +97,14 @@ public class InitDatabaseUWS extends InitDatabase {
     };
 
     public static final String[] UPGRADE_SQL = new String[]{
-        "uws.upgrade-1.2.16.sql"
+        "uws.upgrade-1.2.18.sql"
+    };
+    
+    public static final String[] MAINT_SQL = new String[] {
+        "uws.rollover.sql",
+        "uws.Job.sql",
+        "uws.JobDetail.sql",
+        "uws.permissions.sql"
     };
 
     public InitDatabaseUWS(DataSource dataSource, String database, String schema) {
@@ -107,7 +115,20 @@ public class InitDatabaseUWS extends InitDatabase {
         for (String s : UPGRADE_SQL) {
             upgradeSQL.add(s);
         }
+        for (String s : MAINT_SQL) {
+            maintenanceSQL.add(s);
+        }
     }
+
+    @Override
+    public boolean doMaintenance(Date lastModified, String tag) {
+        if (tag == null) {
+            throw new IllegalArgumentException("null tag not allowed, must be valid part of table name");
+        }
+        return super.doMaintenance(lastModified, tag);
+    }
+    
+    
 
     @Override
     protected URL findSQL(String fname) {

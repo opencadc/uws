@@ -99,7 +99,7 @@ create table <schema>.Job
     lastModified            timestamp       not null
 );
 
-create index <schema>_jobIndex_ownerID on <schema>.Job(ownerID)
+create index job_ownerID on <schema>.Job(ownerID)
     where ownerID is not null;
 
-create index <schema>_jobIndex_creationTime on <schema>.Job(creationTime);
+create index job_creationTime on <schema>.Job(creationTime);

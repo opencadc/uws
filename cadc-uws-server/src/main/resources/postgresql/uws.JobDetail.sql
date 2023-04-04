@@ -79,5 +79,5 @@ create table <schema>.JobDetail
 )
 ;
 
-create index jobid_fkey on uws.JobDetail(jobID)
+create index jobdetail_fkey on <schema>.JobDetail(jobID)
 ;
