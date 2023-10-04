@@ -81,6 +81,10 @@ import ca.nrc.cadc.uws.Job;
  */
 public interface JobExecutor 
 {
+    default void setAppName(String appName) {
+        // no-op
+    }
+    
     /**
      * Shutdown and release any resources. This includes ThreadPools, connections, open files, etc.
      */

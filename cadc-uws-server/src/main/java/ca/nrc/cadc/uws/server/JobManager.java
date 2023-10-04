@@ -84,6 +84,10 @@ import java.util.List;
  */
 public interface JobManager {
 
+    default void setAppName(String appName) {
+        // no-op
+    }
+    
     void terminate() throws InterruptedException;
     
     Job create(String requestPath, Job job) 

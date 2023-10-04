@@ -79,6 +79,10 @@ import ca.nrc.cadc.uws.Job;
  */
 public interface JobRunner extends Runnable
 {
+    default void setAppName(String appName) {
+        // no-op
+    }
+    
     public void setJobUpdater(JobUpdater jobUpdater);
 
     public void setJob(Job job);
