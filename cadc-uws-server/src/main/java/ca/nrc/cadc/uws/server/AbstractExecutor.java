@@ -86,6 +86,7 @@ public abstract class AbstractExecutor  implements JobExecutor
 
     protected JobUpdater jobUpdater;
     protected Class<JobRunner> jobRunnerClass;
+    protected String appName;
 
     private AbstractExecutor() { }
 
@@ -106,6 +107,13 @@ public abstract class AbstractExecutor  implements JobExecutor
         // no-op
     }
 
+    @Override
+    public void setAppName(String appName) {
+        JobExecutor.super.setAppName(appName);
+        this.appName = appName;
+    }
+
+    
     public void setJobUpdater(JobUpdater jobUpdater)
     {
         this.jobUpdater = jobUpdater;
@@ -163,6 +171,7 @@ public abstract class AbstractExecutor  implements JobExecutor
             JobRunner jobRunner = getJobRunner();
             jobRunner.setJobUpdater(jobUpdater);
             jobRunner.setJob(job);
+            jobRunner.setAppName(appName);
             jobRunner.setSyncOutput(sync);
 
             if (sync != null)

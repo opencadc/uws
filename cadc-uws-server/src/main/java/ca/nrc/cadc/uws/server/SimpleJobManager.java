@@ -95,6 +95,7 @@ public class SimpleJobManager implements JobManager {
 
     protected JobPersistence jobPersistenceImpl;
     protected JobExecutor jobExecutorImpl;
+    protected String appName;
     protected Long maxExecDuration = 3600L;
     protected Long maxQuote = 3600L;
     protected Long maxDestruction = 7 * 24 * 3600L;
@@ -112,6 +113,14 @@ public class SimpleJobManager implements JobManager {
         }
     }
 
+    @Override
+    public void setAppName(String appName) {
+        this.appName = appName;
+        if (jobExecutorImpl != null) {
+            jobExecutorImpl.setAppName(appName);
+        }
+    }
+    
     /**
      * Set a single (global) JobPersistence instance to be used for all requests.
      * 
@@ -128,6 +137,9 @@ public class SimpleJobManager implements JobManager {
      */
     public void setJobExecutor(JobExecutor jobExecutor) {
         this.jobExecutorImpl = jobExecutor;
+        if (appName != null) {
+            jobExecutorImpl.setAppName(appName);
+        }
     }
     
     protected JobPersistence getJobPersistence(String requestPath) {

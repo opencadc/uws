@@ -104,6 +104,7 @@ public class JobServlet extends RestServlet {
             {
                 Class<JobManager> clazz = (Class<JobManager>) Class.forName(cname);
                 this.jobManager = clazz.newInstance();
+                jobManager.setAppName(appName);
                 
                 Context ctx = new InitialContext();
                 try {
