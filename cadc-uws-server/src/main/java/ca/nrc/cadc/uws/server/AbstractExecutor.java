@@ -157,14 +157,20 @@ public abstract class AbstractExecutor  implements JobExecutor
         log.debug("execute: " + job.getID() + " sync=" + (sync != null));
         log.debug(job.getID() + ": PENDING -> QUEUED");
         ExecutionPhase ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.PENDING, ExecutionPhase.QUEUED);
-        if (!ExecutionPhase.QUEUED.equals(ep))
-        {
-            ExecutionPhase actual = jobUpdater.getPhase(job.getID());
-            log.debug(job.getID() + ": PENDING -> QUEUED [FAILED] -- was " + actual);
-            throw new JobPhaseException("cannot execute job " + job.getID() + " when phase = " + actual);
+
+        // If the phase change from PENDING to QUEUED fails (null ExecutionPhase returned from setPhase()),
+        // check for a sync job in the SUSPENDED phase, if found do not change the phase, and allow the job to be run.
+        if (ep == null && sync != null && job.getExecutionPhase().equals(ExecutionPhase.SUSPENDED)) {
+            log.debug(job.getID() + ": SUSPENDED - no phase change");
+        } else {
+            if (!ExecutionPhase.QUEUED.equals(ep)) {
+                ExecutionPhase actual = jobUpdater.getPhase(job.getID());
+                log.debug(job.getID() + ": PENDING -> QUEUED [FAILED] -- was " + actual);
+                throw new JobPhaseException("cannot execute job " + job.getID() + " when phase = " + actual);
+            }
+            job.setExecutionPhase(ep);
+            log.debug(job.getID() + ": PENDING -> QUEUED [OK]");
         }
-        job.setExecutionPhase(ep);
-        log.debug(job.getID() + ": PENDING -> QUEUED [OK]");
 
         try
         {
