@@ -91,12 +91,8 @@ public class SyncPostAction extends JobAction {
         super.init();
 
         log.debug("START: " + syncInput.getPath() + "[" + readable + "," + writable + "]");
-        if (!writable) {
-            String cause = RestAction.STATE_OFFLINE_MSG;
-            if (readable) {
-                cause = RestAction.STATE_READ_ONLY_MSG;
-            }
-            throw new AccessControlException("cannot create job: " + cause);
+        if (!readable) {
+            throw new AccessControlException("cannot create job: " + RestAction.STATE_OFFLINE_MSG);
         }
         String sval = initParams.get(SyncPostAction.class.getName() + ".execOnPOST");
         boolean exec = "true".equals(sval);

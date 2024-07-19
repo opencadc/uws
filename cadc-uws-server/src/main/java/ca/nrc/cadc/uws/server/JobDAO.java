@@ -1934,8 +1934,10 @@ public class JobDAO
                         ExecutionPhase executionPhase = ExecutionPhase.valueOf(rs.getString("executionPhase").toUpperCase());
                         Date startTime = rs.getTimestamp("startTime", Calendar.getInstance(DateUtil.UTC));
                         String runID = rs.getString("runID");
-                        String ownerID = rs.getString("ownerID");
-                        return new JobRef(rs.getString("jobID"), executionPhase, startTime, runID, ownerID);
+                        Object ownerID = rs.getObject("ownerID");
+                        Subject osub = identManager.toSubject(ownerID);
+                        String odisp = identManager.toDisplayString(osub);
+                        return new JobRef(rs.getString("jobID"), executionPhase, startTime, runID, odisp);
                     }
                 });
 
