@@ -164,16 +164,15 @@ public class InitDatabaseUWSTest {
     @Test
     public void testRollover() {
         try {
-            Date start = new Date();
-            Thread.sleep(10L);
-            
-            // TODO: create previous version  of tables and upgrade... sounds complicated
-            // for now: create || upgrade || idempotent
             InitDatabase init = new InitDatabaseUWS(dataSource, TestUtil.DATABASE, TestUtil.SCHEMA);
             init.doInit();
 
+            Thread.sleep(100L);
+            Date now = new Date(); // will proceed if tables are older than this
+            log.info("doMaintenance: START");
             String tag = "backup";
-            boolean maint = init.doMaintenance(start, tag);
+            boolean maint = init.doMaintenance(now, tag);
+            log.info("doMaintenance: " + maint);
             Assert.assertTrue(maint);
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
