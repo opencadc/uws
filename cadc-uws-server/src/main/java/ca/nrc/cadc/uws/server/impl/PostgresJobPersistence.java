@@ -67,6 +67,7 @@
 
 package ca.nrc.cadc.uws.server.impl;
 
+import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.IdentityManager;
 import ca.nrc.cadc.db.DBUtil;
 import ca.nrc.cadc.uws.server.DatabaseJobPersistence;
@@ -87,16 +88,28 @@ public class PostgresJobPersistence extends DatabaseJobPersistence {
 
     public static final String DEFAULT_DS_NAME = "jdbc/uws";
     
-    private boolean storeOwnerASCII = false;
+    private final boolean  storeOwnerASCII;
 
+    /**
+     * Constructor (preferred). This uses <code>AuthenticationUtil.getIdentityManager()</code>
+     * and other setup designed to work with <code>InitDatabaseUWS</code>.
+     */
+    public PostgresJobPersistence() {
+        super(new RandomStringGenerator(16), AuthenticationUtil.getIdentityManager());
+        this.storeOwnerASCII = true;
+    }
+
+    @Deprecated
     public PostgresJobPersistence(IdentityManager im) {
         this(new RandomStringGenerator(16), im);
     }
 
+    @Deprecated
     public PostgresJobPersistence(StringIDGenerator idg, IdentityManager im) {
-        this(idg, im, false);
+        this(idg, im, true);
     }
 
+    @Deprecated
     public PostgresJobPersistence(StringIDGenerator idg, IdentityManager im, boolean storeOwnerASCII) {
         super(idg, im);
         this.storeOwnerASCII = storeOwnerASCII;
