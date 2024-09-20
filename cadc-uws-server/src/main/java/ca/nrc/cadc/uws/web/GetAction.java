@@ -69,11 +69,9 @@ package ca.nrc.cadc.uws.web;
 
 import ca.nrc.cadc.auth.AuthMethod;
 import ca.nrc.cadc.auth.AuthenticationUtil;
-import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.io.ByteCountOutputStream;
 import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.net.TransientException;
-import ca.nrc.cadc.rest.RestAction;
 import ca.nrc.cadc.uws.ErrorSummary;
 import ca.nrc.cadc.uws.ExecutionPhase;
 import ca.nrc.cadc.uws.Job;
@@ -119,9 +117,7 @@ public class GetAction extends JobAction {
         super.init();
 
         log.debug("START: " + syncInput.getPath() + "[" + readable + "," + writable + "]");
-        if (!readable) {
-            throw new AccessControlException(RestAction.STATE_OFFLINE_MSG);
-        }
+        checkReadable();
         
         String jobID = getJobID();
         try {

@@ -67,18 +67,15 @@
 
 package ca.nrc.cadc.uws.web;
 
-import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.rest.InlineContentHandler;
-import ca.nrc.cadc.rest.RestAction;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobAttribute;
 import ca.nrc.cadc.uws.UWS;
 import ca.nrc.cadc.uws.server.JobNotFoundException;
 import ca.nrc.cadc.uws.server.JobPersistenceException;
 import ca.nrc.cadc.uws.server.JobPhaseException;
-import java.security.AccessControlException;
 import java.text.DateFormat;
 import java.util.Date;
 import org.apache.log4j.Logger;
@@ -98,9 +95,7 @@ public class PostAction extends JobAction {
         super.init();
 
         log.debug("START: " + syncInput.getPath() + "[" + readable + "," + writable + "]");
-        if (!readable) {
-            throw new AccessControlException("cannot create job: " + RestAction.STATE_OFFLINE_MSG);
-        }
+        checkReadable();
         
         String jobID = getJobID();
         try {
