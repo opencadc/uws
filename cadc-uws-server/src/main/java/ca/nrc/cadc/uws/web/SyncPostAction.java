@@ -67,10 +67,7 @@
 
 package ca.nrc.cadc.uws.web;
 
-
-import ca.nrc.cadc.rest.RestAction;
 import ca.nrc.cadc.uws.Job;
-import java.security.AccessControlException;
 import org.apache.log4j.Logger;
 
 /**
@@ -91,9 +88,8 @@ public class SyncPostAction extends JobAction {
         super.init();
 
         log.debug("START: " + syncInput.getPath() + "[" + readable + "," + writable + "]");
-        if (!readable) {
-            throw new AccessControlException("cannot create job: " + RestAction.STATE_OFFLINE_MSG);
-        }
+        checkReadable();
+
         String sval = initParams.get(SyncPostAction.class.getName() + ".execOnPOST");
         boolean exec = "true".equals(sval);
         
