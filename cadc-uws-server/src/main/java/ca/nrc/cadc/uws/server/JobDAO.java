@@ -85,6 +85,7 @@ import java.sql.Types;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -1407,7 +1408,6 @@ public class JobDAO
 
             if (!jobSchema.limitWithTop)
                 sb.append(" LIMIT " + rowLimit );
-
             return sb.toString();
         }
     }
@@ -1940,55 +1940,58 @@ public class JobDAO
                         return new JobRef(rs.getString("jobID"), executionPhase, startTime, runID, odisp);
                     }
                 });
-
-            if (!jobs.isEmpty())
-            {
-                JobRef lastEntry = jobs.get(jobs.size() - 1);
-            	this.lastJobID = lastEntry.getJobID();
-            	if (last != null)
-            	    this.lastCreationTime = lastEntry.getCreationTime();
+            
+            // Return emptyIterator if no jobs found
+            if (jobs.isEmpty()) {
+                return Collections.emptyIterator();
             }
 
-            // for startTime ordered queries, account for equal startDates
-            // by throwing away entries until a jobID greater than the last
-            // of the last batch is reached
-            if (lastCreationTime != null && jobs.size() > 0)
-            {
-                int startIndex = 0;
-                while (jobs.size() > startIndex &&
-                       jobs.get(startIndex).equals(lastCreationTime) &&
-                       jobs.get(startIndex).getJobID().compareTo(lastJobID) <= 0)
-                {
-                    startIndex++;
+            if (lastCreationTime != null) {
+                jobs = removeOverlappingEntries(jobs);
+                
+                if (jobs.isEmpty()) {
+                    return Collections.emptyIterator();
                 }
-
-                if (jobs.size() <= startIndex)
-                {
-                    // ran out of rows
-                    throw new IllegalStateException("loop detected");
-                }
-
-                if (startIndex > 0)
-                {
-                    // disregard the initial duplicates
-                    log.debug("throwing away " + startIndex + " duplicate(s) in batch");
-                    jobs = jobs.subList(startIndex, jobs.size() - 1);
+                
+                if (jobs.size() > 1 && (count + jobs.size() < last)) {
+                    JobRef firstEntry = jobs.get(0);
+                    JobRef lastEntry = jobs.get(jobs.size() - 1);
+                    
+                    // Ensure first and last entries don't have the same timestamp
+                    if (firstEntry.getCreationTime().equals(lastEntry.getCreationTime())) {
+                        throw new IllegalStateException("Pagination cannot proceed: all remaining entries have the same timestamp");
+                    }
                 }
             }
 
-            // for startTime ordered queries, ensure the first and
-            // last record don't have the same startTime--this would
-            // cause an infinite loop because the same query results
-            // would be returned over and over.
-            if (lastCreationTime != null && jobs.size() > 1 && (count + jobs.size() < last))
-            {
-                JobRef firstEntry = jobs.get(0);
-                JobRef lastEntry = jobs.get(jobs.size() - 1);
-                if (firstEntry.getCreationTime().equals(lastEntry.getCreationTime()))
-                    throw new IllegalStateException("loop detected");
+            JobRef lastEntry = jobs.get(jobs.size() - 1);
+            this.lastJobID = lastEntry.getJobID();
+            if (last != null) {
+                this.lastCreationTime = lastEntry.getCreationTime();
             }
 
             return jobs.iterator();
+        }
+        
+        /**
+         * For startTime ordered queries, account for equal startDates by throwing away entries 
+         * until a jobID greater than the last of the last batch is reached
+         * 
+         * @param jobs The list of jobs to filter
+         * @return A new List containing only non-overlapping entries, or an empty list if
+         *         all entries overlapped
+         */
+        private List<JobRef> removeOverlappingEntries(List<JobRef> jobs) {
+            int startIndex = 0;
+            while (startIndex < jobs.size() && 
+                   jobs.get(startIndex).getCreationTime().equals(lastCreationTime) && 
+                   jobs.get(startIndex).getJobID().compareTo(lastJobID) <= 0) {
+                startIndex++;
+            }
+            
+            return startIndex < jobs.size() ? 
+                   jobs.subList(startIndex, jobs.size()) : 
+                   Collections.emptyList();
         }
 
         @Override
@@ -2061,5 +2064,6 @@ public class JobDAO
     }
 
 }
+
 
 
