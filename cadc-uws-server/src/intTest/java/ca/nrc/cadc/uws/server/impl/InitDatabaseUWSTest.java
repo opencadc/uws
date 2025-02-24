@@ -110,7 +110,7 @@ public class InitDatabaseUWSTest {
         try {
             DBConfig dbrc = new DBConfig();
             ConnectionConfig cc = dbrc.getConnectionConfig(TestUtil.SERVER, TestUtil.DATABASE);
-            dataSource = DBUtil.getDataSource(cc);
+            dataSource = DBUtil.getDataSource(cc, true, true);
         } catch (Exception ex) {
             log.error("failed to init DataSource", ex);
         }
