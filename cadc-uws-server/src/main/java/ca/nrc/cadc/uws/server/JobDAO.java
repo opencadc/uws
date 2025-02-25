@@ -85,6 +85,7 @@ import java.sql.Types;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -1271,6 +1272,8 @@ public class JobDAO
         private Integer last;
         private String lastJobID;
         private Date lastCreationTime;
+        
+        private Calendar utc = Calendar.getInstance(DateUtil.UTC);
 
         public JobListStatementCreator(String lastJobID, Date lastCreationTime, Object owner, String requestPath, List<ExecutionPhase> phases, Date after, Integer last)
         {
@@ -1324,90 +1327,83 @@ public class JobDAO
                 log.debug(arg + " : " + ExecutionPhase.ARCHIVED);
                 ret.setString(arg++, ExecutionPhase.ARCHIVED.getValue());
             }
-
-            if (lastJobID != null && lastCreationTime == null)
-            {
-                log.debug(arg + " : " + lastJobID);
-                ret.setString(arg++, lastJobID);
-            }
-
-            if (requestPath != null)
-            {
+            if (requestPath != null) {
                 log.debug(arg + " : " + requestPath);
                 ret.setString(arg++, requestPath);
             }
-            if (after != null)
-            {
-                // value is set in getSQL()
+            if (after != null) {
+                ret.setTimestamp(arg++, new Timestamp(after.getTime()), utc);
             }
+            if (last != null) {
+                if (lastCreationTime != null) {
+                    ret.setTimestamp(arg++, new Timestamp(lastCreationTime.getTime()), utc);
+                }
+            } else if (lastJobID != null) {
+                ret.setString(arg++, lastJobID);
+            }
+
             return ret;
         }
 
-        protected String getSQL()
-        {
+        protected String getSQL() {
             int rowLimit = BATCH_SIZE;
-            if (last != null && last < BATCH_SIZE)
+            if (last != null && last < BATCH_SIZE) {
                 rowLimit = last;
-
+            }
             StringBuilder sb = new StringBuilder();
 
             sb.append("SELECT ");
-            if (jobSchema.limitWithTop)
+            if (jobSchema.limitWithTop) {
                 sb.append("TOP ").append(rowLimit);
-
-            sb.append(" jobID, executionPhase, startTime, runID, ownerID FROM ");
+            }
+            sb.append(" jobID, executionPhase, creationTime, runID, ownerID FROM ");
             sb.append(jobSchema.jobTable);
             sb.append(" WHERE deletedByUser = 0");
-            if (owner != null)
+            if (owner != null) {
                 sb.append(" AND ownerID = ?");
-            if (phases != null && !phases.isEmpty())
-            {
+            }
+
+            if (phases != null && !phases.isEmpty()) {
                 sb.append(" AND executionPhase IN (");
                 Iterator<ExecutionPhase> i = phases.iterator();
-                while (i.hasNext())
-                {
+                while (i.hasNext()) {
                     i.next();
                     sb.append("?");
-                    if (i.hasNext())
+                    if (i.hasNext()) {
                         sb.append(",");
+                    }
                 }
                 sb.append(")");
-            }
-            else
+            } else {
                 sb.append(" AND executionPhase != ?");
-            if (lastJobID != null && lastCreationTime == null)
-                sb.append(" AND jobID > ?");
-            if (lastCreationTime != null)
-            {
-                // need to set the value here in quotes
-                // for precise date comparison in iso format
-                String lastStartStr = isoDateFormat.format(lastCreationTime);
-                log.debug("lastCreationTime: " + lastStartStr);
-                sb.append(" AND creationTime < '" + lastStartStr + "'");
             }
+
             if (requestPath != null) {
                 sb.append(" AND requestPath = ?");
             }
-            if (after != null)
-            {
-                // need to set the value here in quotes
-                // for precise date comparison in iso format
-                String afterStr = isoDateFormat.format(after);
-                log.debug("after: " + afterStr);
-                sb.append(" AND creationTime > '" + afterStr + "'");
+
+            if (after != null) {
+                sb.append(" AND creationTime > ?");
+            }
+            if (last != null) {
+                log.debug("batch and sort by creationTime");
+                if (lastCreationTime != null) {
+                    sb.append(" AND creationTime <= ?");
+                } else {
+                    sb.append(" AND creationTime IS NOT NULL");
+                }
+                sb.append(" ORDER BY creationTime DESC, jobID ASC"); // fully consistent order for iterator duplicate filter
+            } else {
+                log.debug("batch and sort by jobID");
+                if (lastJobID != null) {
+                    sb.append(" AND jobID > ?");
+                }
+                sb.append(" ORDER by jobID ASC");
             }
 
-            if (after != null || last != null)
-                sb.append(" AND creationTime is not null");
-
-            if (last != null)
-                sb.append(" ORDER BY creationTime DESC, jobID ASC ");
-            else
-                sb.append(" ORDER BY jobID ASC " );
-
-            if (!jobSchema.limitWithTop)
-                sb.append(" LIMIT " + rowLimit );
-
+            if (!jobSchema.limitWithTop) {
+                sb.append(" LIMIT ").append(rowLimit);
+            }
             return sb.toString();
         }
     }
@@ -1903,36 +1899,35 @@ public class JobDAO
         }
 
         @Override
-        public boolean hasNext()
-        {
-            if (last != null && count >= last)
+        public boolean hasNext() {
+            if (last != null && count >= last) {
                 return false;
+            }
 
-            if (!jobRefIterator.hasNext())
+            if (!jobRefIterator.hasNext()) {
                 this.jobRefIterator = getNextBatchIterator();
+            }
 
             return this.jobRefIterator.hasNext();
         }
 
         @Override
-        public JobRef next()
-        {
-            JobRef next = this.jobRefIterator.next();
+        public JobRef next() {
+            JobRef ret = this.jobRefIterator.next();
             count++;
-            return next;
+            this.lastJobID = ret.getJobID();
+            this.lastCreationTime = ret.getCreationTime();
+            return ret;
         }
 
         @SuppressWarnings("unchecked")
-        private Iterator<JobRef> getNextBatchIterator()
-        {
+        private Iterator<JobRef> getNextBatchIterator() {
             JobListStatementCreator sc = new JobListStatementCreator(lastJobID, lastCreationTime, owner, requestPath, phases, after, last);
-            List<JobRef> jobs = this.jdbcTemplate.query(sc, new RowMapper()
-                {
-            	    // mapRow is required to preserve the order of the ResultSet
-                    public Object mapRow(ResultSet rs, int rowNum) throws SQLException
-                    {
+            final Calendar utc = Calendar.getInstance(DateUtil.UTC);
+            List<JobRef> jobs = this.jdbcTemplate.query(sc, new RowMapper<JobRef>() {
+                    public JobRef mapRow(ResultSet rs, int rowNum) throws SQLException {
                         ExecutionPhase executionPhase = ExecutionPhase.valueOf(rs.getString("executionPhase").toUpperCase());
-                        Date startTime = rs.getTimestamp("startTime", Calendar.getInstance(DateUtil.UTC));
+                        Date startTime = rs.getTimestamp("creationTime", utc);
                         String runID = rs.getString("runID");
                         Object ownerID = rs.getObject("ownerID");
                         Subject osub = identManager.toSubject(ownerID);
@@ -1940,60 +1935,25 @@ public class JobDAO
                         return new JobRef(rs.getString("jobID"), executionPhase, startTime, runID, odisp);
                     }
                 });
-
-            if (!jobs.isEmpty())
-            {
-                JobRef lastEntry = jobs.get(jobs.size() - 1);
-            	this.lastJobID = lastEntry.getJobID();
-            	if (last != null)
-            	    this.lastCreationTime = lastEntry.getCreationTime();
-            }
-
-            // for startTime ordered queries, account for equal startDates
-            // by throwing away entries until a jobID greater than the last
-            // of the last batch is reached
-            if (lastCreationTime != null && jobs.size() > 0)
-            {
-                int startIndex = 0;
-                while (jobs.size() > startIndex &&
-                       jobs.get(startIndex).equals(lastCreationTime) &&
-                       jobs.get(startIndex).getJobID().compareTo(lastJobID) <= 0)
-                {
-                    startIndex++;
-                }
-
-                if (jobs.size() <= startIndex)
-                {
-                    // ran out of rows
-                    throw new IllegalStateException("loop detected");
-                }
-
-                if (startIndex > 0)
-                {
-                    // disregard the initial duplicates
-                    log.debug("throwing away " + startIndex + " duplicate(s) in batch");
-                    jobs = jobs.subList(startIndex, jobs.size() - 1);
+            
+            if (!jobs.isEmpty()) {
+                if (lastCreationTime != null) {
+                    // check for duplicate due to creationTime <= ? constraint
+                    // only need to check the first one because of the order by
+                    JobRef jr = jobs.get(0);
+                    if (lastCreationTime.equals(jr.getCreationTime())
+                            && lastJobID.equals(jr.getJobID())) {
+                        log.debug("iterator filter duplicate: " + jr);
+                        jobs.remove(0);
+                    }
                 }
             }
-
-            // for startTime ordered queries, ensure the first and
-            // last record don't have the same startTime--this would
-            // cause an infinite loop because the same query results
-            // would be returned over and over.
-            if (lastCreationTime != null && jobs.size() > 1 && (count + jobs.size() < last))
-            {
-                JobRef firstEntry = jobs.get(0);
-                JobRef lastEntry = jobs.get(jobs.size() - 1);
-                if (firstEntry.getCreationTime().equals(lastEntry.getCreationTime()))
-                    throw new IllegalStateException("loop detected");
-            }
-
+            
             return jobs.iterator();
         }
-
+        
         @Override
-        public void remove()
-        {
+        public void remove() {
             throw new UnsupportedOperationException();
         }
     }
@@ -2061,5 +2021,6 @@ public class JobDAO
     }
 
 }
+
 
 

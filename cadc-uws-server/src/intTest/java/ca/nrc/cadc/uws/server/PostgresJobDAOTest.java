@@ -23,7 +23,7 @@ public class PostgresJobDAOTest extends AbstractJobDAOTest {
         try {
             DBConfig conf = new DBConfig();
             ConnectionConfig cc = conf.getConnectionConfig(TestUtil.SERVER, TestUtil.DATABASE);
-            dataSource = DBUtil.getDataSource(cc);
+            dataSource = DBUtil.getDataSource(cc, true, true);
             log.info("configured data source: " + cc.getServer() + "," + cc.getDatabase() + "," + cc.getDriver() + "," + cc.getURL());
             JOB_SCHEMA = new JobDAO.JobSchema(TestUtil.SCHEMA + ".Job", TestUtil.SCHEMA + ".JobDetail", false);
         } catch (Exception ex) {
