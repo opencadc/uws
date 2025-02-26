@@ -1,7 +1,7 @@
 plugins {
-    id 'java'
-    id 'maven'
+    id 'java-library'
     id 'maven-publish'
+    id 'checkstyle'
 }
 
 repositories {
@@ -9,7 +9,9 @@ repositories {
     mavenLocal()
 }
 
-sourceCompatibility = 1.8
+apply from: '../opencadc.gradle'
+
+sourceCompatibility = 11
 
 group = 'org.opencadc'
 
@@ -20,14 +22,15 @@ def git_url = 'https://github.com/opencadc/uws'
 
 
 dependencies {
-    compile 'httpunit:httpunit:1.7'
-    compile 'junit:junit:[4.13,5.0)'
-    compile 'org.jdom:jdom2:[2.0,3.0)'
-    compile 'xmlunit:xmlunit:[1.0,)'
-    runtime 'nekohtml:nekohtml:1.9.6'
-    runtime 'rhino:js:[1.6,)'
+    implementation 'httpunit:httpunit:1.7'
+    implementation 'junit:junit:[4.13,5.0)'
+    implementation 'xmlunit:xmlunit:[1.0,)'
+    implementation 'org.opencadc:cadc-registry:[1.5.0,)'
+    implementation 'org.opencadc:cadc-util:[1.6,)'
+    implementation 'org.opencadc:cadc-uws:[1.0.5,)'
+    
+    runtimeOnly 'nekohtml:nekohtml:1.9.6'
+    runtimeOnly 'rhino:js:[1.6,)'
 
-    compile 'org.opencadc:cadc-registry:[1.5.0,)'
-    compile 'org.opencadc:cadc-util:[1.6,)'
-    compile 'org.opencadc:cadc-uws:[1.0.5,)'
+    
 }
