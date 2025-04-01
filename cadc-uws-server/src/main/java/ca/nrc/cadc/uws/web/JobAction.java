@@ -73,6 +73,7 @@ import ca.nrc.cadc.rest.RestAction;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobAttribute;
 import ca.nrc.cadc.uws.JobWriter;
+import ca.nrc.cadc.uws.server.JobManager;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
@@ -81,7 +82,6 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import org.apache.log4j.Logger;
-import ca.nrc.cadc.uws.server.JobManager;
 
 /**
  *
@@ -129,7 +129,7 @@ public abstract class JobAction extends RestAction {
                 Context ctx = new InitialContext();
                 this.jobManager = (JobManager) ctx.lookup(jndiKey);
                 if (jobManager != null) {
-                    log.debug("found: " + jndiKey +"=" + jobManager.getClass().getName());
+                    log.debug("found: " + jndiKey + "=" + jobManager.getClass().getName());
                 } else {
                     log.error("BUG: failed to find " + jndiKey + " via JNDI");
                 }

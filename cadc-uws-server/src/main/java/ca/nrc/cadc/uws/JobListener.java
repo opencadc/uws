@@ -65,23 +65,22 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws;
 
 /**
  * Receivers of JobEvents must implement this interface.
- * 
+ *
  * @author majorb
  *
  */
-public interface JobListener
-{
-    
+public interface JobListener {
+
     /**
      * Receive a job event indicating that a job's execution
      * phase has changed.
-     * 
+     *
      * @param e The new JobEvent.
      */
     void jobEvent(JobEvent e);

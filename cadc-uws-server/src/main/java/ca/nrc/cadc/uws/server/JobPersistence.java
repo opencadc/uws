@@ -65,7 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.server;
 
@@ -81,12 +81,14 @@ import java.util.List;
  * Service interface for job persistence.
  */
 public interface JobPersistence extends JobUpdater {
+
     /**
      * Shutdown and release any resources. This includes ThreadPools, connections, open files, etc.
+     *
      * @throws java.lang.InterruptedException
      */
     public void terminate()
-        throws InterruptedException;
+            throws InterruptedException;
 
     /**
      * Obtain a Job from the persistence layer. Normally the job has
@@ -100,7 +102,7 @@ public interface JobPersistence extends JobUpdater {
      * @throws TransientException
      */
     public Job get(String jobID)
-        throws JobNotFoundException, JobPersistenceException, TransientException;
+            throws JobNotFoundException, JobPersistenceException, TransientException;
 
     /**
      * Get the details for the specified job. The details include all parameters
@@ -111,7 +113,7 @@ public interface JobPersistence extends JobUpdater {
      * @throws TransientException
      */
     public void getDetails(Job job)
-        throws JobPersistenceException, TransientException;
+            throws JobPersistenceException, TransientException;
 
     /**
      * Persist the given Job. The returned job will have a jobID value.
@@ -122,7 +124,7 @@ public interface JobPersistence extends JobUpdater {
      * @throws TransientException
      */
     public Job put(Job job)
-        throws JobPersistenceException, TransientException;
+            throws JobPersistenceException, TransientException;
 
     /**
      * Delete the specified job.
@@ -132,7 +134,7 @@ public interface JobPersistence extends JobUpdater {
      * @throws TransientException
      */
     public void delete(String jobID)
-        throws JobPersistenceException, TransientException;
+            throws JobPersistenceException, TransientException;
 
     /**
      * Obtain a listing of JobRef instances.
@@ -143,7 +145,7 @@ public interface JobPersistence extends JobUpdater {
      * @throws ca.nrc.cadc.net.TransientException
      */
     public Iterator<JobRef> iterator(String requestPath)
-        throws JobPersistenceException, TransientException;
+            throws JobPersistenceException, TransientException;
 
     /**
      * Obtain a listing of JobRef instances in the specified phase.
@@ -155,7 +157,7 @@ public interface JobPersistence extends JobUpdater {
      * @throws ca.nrc.cadc.net.TransientException
      */
     public Iterator<JobRef> iterator(String requestPath, List<ExecutionPhase> phases)
-        throws JobPersistenceException, TransientException;
+            throws JobPersistenceException, TransientException;
 
     /**
      * Obtain a listing of the last 'last' JobRef instances in the specified
@@ -170,6 +172,6 @@ public interface JobPersistence extends JobUpdater {
      * @throws ca.nrc.cadc.net.TransientException
      */
     public Iterator<JobRef> iterator(String requestPath, List<ExecutionPhase> phases, Date after, Integer last)
-        throws JobPersistenceException, TransientException;
+            throws JobPersistenceException, TransientException;
 
 }

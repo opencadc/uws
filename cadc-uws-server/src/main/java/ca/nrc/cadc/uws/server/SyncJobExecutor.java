@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.server;
 
@@ -73,27 +73,23 @@ import ca.nrc.cadc.uws.Job;
 
 /**
  * Simple JobExecutor that only supports synchronous execution.
- * 
+ *
  * @author pdowler
  */
-public class SyncJobExecutor extends AbstractExecutor
-{
-    public SyncJobExecutor(JobUpdater jobUpdater, Class jobRunnerClass)
-    {
+public class SyncJobExecutor extends AbstractExecutor {
+
+    public SyncJobExecutor(JobUpdater jobUpdater, Class jobRunnerClass) {
         super(jobUpdater, jobRunnerClass);
     }
 
     @Override
-    protected void abortJob(String jobID)
-    {
+    protected void abortJob(String jobID) {
         throw new UnsupportedOperationException("cannot abort sync jobs");
     }
 
     @Override
-    protected void executeAsync(Job job, JobRunner jobRunner)
-    {
+    protected void executeAsync(Job job, JobRunner jobRunner) {
         throw new UnsupportedOperationException("async job execution");
     }
-
 
 }

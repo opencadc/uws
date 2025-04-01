@@ -65,7 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.server;
 
@@ -75,29 +75,28 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 /**
- * Simple implementation of the JobExecutor Service for running asynchronous jobs 
+ * Simple implementation of the JobExecutor Service for running asynchronous jobs
  * in separate threads. This implementation creates a new instance of the JobRunner
  * for each job. For sync jobs, the job runner is run in the calling thread; for async
  * jobs, it starts a new Thread (daemon=true) for each job.
  *
  * @author pdowler
  */
-public class ThreadExecutor extends AbstractExecutor
-{
+public class ThreadExecutor extends AbstractExecutor {
+
     private static final Logger log = Logger.getLogger(ThreadExecutor.class);
 
-    private final Map<String,Thread> currentJobs = new HashMap<String,Thread>();
+    private final Map<String, Thread> currentJobs = new HashMap<String, Thread>();
     private String threadBaseName;
     private int num = 0;
-    
+
     /**
      * Constructor when using constructor dependency injection.
      *
      * @param jobUpdater
      * @param jobRunnerClass
      */
-    public ThreadExecutor(JobUpdater jobUpdater, Class jobRunnerClass)
-    {
+    public ThreadExecutor(JobUpdater jobUpdater, Class jobRunnerClass) {
         this(jobUpdater, jobRunnerClass, ThreadExecutor.class.getSimpleName());
     }
 
@@ -108,11 +107,11 @@ public class ThreadExecutor extends AbstractExecutor
      * @param jobRunnerClass
      * @param threadBaseName base name for spawned threads
      */
-    public ThreadExecutor(JobUpdater jobUpdater, Class jobRunnerClass, String threadBaseName)
-    {
+    public ThreadExecutor(JobUpdater jobUpdater, Class jobRunnerClass, String threadBaseName) {
         super(jobUpdater, jobRunnerClass);
-        if (threadBaseName == null)
+        if (threadBaseName == null) {
             throw new IllegalArgumentException("threadBaseName cannot be null");
+        }
         this.threadBaseName = threadBaseName + "-";
     }
 
@@ -120,46 +119,40 @@ public class ThreadExecutor extends AbstractExecutor
      * Abort the job. This implementation finds the job thread and if found,
      * calls the interrupt() method. Subclasses should override this if they have
      * also overriden syncExecute or asyncExecute.
-     * 
+     *
      * @param jobID
      */
-    protected void abortJob(String jobID)
-    {
-        synchronized(currentJobs)
-        {
+    protected void abortJob(String jobID) {
+        synchronized (currentJobs) {
             Thread t = currentJobs.remove(jobID);
-            if (t != null && t.isAlive())
+            if (t != null && t.isAlive()) {
                 t.interrupt();
+            }
         }
     }
 
     /**
      * Execute the job asynchronously. This method spawns a new thread for every job.
      * The thread is marked as a daemon thread so it will not block application shutdown.
-     * 
+     *
      * @param job
      * @param jobRunner
      */
-    protected void executeAsync(final Job job, final JobRunner jobRunner)
-    {
-        Runnable r = new Runnable()
-        {
-            public void run()
-            {
+    protected void executeAsync(final Job job, final JobRunner jobRunner) {
+        Runnable r = new Runnable() {
+            public void run() {
                 jobRunner.run();
-                synchronized(currentJobs)
-                {
+                synchronized (currentJobs) {
                     currentJobs.remove(job.getID());
                 }
             }
         };
-        
+
         Thread t = new Thread(r);
         t.setName(threadBaseName + Integer.toString(num++));
         t.setDaemon(true); // so the thread will not block application shutdown
         t.start();
-        synchronized(currentJobs)
-        {
+        synchronized (currentJobs) {
             currentJobs.put(job.getID(), t);
         }
     }

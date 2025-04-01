@@ -65,7 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.web;
 
@@ -77,14 +77,14 @@ import java.net.URL;
 import java.util.List;
 
 /**
- * 
+ *
  * @author jburke
  * @deprecated Use UWSInlineContentHandler
- * 
+ *
  */
 @Deprecated
-public interface InlineContentHandler
-{
+public interface InlineContentHandler {
+
     /**
      * Sets the list of current Parameters.
      *
@@ -99,7 +99,7 @@ public interface InlineContentHandler
     List<Parameter> getParameterList();
 
     /**
-     * 
+     *
      * @return JobInfo.
      */
     JobInfo getJobInfo();
@@ -110,12 +110,12 @@ public interface InlineContentHandler
      * @param name of the data header.
      * @param contentType MIME type of the data.
      * @param inputStream containing the data.
+     * @return URL to the data, or null it the data is not stored.
      * @throws InlineContentException for errors storing the data.
      * @throws IOException for errors reading the InputStream.
      * @throws RuntimeException for processing errors.
-     * @return URL to the data, or null it the data is not stored.
      */
     URL accept(String name, String contentType, InputStream inputStream)
-        throws InlineContentException, IOException;
+            throws InlineContentException, IOException;
 
 }

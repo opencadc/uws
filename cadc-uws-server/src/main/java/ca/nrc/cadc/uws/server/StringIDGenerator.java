@@ -65,7 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.server;
 
@@ -73,11 +73,11 @@ package ca.nrc.cadc.uws.server;
  *
  * @author pdowler
  */
-public interface StringIDGenerator
-{
+public interface StringIDGenerator {
+
     /**
      * Generate a new identifier.
-     * 
+     *
      * @return
      */
     public String getID();

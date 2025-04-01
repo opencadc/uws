@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.server;
 
@@ -97,11 +97,11 @@ import org.apache.log4j.Logger;
  * the <code>param-value</code> is the class name that implements the interface. This class
  * must have a public no-arg constructor.
  * </p>
- * 
+ *
  * @author pdowler
  */
-public class JobUpdaterServlet extends HttpServlet
-{
+public class JobUpdaterServlet extends HttpServlet {
+
     private static Logger log = Logger.getLogger(JobUpdaterServlet.class);
     private static final long serialVersionUID = 201206061200L;
 
@@ -109,40 +109,31 @@ public class JobUpdaterServlet extends HttpServlet
 
     @Override
     public void init(ServletConfig config)
-        throws ServletException
-    {
+            throws ServletException {
         super.init(config);
 
-        try
-        {
+        try {
             this.jobUpdater = createJobUpdater(config);
-        }
-        catch(Exception ex)
-        {
+        } catch (Exception ex) {
             log.error("failed to init: " + ex);
         }
     }
 
-    protected JobUpdater createJobUpdater(ServletConfig config)
-    {
+    protected JobUpdater createJobUpdater(ServletConfig config) {
         String pname = JobUpdater.class.getName();
-        try
-        {
+        try {
             String cname = config.getInitParameter(pname);
             //if (cname == null) // try a context param
             //    cname = config.getServletContext().getInitParameter(pname);
-            if (cname != null && cname.trim().length() > 0)
-            {
+            if (cname != null && cname.trim().length() > 0) {
                 Class c = Class.forName(cname);
                 JobUpdater ret = (JobUpdater) c.newInstance();
                 log.info("created JobUpdater: " + ret.getClass().getName());
                 return ret;
-            }
-            else
+            } else {
                 log.error("CONFIGURATION ERROR: required init-param not found: " + pname + " = <class name of JobUpdater implementation>");
-        }
-        catch(Exception ex)
-        {
+            }
+        } catch (Exception ex) {
             log.error("failed to create JobUpdater", ex);
         }
         return null;
@@ -150,8 +141,7 @@ public class JobUpdaterServlet extends HttpServlet
 
     @Override
     protected void doGet(final HttpServletRequest request, final HttpServletResponse response)
-        throws ServletException, IOException
-    {
+            throws ServletException, IOException {
         log.debug("doGet - START");
         doit(true, request, response);
         log.debug("doGet - DONE");
@@ -159,18 +149,15 @@ public class JobUpdaterServlet extends HttpServlet
 
     @Override
     protected void doPost(final HttpServletRequest request, final HttpServletResponse response)
-        throws ServletException, IOException
-    {
+            throws ServletException, IOException {
         log.debug("doPost - START");
         doit(false, request, response);
         log.debug("doPost - DONE");
     }
 
     private void doit(final boolean get, final HttpServletRequest request, final HttpServletResponse response)
-        throws ServletException, IOException
-    {
-        if (jobUpdater == null)
-        {
+            throws ServletException, IOException {
+        if (jobUpdater == null) {
             // config error
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             response.setContentType("text/plain");
@@ -181,61 +168,49 @@ public class JobUpdaterServlet extends HttpServlet
         }
 
         Subject subject = AuthenticationUtil.getSubject(request);
-        if (subject == null)
-        {
+        if (subject == null) {
             processRequest(get, request, response);
-        }
-        else
-        {
-            try
-            {
-                Subject.doAs(subject, new PrivilegedExceptionAction<Object>()
-                {
+        } else {
+            try {
+                Subject.doAs(subject, new PrivilegedExceptionAction<Object>() {
                     public Object run()
-                        throws PrivilegedActionException
-                    {
-                        try
-                        {
+                            throws PrivilegedActionException {
+                        try {
                             processRequest(get, request, response);
                             return null;
-                        }
-                        catch(Exception ex)
-                        {
+                        } catch (Exception ex) {
                             throw new PrivilegedActionException(ex);
                         }
                     }
-                } );
-            }
-            catch(PrivilegedActionException pex)
-            {
-                if (pex.getCause() instanceof ServletException)
+                });
+            } catch (PrivilegedActionException pex) {
+                if (pex.getCause() instanceof ServletException) {
                     throw (ServletException) pex.getCause();
-                else if (pex.getCause() instanceof IOException)
+                } else if (pex.getCause() instanceof IOException) {
                     throw (IOException) pex.getCause();
-                else if (pex.getCause() instanceof RuntimeException)
+                } else if (pex.getCause() instanceof RuntimeException) {
                     throw (RuntimeException) pex.getCause();
-                else
+                } else {
                     throw new RuntimeException(pex.getCause());
+                }
             }
         }
     }
 
     private void processRequest(boolean get, HttpServletRequest request, HttpServletResponse response)
-        throws ServletException, IOException
-    {
+            throws ServletException, IOException {
         String jobID = null;
-        try
-        {
+        try {
             // GET: <jobID>
             // POST:
             // <jobID>/<current phase>/<new phase>
             // <jobID>/<current phase>/ERROR/<base64 encoded message>/<errorType>
             jobID = getPathToken(request, 0);
-            if (jobID == null)
+            if (jobID == null) {
                 throw new IllegalArgumentException("jobID not specified");
+            }
 
-            if (get)
-            {
+            if (get) {
                 ExecutionPhase ep = jobUpdater.getPhase(jobID);
                 log.debug("GET: " + jobID + " " + ep.name());
                 response.setStatus(HttpServletResponse.SC_OK);
@@ -247,22 +222,22 @@ public class JobUpdaterServlet extends HttpServlet
             }
 
             String phase = getPathToken(request, 1);
-            if (phase == null)
+            if (phase == null) {
                 throw new IllegalArgumentException("current phase not specified");
+            }
             ExecutionPhase cur = ExecutionPhase.valueOf(phase);
 
             phase = getPathToken(request, 2);
-            if (phase == null)
+            if (phase == null) {
                 throw new IllegalArgumentException("new phase not specified");
+            }
             ExecutionPhase end = ExecutionPhase.valueOf(phase);
 
             ErrorSummary err = null;
-            if (ExecutionPhase.ERROR.equals(end))
-            {
+            if (ExecutionPhase.ERROR.equals(end)) {
                 String base64 = getPathToken(request, 3);
                 String type = getPathToken(request, 4);
-                if (base64 != null && type != null)
-                {
+                if (base64 != null && type != null) {
                     String msg = Base64.decodeString(base64);
                     ErrorType et = ErrorType.valueOf(type);
                     err = new ErrorSummary(msg, et);
@@ -271,22 +246,20 @@ public class JobUpdaterServlet extends HttpServlet
 
             log.debug("changing phase of " + jobID + " to " + end);
             ExecutionPhase result = null;
-            if (err != null)
+            if (err != null) {
                 result = jobUpdater.setPhase(jobID, cur, end, err, new Date());
-            else
+            } else {
                 result = jobUpdater.setPhase(jobID, cur, end, new Date());
+            }
 
-            if (result == null)
-            {
+            if (result == null) {
                 ExecutionPhase actual = jobUpdater.getPhase(jobID);
                 log.debug("cannot change phase of " + jobID + " from " + cur + " to " + end + "(was: " + actual + ") [FAIL]");
                 throw new IllegalArgumentException("cannot change phase of " + jobID + " from " + cur + " to " + end + "(was: " + actual + ")");
             }
             log.debug("changed phase of " + jobID + " to " + end + " [OK]");
             response.setStatus(HttpServletResponse.SC_OK);
-        }
-        catch(IllegalArgumentException ex)
-        {
+        } catch (IllegalArgumentException ex) {
             // OutputStream not open, write an error response
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             response.setContentType("text/plain");
@@ -294,9 +267,7 @@ public class JobUpdaterServlet extends HttpServlet
             w.println(ex.getMessage());
             w.close();
             return;
-        }
-        catch(JobNotFoundException ex)
-        {
+        } catch (JobNotFoundException ex) {
             // OutputStream not open, write an error response
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             response.setContentType("text/plain");
@@ -304,26 +275,21 @@ public class JobUpdaterServlet extends HttpServlet
             w.println("failed to find job: " + jobID);
             w.close();
             return;
-        }
-        catch(TransientException ex)
-        {
-        	if (!response.isCommitted())
-        	{  
-	            response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-	            response.addHeader("Retry-After", Integer.toString(ex.getRetryDelay()));
-	            response.setContentType("text/plain");
-	            PrintWriter w = response.getWriter();
-	            w.println("failed to persist job: " + jobID);
-	            w.println("   reason: " + ex.getMessage());
-	            w.close();
-	            return;
-        	}
-        	
-        	log.error("response already committed", ex);
-        	return;
-        }
-        catch(JobPersistenceException ex)
-        {
+        } catch (TransientException ex) {
+            if (!response.isCommitted()) {
+                response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+                response.addHeader("Retry-After", Integer.toString(ex.getRetryDelay()));
+                response.setContentType("text/plain");
+                PrintWriter w = response.getWriter();
+                w.println("failed to persist job: " + jobID);
+                w.println("   reason: " + ex.getMessage());
+                w.close();
+                return;
+            }
+
+            log.error("response already committed", ex);
+            return;
+        } catch (JobPersistenceException ex) {
             // OutputStream not open, write an error response
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             response.setContentType("text/plain");
@@ -335,17 +301,19 @@ public class JobUpdaterServlet extends HttpServlet
         }
     }
 
-    private String getPathToken(HttpServletRequest request, int n)
-    {
+    private String getPathToken(HttpServletRequest request, int n) {
         String path = request.getPathInfo();
-        if (path == null)
+        if (path == null) {
             return null;
-        if (path.startsWith("/"))
+        }
+        if (path.startsWith("/")) {
             path = path.substring(1);
+        }
         String[] parts = path.split("/");
         log.debug("path: " + path + " " + parts.length + " parts, n=" + n);
-        if (n > parts.length - 1)
+        if (n > parts.length - 1) {
             return null;
+        }
         return parts[n];
     }
 }

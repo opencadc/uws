@@ -63,33 +63,32 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.web;
 
 import ca.nrc.cadc.rest.InlineContentHandler;
-import ca.nrc.cadc.uws.Parameter;
 
 /**
  * Extension of the base cadc-rest InlineContentHandler that gives the implementation
  * access to the job parameter list.
- * 
+ *
  * @author pdowler
  */
 public interface UWSInlineContentHandler extends InlineContentHandler {
-    
+
     /**
      * Content.name value to use when the value is a JobInfo created from a
      * job description document.
      */
     public static final String CONTENT_JOBINFO = "JobInfo";
-    
+
     /**
      * Content.name value to use when the value is a ParamReplacement created by
      * inline content processing.
      */
     public static final String CONTENT_PARAM_REPLACE = "ParamReplacement";
-    
+
     /**
      * InlineContentHandler.Content.value object to trigger replacing an original
      * parameter value with a new value based on processing of inline content. After
@@ -97,6 +96,7 @@ public interface UWSInlineContentHandler extends InlineContentHandler {
      * newStr (complete or partial replacement).
      */
     public static class ParameterReplacement {
+
         String origStr;
         String newStr;
 
@@ -109,7 +109,6 @@ public interface UWSInlineContentHandler extends InlineContentHandler {
         public String toString() {
             return "UWSInlineContentHandler.ParameterReplacement[" + origStr + " -> " + newStr + "]";
         }
-        
-        
+
     }
 }

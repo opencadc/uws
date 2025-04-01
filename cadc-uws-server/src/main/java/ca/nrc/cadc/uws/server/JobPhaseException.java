@@ -65,24 +65,22 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.server;
 
 /**
  * @author pdowler
  */
-public class JobPhaseException extends Exception
-{
+public class JobPhaseException extends Exception {
+
     private static final long serialVersionUID = 201107081200L;
-    
-    public JobPhaseException(String message, Throwable cause)
-    {
+
+    public JobPhaseException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public JobPhaseException(String message)
-    {
+    public JobPhaseException(String message) {
         super(message);
     }
 

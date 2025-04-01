@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.server;
 
@@ -87,58 +87,52 @@ import org.apache.log4j.Logger;
 
 /**
  * Simple client class to send job updates to the JobUpdaterServlet.
- * 
+ *
  * @author pdowler
  */
-public class RemoteJobUpdater implements JobUpdater
-{
+public class RemoteJobUpdater implements JobUpdater {
+
     private static final Logger log = Logger.getLogger(RemoteJobUpdater.class);
 
     private URL baseURL;
 
-    public RemoteJobUpdater(URL baseURL)
-    {
+    public RemoteJobUpdater(URL baseURL) {
         this.baseURL = baseURL;
     }
 
-
     public ExecutionPhase getPhase(String jobID)
-        throws JobNotFoundException, JobPersistenceException
-    {
-        try
-        {
+            throws JobNotFoundException, JobPersistenceException {
+        try {
             URL u = new URL(baseURL.toExternalForm() + "/" + jobID);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             HttpDownload get = new HttpDownload(u, out);
             get.setUserAgent(this.getClass().getName());
             get.run();
-            if (get.getThrowable() != null)
-            {
-                if (get.getThrowable().getMessage().contains("not found"))
+            if (get.getThrowable() != null) {
+                if (get.getThrowable().getMessage().contains("not found")) {
                     throw new JobNotFoundException("not found: " + jobID);
+                }
                 throw new JobPersistenceException("failed to get " + jobID, get.getThrowable());
             }
             String phase = out.toString().trim();
             log.debug("phase: " + phase);
             ExecutionPhase ret = ExecutionPhase.toValue(phase);
             return ret;
-        }
-        catch(MalformedURLException bug)
-        {
+        } catch (MalformedURLException bug) {
             throw new RuntimeException("BUG - failed to create valid URL", bug);
         }
     }
 
     /**
      * Set the phase.
+     *
      * @param jobID
      * @param ep
      * @throws JobNotFoundException
      * @throws JobPersistenceException
      */
     public void setPhase(String jobID, ExecutionPhase ep)
-        throws JobNotFoundException, JobPersistenceException
-    {
+            throws JobNotFoundException, JobPersistenceException {
         throw new UnsupportedOperationException();
     }
 
@@ -152,14 +146,13 @@ public class RemoteJobUpdater implements JobUpdater
      * @throws JobNotFoundException
      */
     public ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end)
-        throws JobNotFoundException, JobPersistenceException
-    {
+            throws JobNotFoundException, JobPersistenceException {
         return setPhase(jobID, start, end, null);
     }
 
     /**
      * Conditionally set the phase.
-     * 
+     *
      * @param jobID
      * @param start
      * @param end
@@ -169,8 +162,7 @@ public class RemoteJobUpdater implements JobUpdater
      * @throws JobPersistenceException
      */
     public ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end, Date date)
-        throws JobNotFoundException, JobPersistenceException
-    {
+            throws JobNotFoundException, JobPersistenceException {
         ErrorSummary es = null;
         return setPhase(jobID, start, end, es, date);
     }
@@ -187,13 +179,13 @@ public class RemoteJobUpdater implements JobUpdater
      * @throws JobNotFoundException
      */
     public ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end, List<Result> results, Date date)
-        throws JobNotFoundException, JobPersistenceException
-    {
+            throws JobNotFoundException, JobPersistenceException {
         throw new UnsupportedOperationException();
     }
 
     /**
-     * Conditional phase change with error summary. 
+     * Conditional phase change with error summary.
+     *
      * @param jobID
      * @param start
      * @param end
@@ -204,14 +196,14 @@ public class RemoteJobUpdater implements JobUpdater
      * @throws JobPersistenceException
      */
     public ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end, ErrorSummary error, Date date)
-        throws JobNotFoundException, JobPersistenceException
-    {
-        if (start == null)
+            throws JobNotFoundException, JobPersistenceException {
+        if (start == null) {
             throw new IllegalArgumentException("start phase cannot be null");
-        if (end == null)
+        }
+        if (end == null) {
             throw new IllegalArgumentException("end phase cannot be null");
-        try
-        {
+        }
+        try {
             StringBuilder sb = new StringBuilder();
             sb.append(baseURL.toExternalForm());
             sb.append("/");
@@ -220,8 +212,7 @@ public class RemoteJobUpdater implements JobUpdater
             sb.append(start.getValue());
             sb.append("/");
             sb.append(end.getValue());
-            if (error != null)
-            {
+            if (error != null) {
                 String msg = Base64.encodeString(error.getSummaryMessage());
                 String et = error.getErrorType().name();
                 sb.append("/");
@@ -235,18 +226,16 @@ public class RemoteJobUpdater implements JobUpdater
             con.setRequestMethod("POST");
             int code = con.getResponseCode();
             String msg = con.getResponseMessage();
-            if (code == 200)
+            if (code == 200) {
                 return end;
-            if (code == 404)
+            }
+            if (code == 404) {
                 throw new JobNotFoundException(msg);
+            }
             throw new JobPersistenceException("failed to update job " + jobID + ", reason: [" + code + "] " + msg);
-        }
-        catch(MalformedURLException bug)
-        {
+        } catch (MalformedURLException bug) {
             throw new RuntimeException("BUG - failed to create valid URL", bug);
-        }
-        catch(IOException ex)
-        {
+        } catch (IOException ex) {
             throw new JobPersistenceException("failed to update job " + jobID, ex);
         }
     }
@@ -261,8 +250,7 @@ public class RemoteJobUpdater implements JobUpdater
      * @throws TransientException
      */
     public void addParameters(String jobID, List<Parameter> params)
-        throws JobNotFoundException, JobPersistenceException, TransientException
-    {
+            throws JobNotFoundException, JobPersistenceException, TransientException {
         throw new UnsupportedOperationException("addParameters() not implemented in RemoteJobUpdater.");
     }
 

@@ -65,7 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.server;
 
@@ -80,10 +80,11 @@ import java.util.List;
 /**
  * Interface to define the subset of the JobPersistence API that is intended for use by
  * JobRunner implementations.
- * 
+ *
  * @author pdowler
  */
 public interface JobUpdater {
+
     /**
      * Get the current execution phase of the specified job.
      *
@@ -91,10 +92,10 @@ public interface JobUpdater {
      * @return the current phase
      * @throws JobNotFoundException
      * @throws JobPersistenceException
-     * @throws TransientException 
+     * @throws TransientException
      */
     public ExecutionPhase getPhase(String jobID)
-        throws JobNotFoundException, JobPersistenceException, TransientException;
+            throws JobNotFoundException, JobPersistenceException, TransientException;
 
     /**
      * Try to change the phase from <em>start</em> to <em>end</em>. The transition is
@@ -107,10 +108,10 @@ public interface JobUpdater {
      * @return the resulting phase or null if the the transition was not successful.
      * @throws JobNotFoundException
      * @throws JobPersistenceException
-     * @throws TransientException 
+     * @throws TransientException
      */
     public ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end)
-        throws JobNotFoundException, JobPersistenceException, TransientException;
+            throws JobNotFoundException, JobPersistenceException, TransientException;
 
     /**
      * Try to change the phase from <em>start</em> to <em>end</em> and, if successful,
@@ -126,10 +127,10 @@ public interface JobUpdater {
      * @return the resulting phase or null if the the transition was not successful.
      * @throws JobNotFoundException
      * @throws JobPersistenceException
-     * @throws TransientException 
+     * @throws TransientException
      */
     public ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end, Date date)
-        throws JobNotFoundException, JobPersistenceException, TransientException;
+            throws JobNotFoundException, JobPersistenceException, TransientException;
 
     /**
      * Conditionally change phase from start to end and, if successful, add the specified results to the
@@ -143,13 +144,13 @@ public interface JobUpdater {
      * @return the final phase (end) or null if not successful
      * @throws JobNotFoundException
      * @throws JobPersistenceException
-     * @throws TransientException 
+     * @throws TransientException
      */
     public ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end, List<Result> results, Date date)
-        throws JobNotFoundException, JobPersistenceException, TransientException;
+            throws JobNotFoundException, JobPersistenceException, TransientException;
 
     /**
-     * Conditionally change phase from start to end and, if successful, set the 
+     * Conditionally change phase from start to end and, if successful, set the
      * error summary and set the startTime (end=EXECUTING) or endTime (end=COMPLETED | ERROR | ABORTED).
      *
      * @param jobID
@@ -160,10 +161,10 @@ public interface JobUpdater {
      * @return the final phase (end) or null if not successful
      * @throws JobNotFoundException
      * @throws JobPersistenceException
-     * @throws TransientException 
+     * @throws TransientException
      */
     public ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end, ErrorSummary error, Date date)
-        throws JobNotFoundException, JobPersistenceException, TransientException;
+            throws JobNotFoundException, JobPersistenceException, TransientException;
 
     /**
      * Add parameters to the specified job.
@@ -175,5 +176,5 @@ public interface JobUpdater {
      * @throws TransientException
      */
     public void addParameters(String jobID, List<Parameter> params)
-        throws JobNotFoundException, JobPersistenceException, TransientException;
+            throws JobNotFoundException, JobPersistenceException, TransientException;
 }

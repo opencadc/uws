@@ -65,7 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.server;
 
@@ -79,11 +79,11 @@ import org.apache.log4j.Logger;
  * String identifier generator. This class uses the <code>java.security.SecureRandom</code>
  * class to generater random identifiers from a set of characters (typically alphanumeric).
  * It always makes sure the first character is an alphabetic letter.
- * 
+ *
  * @author pdowler
  */
-public class RandomStringGenerator implements StringIDGenerator
-{
+public class RandomStringGenerator implements StringIDGenerator {
+
     private static Logger log = Logger.getLogger(RandomStringGenerator.class);
 
     // generate a random modest-length lower case string
@@ -101,41 +101,35 @@ public class RandomStringGenerator implements StringIDGenerator
      *
      * @param length
      */
-    public RandomStringGenerator(int length)
-    {
+    public RandomStringGenerator(int length) {
         this(length, DEFAULT_CHARS);
     }
 
     /**
      * Constructor. Generates identifiers with the specified number of characters and
      * the specified set of allowed characters.
-     * 
+     *
      * @param length
      * @param allowedChars
      */
-    public RandomStringGenerator(int length, String allowedChars)
-    {
+    public RandomStringGenerator(int length, String allowedChars) {
         this.length = length;
-        this.characters = new char[ allowedChars.length() ];
+        this.characters = new char[allowedChars.length()];
 
         // find/add all the letters first
         this.numLetters = 0;
-        for (int i=0; i<allowedChars.length(); i++)
-        {
+        for (int i = 0; i < allowedChars.length(); i++) {
             char c = allowedChars.charAt(i);
-            if ( Character.isLetter(c) )
-            {
+            if (Character.isLetter(c)) {
                 characters[i] = c;
                 numLetters++;
             }
         }
         // find/add all the non-letters (presumably digits)
         int n = 0;
-        for (int i=0; i<allowedChars.length(); i++)
-        {
+        for (int i = 0; i < allowedChars.length(); i++) {
             char c = allowedChars.charAt(i);
-            if ( !Character.isLetter(c) )
-            {
+            if (!Character.isLetter(c)) {
                 characters[numLetters + n] = c;
                 n++;
             }
@@ -150,37 +144,37 @@ public class RandomStringGenerator implements StringIDGenerator
      *
      * @return a new ID
      */
-    public String getID()
-    {
-        synchronized(rnd)
-        {
+    public String getID() {
+        synchronized (rnd) {
             char[] c = new char[length];
-            c[0] = characters[ rnd.nextInt(numLetters) ];
-            for (int i=1; i<length; i++)
-                c[i] = characters[ rnd.nextInt(characters.length) ];
+            c[0] = characters[rnd.nextInt(numLetters)];
+            for (int i = 1; i < length; i++) {
+                c[i] = characters[rnd.nextInt(characters.length)];
+            }
             return new String(c);
         }
     }
 
     // package access for test code
-    void initRNG()
-    {
+    void initRNG() {
         // add extra seed info: clock
         byte[] clock = HexUtil.toBytes(System.currentTimeMillis());
         byte[] addr = null;
-        try
-        {
+        try {
             // add extra seed info: ip address
             InetAddress inet = InetAddress.getLocalHost();
-            if ( !inet.isLoopbackAddress() )
+            if (!inet.isLoopbackAddress()) {
                 addr = inet.getAddress();
+            }
+        } catch (UnknownHostException ignore) {
+            log.debug("OOPS - failed to find hostname", ignore);
         }
-        catch(UnknownHostException ignore) { }
 
-        
-        if (clock != null)
+        if (clock != null) {
             rnd.setSeed(clock);
-        if (addr != null)
+        }
+        if (addr != null) {
             rnd.setSeed(addr);
+        }
     }
 }
