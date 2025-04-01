@@ -65,7 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws;
 
@@ -89,14 +89,13 @@ import org.jdom2.output.XMLOutputter;
  *
  * @author Sailor Zhang
  */
-public class JobWriter
-{
+public class JobWriter {
+
     private static Logger log = Logger.getLogger(JobWriter.class);
 
     private DateFormat dateFormat;
 
-    public JobWriter()
-    {
+    public JobWriter() {
         this.dateFormat = UWS.getDateFormat();
     }
 
@@ -108,8 +107,7 @@ public class JobWriter
      * @throws IOException if the writer fails to write.
      */
     protected void writeDocument(Element root, Writer writer)
-        throws IOException
-    {
+            throws IOException {
         XMLOutputter outputter = new XMLOutputter();
         outputter.setFormat(Format.getPrettyFormat());
         Document document = new Document(root);
@@ -124,8 +122,7 @@ public class JobWriter
      * @throws IOException if the writer fails to write.
      */
     public void write(Job job, OutputStream out)
-        throws IOException
-    {
+            throws IOException {
         write(job, new OutputStreamWriter(out));
     }
 
@@ -137,21 +134,19 @@ public class JobWriter
      * @throws IOException if the writer fails to write.
      */
     public void write(Job job, Writer writer)
-        throws IOException
-    {
+            throws IOException {
         Element root = getRootElement(job);
         XMLOutputter outputter = new XMLOutputter();
         outputter.setFormat(Format.getPrettyFormat());
         Document document = new Document(root);
         outputter.output(document, writer);
     }
-    
+
     public void writeParametersDoc(List<Parameter> params, OutputStream out)
-        throws IOException
-    {
+            throws IOException {
         writeParametersDoc(params, new OutputStreamWriter(out));
     }
-    
+
     public void writeParametersDoc(List<Parameter> params, Writer writer) throws IOException {
         Element root = getParametersRootElement(params);
         XMLOutputter outputter = new XMLOutputter();
@@ -159,13 +154,12 @@ public class JobWriter
         Document document = new Document(root);
         outputter.output(document, writer);
     }
-    
+
     public void writeResultsDoc(List<Result> params, OutputStream out)
-        throws IOException
-    {
+            throws IOException {
         writeResultsDoc(params, new OutputStreamWriter(out));
     }
-    
+
     public void writeResultsDoc(List<Result> results, Writer writer) throws IOException {
         Element root = getResultsRootElement(results);
         XMLOutputter outputter = new XMLOutputter();
@@ -179,9 +173,8 @@ public class JobWriter
      *
      * @return A job Element.
      */
-    public static Element getJob()
-    {
-        Element element = new Element(JobAttribute.JOB.getAttributeName(), UWS.NS);
+    public static Element getJob() {
+        Element element = new Element(JobAttribute.JOB.getValue(), UWS.NS);
         element.addNamespaceDeclaration(UWS.NS);
         element.addNamespaceDeclaration(UWS.XLINK_NS);
         //element.setAttribute("schemaLocation", "http://www.ivoa.net/xml/UWS/v1.0 UWS.xsd", UWS.XSI_NS);
@@ -192,29 +185,29 @@ public class JobWriter
         Element root = getParameters(params);
         root.addNamespaceDeclaration(UWS.NS);
         root.addNamespaceDeclaration(UWS.XLINK_NS);
-        root.setAttribute(JobAttribute.VERSION.getAttributeName(), UWS.UWS_VERSION);
+        root.setAttribute(JobAttribute.VERSION.getValue(), UWS.UWS_VERSION);
         return root;
     }
-    
+
     public Element getResultsRootElement(List<Result> results) {
         Element root = getResults(results);
         root.addNamespaceDeclaration(UWS.NS);
         root.addNamespaceDeclaration(UWS.XLINK_NS);
-        root.setAttribute(JobAttribute.VERSION.getAttributeName(), UWS.UWS_VERSION);
+        root.setAttribute(JobAttribute.VERSION.getValue(), UWS.UWS_VERSION);
         return root;
     }
-    
+
     /**
      * Create the root element of a job document.
+     *
      * @param job
      * @return
      */
-    public Element getRootElement(Job job)
-    {
-        Element root = new Element(JobAttribute.JOB.getAttributeName(), UWS.NS);
+    public Element getRootElement(Job job) {
+        Element root = new Element(JobAttribute.JOB.getValue(), UWS.NS);
         root.addNamespaceDeclaration(UWS.NS);
         root.addNamespaceDeclaration(UWS.XLINK_NS);
-        root.setAttribute(JobAttribute.VERSION.getAttributeName(), UWS.UWS_VERSION);
+        root.setAttribute(JobAttribute.VERSION.getValue(), UWS.UWS_VERSION);
 
         root.addContent(getJobId(job));
         root.addContent(getRunId(job));
@@ -232,12 +225,14 @@ public class JobWriter
         root.addContent(getParameters(job.getParameterList()));
         root.addContent(getResults(job.getResultsList()));
         Element errorSummary = getErrorSummary(job);
-        if (errorSummary != null)
+        if (errorSummary != null) {
             root.addContent(errorSummary);
+        }
 
         Element jobInfo = getJobInfo(job);
-        if (jobInfo != null)
+        if (jobInfo != null) {
             root.addContent(jobInfo);
+        }
 
         return root;
     }
@@ -247,9 +242,8 @@ public class JobWriter
      *
      * @return The Job jobId Element.
      */
-    public Element getJobId(Job job)
-    {
-        Element element = new Element(JobAttribute.JOB_ID.getAttributeName(), UWS.NS);
+    public Element getJobId(Job job) {
+        Element element = new Element(JobAttribute.JOB_ID.getValue(), UWS.NS);
         element.addContent(job.getID());
         return element;
     }
@@ -260,9 +254,8 @@ public class JobWriter
      * @param host The host part of the Job request URL.
      * @return The Job jobref Element.
      */
-    public Element getJobRef(String host, Job job)
-    {
-        Element element = new Element(JobAttribute.JOB_REF.getAttributeName(), UWS.NS);
+    public Element getJobRef(String host, Job job) {
+        Element element = new Element(JobAttribute.JOB_REF.getValue(), UWS.NS);
         element.setAttribute("id", job.getID());
         element.setAttribute("xlink:href", host + job.getRequestPath() + "/" + job.getID());
         return element;
@@ -273,9 +266,8 @@ public class JobWriter
      *
      * @return The Job runId Element.
      */
-    public Element getRunId(Job job)
-    {
-        Element element = new Element(JobAttribute.RUN_ID.getAttributeName(), UWS.NS);
+    public Element getRunId(Job job) {
+        Element element = new Element(JobAttribute.RUN_ID.getValue(), UWS.NS);
         element.addContent(job.getRunID());
         return element;
     }
@@ -285,13 +277,13 @@ public class JobWriter
      *
      * @return The Job ownerId Element.
      */
-    public Element getOwnerId(Job job)
-    {
-        Element element = new Element(JobAttribute.OWNER_ID.getAttributeName(), UWS.NS);
-        if (job.getOwnerID() != null)
+    public Element getOwnerId(Job job) {
+        Element element = new Element(JobAttribute.OWNER_ID.getValue(), UWS.NS);
+        if (job.getOwnerID() != null) {
             element.addContent(job.getOwnerID());
-        else
+        } else {
             element.setAttribute("nil", "true", UWS.XSI_NS);
+        }
         return element;
     }
 
@@ -300,9 +292,8 @@ public class JobWriter
      *
      * @return The Job phase Element.
      */
-    public Element getPhase(Job job)
-    {
-        Element element = new Element(JobAttribute.EXECUTION_PHASE.getAttributeName(), UWS.NS);
+    public Element getPhase(Job job) {
+        Element element = new Element(JobAttribute.EXECUTION_PHASE.getValue(), UWS.NS);
         element.addContent(job.getExecutionPhase().toString());
         return element;
     }
@@ -312,14 +303,14 @@ public class JobWriter
      *
      * @return The Job quote Element.
      */
-    public Element getQuote(Job job)
-    {
-        Element element = new Element(JobAttribute.QUOTE.getAttributeName(), UWS.NS);
+    public Element getQuote(Job job) {
+        Element element = new Element(JobAttribute.QUOTE.getValue(), UWS.NS);
         Date date = job.getQuote();
-        if (date == null)
+        if (date == null) {
             element.setAttribute("nil", "true", UWS.XSI_NS);
-        else
+        } else {
             element.addContent(dateFormat.format(date));
+        }
         return element;
     }
 
@@ -328,14 +319,14 @@ public class JobWriter
      *
      * @return The Job startTime Element.
      */
-    public Element getStartTime(Job job)
-    {
-        Element element = new Element(JobAttribute.START_TIME.getAttributeName(), UWS.NS);
+    public Element getStartTime(Job job) {
+        Element element = new Element(JobAttribute.START_TIME.getValue(), UWS.NS);
         Date date = job.getStartTime();
-        if (date == null)
+        if (date == null) {
             element.setAttribute("nil", "true", UWS.XSI_NS);
-        else
+        } else {
             element.addContent(dateFormat.format(date));
+        }
         return element;
     }
 
@@ -344,14 +335,14 @@ public class JobWriter
      *
      * @return The Job endTime Element.
      */
-    public Element getEndTime(Job job)
-    {
-        Element element = new Element(JobAttribute.END_TIME.getAttributeName(), UWS.NS);
+    public Element getEndTime(Job job) {
+        Element element = new Element(JobAttribute.END_TIME.getValue(), UWS.NS);
         Date date = job.getEndTime();
-        if (date == null)
+        if (date == null) {
             element.setAttribute("nil", "true", UWS.XSI_NS);
-        else
+        } else {
             element.addContent(dateFormat.format(date));
+        }
         return element;
     }
 
@@ -360,12 +351,11 @@ public class JobWriter
      *
      * @return The Job creationTime Element.
      */
-    public Element getCreationTime(Job job)
-    {
-        
+    public Element getCreationTime(Job job) {
+
         Date date = job.getCreationTime();
         if (date != null) {
-            Element element = new Element(JobAttribute.CREATION_TIME.getAttributeName(), UWS.NS);
+            Element element = new Element(JobAttribute.CREATION_TIME.getValue(), UWS.NS);
             element.addContent(dateFormat.format(date));
             return element;
         }
@@ -377,9 +367,8 @@ public class JobWriter
      *
      * @return The Job executionDuration Element.
      */
-    public Element getExecutionDuration(Job job)
-    {
-        Element element = new Element(JobAttribute.EXECUTION_DURATION.getAttributeName(), UWS.NS);
+    public Element getExecutionDuration(Job job) {
+        Element element = new Element(JobAttribute.EXECUTION_DURATION.getValue(), UWS.NS);
         element.addContent(Long.toString(job.getExecutionDuration()));
         return element;
     }
@@ -389,14 +378,14 @@ public class JobWriter
      *
      * @return The Job destruction Element.
      */
-    public Element getDestruction(Job job)
-    {
-        Element element = new Element(JobAttribute.DESTRUCTION_TIME.getAttributeName(), UWS.NS);
+    public Element getDestruction(Job job) {
+        Element element = new Element(JobAttribute.DESTRUCTION_TIME.getValue(), UWS.NS);
         Date date = job.getDestructionTime();
-        if (date == null)
+        if (date == null) {
             element.setAttribute("nil", "true", UWS.XSI_NS);
-        else
+        } else {
             element.addContent(dateFormat.format(date));
+        }
         return element;
     }
 
@@ -405,12 +394,10 @@ public class JobWriter
      *
      * @return The Job parameters Element.
      */
-    public Element getParameters(List<Parameter> params)
-    {
-        Element element = new Element(JobAttribute.PARAMETERS.getAttributeName(), UWS.NS);
-        for (Parameter parameter : params)
-        {
-            Element e = new Element(JobAttribute.PARAMETER.getAttributeName(), UWS.NS);
+    public Element getParameters(List<Parameter> params) {
+        Element element = new Element(JobAttribute.PARAMETERS.getValue(), UWS.NS);
+        for (Parameter parameter : params) {
+            Element e = new Element(JobAttribute.PARAMETER.getValue(), UWS.NS);
             e.setAttribute("id", parameter.getName());
             e.addContent(parameter.getValue());
             element.addContent(e);
@@ -423,12 +410,10 @@ public class JobWriter
      *
      * @return The Job results Element.
      */
-    public Element getResults(List<Result> results)
-    {
-        Element element = new Element(JobAttribute.RESULTS.getAttributeName(), UWS.NS);
-        for (Result result : results)
-        {
-            Element e = new Element(JobAttribute.RESULT.getAttributeName(), UWS.NS);
+    public Element getResults(List<Result> results) {
+        Element element = new Element(JobAttribute.RESULTS.getValue(), UWS.NS);
+        for (Result result : results) {
+            Element e = new Element(JobAttribute.RESULT.getValue(), UWS.NS);
             e.setAttribute("id", result.getName());
             e.setAttribute("href", result.getURI().toASCIIString(), UWS.XLINK_NS);
             element.addContent(e);
@@ -441,17 +426,15 @@ public class JobWriter
      *
      * @return The Job errorSummary Element.
      */
-    public Element getErrorSummary(Job job)
-    {
+    public Element getErrorSummary(Job job) {
         Element eleErrorSummary = null;
         ErrorSummary es = job.getErrorSummary();
-        if (es != null)
-        {
-            eleErrorSummary = new Element(JobAttribute.ERROR_SUMMARY.getAttributeName(), UWS.NS);
+        if (es != null) {
+            eleErrorSummary = new Element(JobAttribute.ERROR_SUMMARY.getValue(), UWS.NS);
             eleErrorSummary.setAttribute("type", es.getErrorType().toString().toLowerCase());
             eleErrorSummary.setAttribute("hasDetail", Boolean.toString(es.getHasDetail()));
 
-            Element eleMessage = new Element(JobAttribute.ERROR_SUMMARY_MESSAGE.getAttributeName(), UWS.NS);
+            Element eleMessage = new Element(JobAttribute.ERROR_SUMMARY_MESSAGE.getValue(), UWS.NS);
             eleMessage.addContent(job.getErrorSummary().getSummaryMessage());
             eleErrorSummary.addContent(eleMessage);
         }
@@ -463,25 +446,19 @@ public class JobWriter
      *
      * @return The Job jobInfo Element.
      */
-    public Element getJobInfo(Job job)
-    {
+    public Element getJobInfo(Job job) {
         Element element = null;
         JobInfo jobInfo = job.getJobInfo();
-        if (jobInfo != null)
-        {
+        if (jobInfo != null) {
 
-            if (jobInfo.getContent() != null && jobInfo.getValid() != null && jobInfo.getValid())
-            {
-                element = new Element(JobAttribute.JOB_INFO.getAttributeName(), UWS.NS);
-                try
-                {
+            if (jobInfo.getContent() != null && jobInfo.getValid() != null && jobInfo.getValid()) {
+                element = new Element(JobAttribute.JOB_INFO.getValue(), UWS.NS);
+                try {
                     // The JobInfo content can't be validated since the schema(s) aren't known
                     // but we still need to parse and extract the root/document element
                     Document doc = XmlUtil.buildDocument(jobInfo.getContent());
                     element.addContent(doc.getRootElement().detach());
-                }
-                catch (Exception e)
-                {
+                } catch (Exception e) {
                     element = null;
                 }
             }

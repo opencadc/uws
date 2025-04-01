@@ -65,13 +65,11 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
-
+ */
 
 package ca.nrc.cadc.uws;
 
 import java.net.URL;
-
 
 /**
  * The error object gives a human readable error message (if any) for the
@@ -80,8 +78,8 @@ import java.net.URL;
  * there is an error running a job a summary of the error should be given using
  * the optional errorSummary element of the JobSummary type.
  */
-public class ErrorSummary
-{
+public class ErrorSummary {
+
     private String message;
     private ErrorType errorType;
     private boolean hasDetail;
@@ -89,29 +87,28 @@ public class ErrorSummary
     // implementation
     private URL documentURL;
 
-    private ErrorSummary() { }
+    private ErrorSummary() {
+    }
 
     /**
      * Constructor.
      *
-     * @param message        The summary of the error.
-     * @param type             The type of the error.
+     * @param message The summary of the error.
+     * @param type The type of the error.
      */
-    public ErrorSummary(String message, ErrorType type)
-    {
+    public ErrorSummary(String message, ErrorType type) {
         this(message, type, null);
     }
 
     /**
      * Constructor used on server side when a detailed error message should be
      * delivered from the /joblist/jobid/error resource.
-     * 
+     *
      * @param message
      * @param type
      * @param documentURL
      */
-    public ErrorSummary(String message, ErrorType type, URL documentURL)
-    {
+    public ErrorSummary(String message, ErrorType type, URL documentURL) {
         this.message = message;
         this.errorType = type;
         this.documentURL = documentURL;
@@ -121,46 +118,42 @@ public class ErrorSummary
     /**
      * Constructor used on the client side when creating a job from the XML
      * representation.
-     * 
+     *
      * @param message
      * @param type
      * @param hasDetail
      */
-    ErrorSummary(String message, ErrorType type, boolean hasDetail)
-    {
+    ErrorSummary(String message, ErrorType type, boolean hasDetail) {
         this.message = message;
         this.errorType = type;
         this.documentURL = null;
         this.hasDetail = hasDetail;
     }
 
-    public String getSummaryMessage()
-    {
+    public String getSummaryMessage() {
         return message;
     }
 
-    public URL getDocumentURL()
-    {
+    public URL getDocumentURL() {
         return documentURL;
     }
 
-    public ErrorType getErrorType()
-    {
+    public ErrorType getErrorType() {
         return errorType;
     }
 
-    public boolean getHasDetail()
-    {
+    public boolean getHasDetail() {
         return hasDetail;
     }
 
     @Override
-    public String toString()
-    {
-        if (documentURL != null)
-            return "ErrorSummary["+message + "," + errorType + "," + documentURL + "]";
-        if (hasDetail)
-            return "ErrorSummary["+message + "," + errorType + "," + hasDetail + "]";
-        return "ErrorSummary["+message + "," + errorType + "]";
+    public String toString() {
+        if (documentURL != null) {
+            return "ErrorSummary[" + message + "," + errorType + "," + documentURL + "]";
+        }
+        if (hasDetail) {
+            return "ErrorSummary[" + message + "," + errorType + "," + hasDetail + "]";
+        }
+        return "ErrorSummary[" + message + "," + errorType + "]";
     }
 }

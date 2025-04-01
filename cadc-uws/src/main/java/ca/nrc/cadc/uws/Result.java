@@ -65,93 +65,77 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
-
+ */
 
 package ca.nrc.cadc.uws;
 
 import java.net.URI;
 
-
 /**
  * Result Object.
  */
-public class Result
-{
+public class Result {
     private String name;
     private URI uri;
     private boolean primaryResult;
 
-
-    public Result(final String name, final URI url)
-    {
+    public Result(final String name, final URI url) {
         this(name, url, false);
     }
-    
-    public Result(final String name, final URI uri, boolean primaryResult)
-    {
+
+    public Result(final String name, final URI uri, boolean primaryResult) {
         this.name = name;
         this.uri = uri;
         this.primaryResult = primaryResult;
     }
 
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
-    public void setName(final String name)
-    {
+    public void setName(final String name) {
         this.name = name;
     }
 
-    public URI getURI()
-    {
+    public URI getURI() {
         return uri;
     }
 
-    public void setURI(final URI url)
-    {
+    public void setURI(final URI url) {
         this.uri = url;
     }
 
-    public boolean isPrimaryResult()
-    {
+    public boolean isPrimaryResult() {
         return this.primaryResult;
     }
 
-    public void setPrimaryResult(final boolean primaryResult)
-    {
+    public void setPrimaryResult(final boolean primaryResult) {
         this.primaryResult = primaryResult;
     }
 
     @Override
-    public boolean equals(Object o)
-    {
-        if (this == o)
-        {
+    public boolean equals(Object o) {
+        if (this == o) {
             return true;
         }
 
-        if ((o == null) || (getClass() != o.getClass()))
-        {
+        if ((o == null) || (getClass() != o.getClass())) {
             return false;
         }
 
         final Result result = (Result) o;
 
         return !((name != null)
-                 ? !name.equals(result.name)
-                 : (result.name != null))
-               && !((uri != null)
-                    ? !uri.equals(result.uri)
-                    : (result.uri != null));
+                ? !name.equals(result.name)
+                : (result.name != null))
+                && !((uri != null)
+                        ? !uri.equals(result.uri)
+                        : (result.uri != null));
 
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         int result = name != null ? name.hashCode() : 0;
         result = 31 * result + (uri != null ? uri.hashCode() : 0);
         return result;

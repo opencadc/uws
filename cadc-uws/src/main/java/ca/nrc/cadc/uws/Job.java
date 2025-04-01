@@ -65,22 +65,20 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
-
+ */
 
 package ca.nrc.cadc.uws;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
 import javax.security.auth.Subject;
 
 /**
  * Default implementation of a Job.
  */
-public class Job
-{
+public class Job {
+
     private String jobID;
     private ExecutionPhase executionPhase;
     private Long executionDuration;
@@ -109,31 +107,31 @@ public class Job
     // so that protocols are not switched in the result
     public transient String protocol;
 
-    public Job() { }
+    public Job() {
+    }
 
     // package access for use by JobReader
-    Job(String jobID)
-    {
+    Job(String jobID) {
         this.jobID = jobID;
     }
+
     // package access for use by JobReader
     Job(String jobID,
-                ExecutionPhase executionPhase,
-                Long executionDuration,
-                Date destructionTime,
-                Date quote,
-                Date startTime,
-                Date endTime,
-                Date creationTime,
-                ErrorSummary errorSummary,
-                String ownerID,
-                String runID,
-                String requestPath,
-                String remoteIP,
-                JobInfo jobInfo,
-                List<Parameter> params,
-                List<Result> results)
-    {
+            ExecutionPhase executionPhase,
+            Long executionDuration,
+            Date destructionTime,
+            Date quote,
+            Date startTime,
+            Date endTime,
+            Date creationTime,
+            ErrorSummary errorSummary,
+            String ownerID,
+            String runID,
+            String requestPath,
+            String remoteIP,
+            JobInfo jobInfo,
+            List<Parameter> params,
+            List<Result> results) {
         this(executionPhase, executionDuration, destructionTime, quote,
                 startTime, endTime, creationTime, errorSummary, ownerID, runID,
                 requestPath, remoteIP, jobInfo, params, results);
@@ -159,21 +157,20 @@ public class Job
      * @param results
      */
     public Job(ExecutionPhase executionPhase,
-                Long executionDuration,
-                Date destructionTime,
-                Date quote,
-                Date startTime,
-                Date endTime,
-                Date creationTime,
-                ErrorSummary errorSummary,
-                String ownerID,
-                String runID,
-                String requestPath,
-                String remoteIP,
-                JobInfo jobInfo,
-                List<Parameter> params,
-                List<Result> results)
-    {
+            Long executionDuration,
+            Date destructionTime,
+            Date quote,
+            Date startTime,
+            Date endTime,
+            Date creationTime,
+            ErrorSummary errorSummary,
+            String ownerID,
+            String runID,
+            String requestPath,
+            String remoteIP,
+            JobInfo jobInfo,
+            List<Parameter> params,
+            List<Result> results) {
         this.executionPhase = executionPhase;
         this.executionDuration = executionDuration;
         this.destructionTime = destructionTime;
@@ -198,8 +195,7 @@ public class Job
      *
      * @param job
      */
-    public Job(Job job)
-    {
+    public Job(Job job) {
         this.executionPhase = job.getExecutionPhase();
         this.executionDuration = job.getExecutionDuration();
         this.destructionTime = job.getDestructionTime();
@@ -215,30 +211,28 @@ public class Job
         this.remoteIP = job.getRemoteIP();
 
         // deep copy of the mutable fields
-        if (job.getParameterList() != null)
-        {
+        if (job.getParameterList() != null) {
             this.parameterList = new ArrayList<Parameter>();
-            for (Parameter p : job.getParameterList())
+            for (Parameter p : job.getParameterList()) {
                 parameterList.add(new Parameter(p.getName(), p.getValue()));
+            }
         }
-        if (job.getResultsList() != null)
-        {
+        if (job.getResultsList() != null) {
             this.resultsList = new ArrayList<Result>();
-            for (Result r : job.getResultsList())
+            for (Result r : job.getResultsList()) {
                 resultsList.add(new Result(r.getName(), r.getURI()));
+            }
         }
-        if (job.getJobInfo() != null)
-        {
+        if (job.getJobInfo() != null) {
             this.jobInfo = new JobInfo(
                     job.getJobInfo().getContent(),
                     job.getJobInfo().getContentType(),
-                    job.getJobInfo().getValid() );
+                    job.getJobInfo().getValid());
         }
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "Job [jobInfo=" + jobInfo + " destructionTime=" + destructionTime + ", endTime=" + endTime + ", creationTime="
                 + creationTime + ", errorSummary=" + errorSummary + ", executionDuration=" + executionDuration + ", executionPhase="
                 + executionPhase + ", jobID=" + jobID + ", ownerID=" + ownerID + ", parameterList=" + parameterList + ", quote="
@@ -246,8 +240,7 @@ public class Job
                 + runID + ", startTime=" + startTime + "]";
     }
 
-    public Date getLastModified()
-    {
+    public Date getLastModified() {
         return lastModified;
     }
 
@@ -256,8 +249,7 @@ public class Job
      *
      * @return Long job ID.
      */
-    public String getID()
-    {
+    public String getID() {
         return jobID;
     }
 
@@ -266,18 +258,16 @@ public class Job
      *
      * @return
      */
-    public String getOwnerID()
-    {
+    public String getOwnerID() {
         return ownerID;
     }
 
     /**
-     * Set  the string representation of the ownerID.
+     * Set the string representation of the ownerID.
      *
      * @param ownerID
      */
-    public void setOwnerID(String ownerID)
-    {
+    public void setOwnerID(String ownerID) {
         this.ownerID = ownerID;
     }
 
@@ -286,8 +276,7 @@ public class Job
      *
      * @return
      */
-    public String getProtocol()
-    {
+    public String getProtocol() {
         return protocol;
     }
 
@@ -296,8 +285,7 @@ public class Job
      *
      * @param protocol
      */
-    public void setProtocol(String protocol)
-    {
+    public void setProtocol(String protocol) {
         this.protocol = protocol;
     }
 
@@ -306,8 +294,7 @@ public class Job
      *
      * @return ExecutionPhase instance.
      */
-    public ExecutionPhase getExecutionPhase()
-    {
+    public ExecutionPhase getExecutionPhase() {
         return executionPhase;
     }
 
@@ -316,14 +303,13 @@ public class Job
      *
      * @param executionPhase The new Phase.
      */
-    public void setExecutionPhase(final ExecutionPhase executionPhase)
-    {
+    public void setExecutionPhase(final ExecutionPhase executionPhase) {
         this.executionPhase = executionPhase;
     }
 
     /**
      * An Execution Duration object defines the duration for which a job shall
-     * run.  This represents the "computation time" that a job is to be
+     * run. This represents the "computation time" that a job is to be
      * allowed, although because a specific measure of CPU time may not be
      * available in all environments, this duration is defined in real clock
      * seconds. An execution duration of 0 implies unlimited execution
@@ -336,13 +322,13 @@ public class Job
      * <p>
      * When a job is created, the service sets the initial execution duration.
      * The client may write to an Execution Duration to try to change the
-     * job's CPU time allocation.  The service may forbid changes, or may set
+     * job's CPU time allocation. The service may forbid changes, or may set
      * limits on the allowed execution duration.
      * </p>
+     *
      * @return long execution duration.
      */
-    public Long getExecutionDuration()
-    {
+    public Long getExecutionDuration() {
         return executionDuration;
     }
 
@@ -351,8 +337,7 @@ public class Job
      *
      * @param executionDuration New execution duration value, in seconds.
      */
-    public void setExecutionDuration(Long executionDuration)
-    {
+    public void setExecutionDuration(Long executionDuration) {
         this.executionDuration = executionDuration;
     }
 
@@ -371,10 +356,10 @@ public class Job
      * expectancy of the job. The service may forbid changes, or may set limits
      * on the allowed destruction time.
      * </p>
+     *
      * @return Date of destruction.
      */
-    public Date getDestructionTime()
-    {
+    public Date getDestructionTime() {
         return destructionTime;
     }
 
@@ -383,8 +368,7 @@ public class Job
      *
      * @param destructionTime Date of destruction.
      */
-    public void setDestructionTime(Date destructionTime)
-    {
+    public void setDestructionTime(Date destructionTime) {
         this.destructionTime = destructionTime;
     }
 
@@ -398,36 +382,30 @@ public class Job
      * two-phase committal of jobs be uniform across all UWS, but it may supply
      * a "don't know" answer for the completion time.
      * </p>
-     * 
+     *
      * @return Date Quote.
      */
-    public Date getQuote()
-    {
+    public Date getQuote() {
         return quote;
     }
 
-    public void setQuote(Date quote)
-    {
+    public void setQuote(Date quote) {
         this.quote = quote;
     }
 
-    public void setStartTime(Date startTime)
-    {
+    public void setStartTime(Date startTime) {
         this.startTime = startTime;
     }
 
-    public void setEndTime(Date endTime)
-    {
+    public void setEndTime(Date endTime) {
         this.endTime = endTime;
     }
 
-    public void setCreationTime(Date creationTime)
-    {
+    public void setCreationTime(Date creationTime) {
         this.creationTime = creationTime;
     }
 
-    public void setRunID(String runID)
-    {
+    public void setRunID(String runID) {
         this.runID = runID;
     }
 
@@ -436,8 +414,7 @@ public class Job
      *
      * @return Date of start.
      */
-    public Date getStartTime()
-    {
+    public Date getStartTime() {
         return startTime;
     }
 
@@ -446,8 +423,7 @@ public class Job
      *
      * @return Date at end of execution.
      */
-    public Date getEndTime()
-    {
+    public Date getEndTime() {
         return endTime;
     }
 
@@ -456,8 +432,7 @@ public class Job
      *
      * @return Date when the job was created.
      */
-    public Date getCreationTime()
-    {
+    public Date getCreationTime() {
         return creationTime;
     }
 
@@ -470,13 +445,11 @@ public class Job
      *
      * @return String human readable message.
      */
-    public ErrorSummary getErrorSummary()
-    {
+    public ErrorSummary getErrorSummary() {
         return errorSummary;
     }
 
-    public void setErrorSummary(ErrorSummary errorSummary)
-    {
+    public void setErrorSummary(ErrorSummary errorSummary) {
         this.errorSummary = errorSummary;
     }
 
@@ -494,8 +467,7 @@ public class Job
      *
      * @return String run ID.
      */
-    public String getRunID()
-    {
+    public String getRunID() {
         return runID;
     }
 
@@ -506,10 +478,8 @@ public class Job
      *
      * @return list of results
      */
-    public List<Result> getResultsList()
-    {
-        if (resultsList == null)
-        {
+    public List<Result> getResultsList() {
+        if (resultsList == null) {
             setResultsList(new ArrayList<Result>());
         }
 
@@ -521,26 +491,22 @@ public class Job
      *
      * @param resultList List of Result instances, never null.
      */
-    public void setResultsList(List<Result> resultList)
-    {
+    public void setResultsList(List<Result> resultList) {
         this.resultsList = resultList;
     }
 
     /**
      * @return ParameterList instance.
      */
-    public List<Parameter> getParameterList()
-    {
-        if (parameterList == null)
-        {
+    public List<Parameter> getParameterList() {
+        if (parameterList == null) {
             setParameterList(new ArrayList<Parameter>());
         }
 
         return parameterList;
     }
 
-    public void setParameterList(List<Parameter> parameterList)
-    {
+    public void setParameterList(List<Parameter> parameterList) {
         this.parameterList = parameterList;
     }
 
@@ -549,8 +515,7 @@ public class Job
      *
      * @return The Request Path.
      */
-    public String getRequestPath()
-    {
+    public String getRequestPath() {
         return requestPath;
     }
 
@@ -559,37 +524,31 @@ public class Job
      *
      * @param path The Request Path.
      */
-    public void setRequestPath(final String path)
-    {
+    public void setRequestPath(final String path) {
         this.requestPath = path;
     }
 
-    public String getRemoteIP()
-    {
+    public String getRemoteIP() {
         return remoteIP;
     }
 
-    public void setRemoteIP(String remoteIP)
-    {
+    public void setRemoteIP(String remoteIP) {
         this.remoteIP = remoteIP;
     }
 
     /**
      * The nebulous ANY object accommodates a domain object meaningful to
-     * specific implementors of the UWS system.  The default implementation will
+     * specific implementors of the UWS system. The default implementation will
      * not make use of it at all.
      *
-     * @return  An Object.  Anything in the world.
+     * @return An Object. Anything in the world.
      */
-    public JobInfo getJobInfo()
-    {
+    public JobInfo getJobInfo() {
         return jobInfo;
     }
 
-    public void setJobInfo(final JobInfo jobInfo)
-    {
+    public void setJobInfo(final JobInfo jobInfo) {
         this.jobInfo = jobInfo;
     }
-
 
 }

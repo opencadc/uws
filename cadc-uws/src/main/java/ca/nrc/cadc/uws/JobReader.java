@@ -65,11 +65,10 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws;
 
-import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.xml.XmlUtil;
 import java.io.IOException;
 import java.io.InputStream;
@@ -99,20 +98,18 @@ import org.jdom2.output.XMLOutputter;
 
 /**
  * Constructs a Job from an XML source. This class is not thread safe but it is
- * re-usable  so it can safely be used to sequentially parse multiple XML transfer
+ * re-usable so it can safely be used to sequentially parse multiple XML transfer
  * documents.
  */
-public class JobReader
-{
+public class JobReader {
+
     @SuppressWarnings("unused")
     private static Logger log = Logger.getLogger(JobReader.class);
 
-    
-
     private static final String uwsSchemaUrl;
     private static final String xlinkSchemaUrl;
-    static
-    {
+
+    static {
         uwsSchemaUrl = XmlUtil.getResourceUrlString(UWS.UWS_XSD_FILE, JobReader.class);
         log.debug("uwsSchemaUrl: " + uwsSchemaUrl);
 
@@ -127,7 +124,9 @@ public class JobReader
     /**
      * Constructor. XML Schema validation is enabled by default.
      */
-    public JobReader() { this(true); }
+    public JobReader() {
+        this(true);
+    }
 
     /**
      * Constructor. XML schema validation may be disabled, in which case the client
@@ -136,17 +135,13 @@ public class JobReader
      *
      * @param enableSchemaValidation
      */
-    public JobReader(boolean enableSchemaValidation)
-    {
-        if (enableSchemaValidation)
-        {
-            schemaMap = new HashMap<String, String>();
+    public JobReader(boolean enableSchemaValidation) {
+        if (enableSchemaValidation) {
+            schemaMap = new HashMap<>();
             schemaMap.put(UWS.UWS_NAMESPACE, uwsSchemaUrl);
             schemaMap.put(UWS.XLINK_NAMESPACE, xlinkSchemaUrl);
             log.debug("schema validation enabled");
-        }
-        else
-        {
+        } else {
             log.debug("schema validation disabled");
         }
 
@@ -156,27 +151,21 @@ public class JobReader
 
     /**
      * Alternative constructor to pass in additional schemas used to valid the
-     * documents being read.
-     *
-     * Passing in an empty Map enables schema validation with no additional schemas
-     * other than the default UWS and XLink schemas.
+     * documents being read. Passing in an empty Map enables schema validation with 
+     * no additional schemas other than the default UWS and XLink schemas.
      *
      * @param schemas Map of schema namespace to resource.
      */
-    public JobReader(Map<String, String> schemas)
-    {
-        if (schemas == null)
-        {
+    public JobReader(Map<String, String> schemas) {
+        if (schemas == null) {
             throw new IllegalArgumentException("Map of schema namespace to resource cannot be null");
         }
         schemaMap = new HashMap<String, String>();
         schemaMap.put(UWS.UWS_NAMESPACE, uwsSchemaUrl);
         schemaMap.put(UWS.XLINK_NAMESPACE, xlinkSchemaUrl);
-        if (!schemas.isEmpty())
-        {
+        if (!schemas.isEmpty()) {
             Set<Entry<String, String>> entries = schemas.entrySet();
-            for (Entry<String, String> entry : entries)
-            {
+            for (Entry<String, String> entry : entries) {
                 schemaMap.put(entry.getKey(), entry.getValue());
                 log.debug("added to SchemaMap: " + entry.getKey() + " = " + entry.getValue());
             }
@@ -188,46 +177,43 @@ public class JobReader
     }
 
     public Job read(InputStream in)
-        throws JDOMException, IOException, ParseException
-    {
-        try
-        {
+            throws JDOMException, IOException, ParseException {
+        try {
             return read(new InputStreamReader(in, "UTF-8"));
-        }
-        catch (UnsupportedEncodingException e)
-        {
+        } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("UTF-8 encoding not supported");
         }
     }
 
     public Job read(Reader reader)
-        throws JDOMException, IOException, ParseException
-    {
+            throws JDOMException, IOException, ParseException {
         Document doc = docBuilder.build(reader);
         return parseJob(doc);
     }
 
     private Job parseJob(Document doc)
-        throws ParseException, DataConversionException
-    {
+            throws ParseException, DataConversionException {
         Element root = doc.getRootElement();
 
-        String jobID = root.getChildText(JobAttribute.JOB_ID.getAttributeName(), UWS.NS);
-        if (jobID != null && jobID.trim().length() == 0)
+        String jobID = root.getChildText(JobAttribute.JOB_ID.getValue(), UWS.NS);
+        if (jobID != null && jobID.trim().length() == 0) {
             jobID = null;
-        String runID = parseStringContent(root.getChild(JobAttribute.RUN_ID.getAttributeName(), UWS.NS));
-        String ownerID = parseStringContent(root.getChild(JobAttribute.OWNER_ID.getAttributeName(), UWS.NS));
-        Date quote = parseDate(parseStringContent(root.getChild(JobAttribute.QUOTE.getAttributeName(), UWS.NS)));
-        Date startTime = parseDate(parseStringContent(root.getChild(JobAttribute.START_TIME.getAttributeName(), UWS.NS)));
-        Date endTime = parseDate(parseStringContent(root.getChild(JobAttribute.END_TIME.getAttributeName(), UWS.NS)));
-        Date creationTime = parseDate(parseStringContent(root.getChild(JobAttribute.CREATION_TIME.getAttributeName(), UWS.NS)));
-        Date destructionTime = parseDate(parseStringContent(root.getChild(JobAttribute.DESTRUCTION_TIME.getAttributeName(), UWS.NS)));
-        Long executionDuration = new Long(parseStringContent(root.getChild(JobAttribute.EXECUTION_DURATION.getAttributeName(), UWS.NS)));
+        }
+        String runID = parseStringContent(root.getChild(JobAttribute.RUN_ID.getValue(), UWS.NS));
+        String ownerID = parseStringContent(root.getChild(JobAttribute.OWNER_ID.getValue(), UWS.NS));
+        Date quote = parseDate(parseStringContent(root.getChild(JobAttribute.QUOTE.getValue(), UWS.NS)));
+        Date startTime = parseDate(parseStringContent(root.getChild(JobAttribute.START_TIME.getValue(), UWS.NS)));
+        Date endTime = parseDate(parseStringContent(root.getChild(JobAttribute.END_TIME.getValue(), UWS.NS)));
+        Date creationTime = parseDate(parseStringContent(root.getChild(JobAttribute.CREATION_TIME.getValue(), UWS.NS)));
+        Date destructionTime = parseDate(parseStringContent(root.getChild(JobAttribute.DESTRUCTION_TIME.getValue(), UWS.NS)));
+        Long executionDuration = new Long(parseStringContent(root.getChild(JobAttribute.EXECUTION_DURATION.getValue(), UWS.NS)));
 
         ExecutionPhase executionPhase = parseExecutionPhase(doc);
 
         ErrorSummary errorSummary = null;
-        if (executionPhase.equals(ExecutionPhase.ERROR)) errorSummary = parseErrorSummary(doc);
+        if (executionPhase.equals(ExecutionPhase.ERROR)) {
+            errorSummary = parseErrorSummary(doc);
+        }
 
         List<Result> resultsList = parseResultsList(doc);
 
@@ -243,67 +229,66 @@ public class JobReader
     }
 
     private Date parseDate(String strDate)
-        throws ParseException
-    {
-        if (strDate == null)
+            throws ParseException {
+        if (strDate == null) {
             return null;
+        }
         strDate = strDate.trim();
-        if (strDate.length() == 0)
+        if (strDate.length() == 0) {
             return null;
+        }
         return dateFormat.parse(strDate);
     }
 
     private String parseStringContent(Element e)
-        throws DataConversionException
-    {
-        if (e == null)
+            throws DataConversionException {
+        if (e == null) {
             return null;
+        }
         Attribute nil = e.getAttribute("nil", UWS.XSI_NS);
-        if (nil != null && nil.getBooleanValue())
+        if (nil != null && nil.getBooleanValue()) {
             return null;
+        }
         return e.getTextTrim();
     }
 
-    private ExecutionPhase parseExecutionPhase(Document doc)
-    {
+    private ExecutionPhase parseExecutionPhase(Document doc) {
         ExecutionPhase rtn = null;
         Element root = doc.getRootElement();
-        String strPhase = root.getChildText(JobAttribute.EXECUTION_PHASE.getAttributeName(), UWS.NS);
-        if (strPhase.equalsIgnoreCase(ExecutionPhase.PENDING.toString()))
+        String strPhase = root.getChildText(JobAttribute.EXECUTION_PHASE.getValue(), UWS.NS);
+        if (strPhase.equalsIgnoreCase(ExecutionPhase.PENDING.toString())) {
             rtn = ExecutionPhase.PENDING;
-        else if (strPhase.equalsIgnoreCase(ExecutionPhase.QUEUED.toString()))
+        } else if (strPhase.equalsIgnoreCase(ExecutionPhase.QUEUED.toString())) {
             rtn = ExecutionPhase.QUEUED;
-        else if (strPhase.equalsIgnoreCase(ExecutionPhase.EXECUTING.toString()))
+        } else if (strPhase.equalsIgnoreCase(ExecutionPhase.EXECUTING.toString())) {
             rtn = ExecutionPhase.EXECUTING;
-        else if (strPhase.equalsIgnoreCase(ExecutionPhase.COMPLETED.toString()))
+        } else if (strPhase.equalsIgnoreCase(ExecutionPhase.COMPLETED.toString())) {
             rtn = ExecutionPhase.COMPLETED;
-        else if (strPhase.equalsIgnoreCase(ExecutionPhase.ERROR.toString()))
+        } else if (strPhase.equalsIgnoreCase(ExecutionPhase.ERROR.toString())) {
             rtn = ExecutionPhase.ERROR;
-        else if (strPhase.equalsIgnoreCase(ExecutionPhase.UNKNOWN.toString()))
+        } else if (strPhase.equalsIgnoreCase(ExecutionPhase.UNKNOWN.toString())) {
             rtn = ExecutionPhase.UNKNOWN;
-        else if (strPhase.equalsIgnoreCase(ExecutionPhase.HELD.toString()))
+        } else if (strPhase.equalsIgnoreCase(ExecutionPhase.HELD.toString())) {
             rtn = ExecutionPhase.HELD;
-        else if (strPhase.equalsIgnoreCase(ExecutionPhase.SUSPENDED.toString()))
+        } else if (strPhase.equalsIgnoreCase(ExecutionPhase.SUSPENDED.toString())) {
             rtn = ExecutionPhase.SUSPENDED;
-        else if (strPhase.equalsIgnoreCase(ExecutionPhase.ABORTED.toString())) rtn = ExecutionPhase.ABORTED;
+        } else if (strPhase.equalsIgnoreCase(ExecutionPhase.ABORTED.toString())) {
+            rtn = ExecutionPhase.ABORTED;
+        }
 
         return rtn;
     }
 
-    private List<Parameter> parseParametersList(Document doc)
-    {
+    private List<Parameter> parseParametersList(Document doc) {
         List<Parameter> rtn = null;
         Element root = doc.getRootElement();
-        Element elementParameters = root.getChild(JobAttribute.PARAMETERS.getAttributeName(), UWS.NS);
-        if (elementParameters != null)
-        {
-            rtn = new ArrayList<Parameter>();
+        Element elementParameters = root.getChild(JobAttribute.PARAMETERS.getValue(), UWS.NS);
+        if (elementParameters != null) {
+            rtn = new ArrayList<>();
 
             Parameter par = null;
-            List<?> listElement = elementParameters.getChildren(JobAttribute.PARAMETER.getAttributeName(), UWS.NS);
-            for (Object obj : listElement)
-            {
-                Element e = (Element) obj;
+            List<Element> listElement = elementParameters.getChildren(JobAttribute.PARAMETER.getValue(), UWS.NS);
+            for (Element e : listElement) {
                 String id = e.getAttributeValue("id");
                 String value = e.getText();
                 par = new Parameter(id, value);
@@ -313,29 +298,22 @@ public class JobReader
         return rtn;
     }
 
-    private List<Result> parseResultsList(Document doc)
-    {
+    private List<Result> parseResultsList(Document doc) {
         List<Result> rtn = null;
         Element root = doc.getRootElement();
-        Element e = root.getChild(JobAttribute.RESULTS.getAttributeName(), UWS.NS);
-        if (e != null)
-        {
+        Element e = root.getChild(JobAttribute.RESULTS.getValue(), UWS.NS);
+        if (e != null) {
             rtn = new ArrayList<Result>();
 
             Result rs = null;
-            List<?> listE = e.getChildren(JobAttribute.RESULT.getAttributeName(), UWS.NS);
-            for (Object obj : listE)
-            {
-                Element eRs = (Element) obj;
-                String id = eRs.getAttributeValue("id");
-                String href = eRs.getAttributeValue("href", UWS.XLINK_NS);
-                try
-                {
+            List<Element> listE = e.getChildren(JobAttribute.RESULT.getValue(), UWS.NS);
+            for (Element re : listE) {
+                String id = re.getAttributeValue("id");
+                String href = re.getAttributeValue("href", UWS.XLINK_NS);
+                try {
                     rs = new Result(id, new URI(href));
                     rtn.add(rs);
-                }
-                catch (URISyntaxException ex)
-                {
+                } catch (URISyntaxException ex) {
                     // do nothing; just do not add rs to list
                     log.debug(ex.getMessage());
                 }
@@ -344,53 +322,47 @@ public class JobReader
         return rtn;
     }
 
-    private ErrorSummary parseErrorSummary(Document doc)
-    {
+    private ErrorSummary parseErrorSummary(Document doc) {
         ErrorSummary rtn = null;
         Element root = doc.getRootElement();
-        Element e = root.getChild(JobAttribute.ERROR_SUMMARY.getAttributeName(), UWS.NS);
-        if (e != null)
-        {
+        Element e = root.getChild(JobAttribute.ERROR_SUMMARY.getValue(), UWS.NS);
+        if (e != null) {
             ErrorType errorType = null;
             String strType = e.getAttributeValue("type");
-            if (strType.equalsIgnoreCase(ErrorType.FATAL.toString()))
+            if (strType.equalsIgnoreCase(ErrorType.FATAL.toString())) {
                 errorType = ErrorType.FATAL;
-            else if (strType.equalsIgnoreCase(ErrorType.TRANSIENT.toString()))
+            } else if (strType.equalsIgnoreCase(ErrorType.TRANSIENT.toString())) {
                 errorType = ErrorType.TRANSIENT;
+            }
 
             boolean hasDetail = false;
             String strDetail = e.getAttributeValue("hasDetail");
-            if (strDetail.equalsIgnoreCase("true"))
+            if (strDetail.equalsIgnoreCase("true")) {
                 hasDetail = true;
+            }
 
-            String summaryMessage = e.getChildText(JobAttribute.ERROR_SUMMARY_MESSAGE.getAttributeName(), UWS.NS);
+            String summaryMessage = e.getChildText(JobAttribute.ERROR_SUMMARY_MESSAGE.getValue(), UWS.NS);
             rtn = new ErrorSummary(summaryMessage, errorType, hasDetail);
         }
         return rtn;
     }
 
-    private JobInfo parseJobInfo(Document doc)
-    {
+    private JobInfo parseJobInfo(Document doc) {
         JobInfo rtn = null;
         Element root = doc.getRootElement();
-        Element e = root.getChild(JobAttribute.JOB_INFO.getAttributeName(), UWS.NS);
-        if (e != null)
-        {
+        Element e = root.getChild(JobAttribute.JOB_INFO.getValue(), UWS.NS);
+        if (e != null) {
             log.debug("found jobInfo element");
             String content = e.getText();
             List children = e.getChildren();
-            if (content != null)
+            if (content != null) {
                 content = content.trim();
-            if (content.length() > 0) // it was text content
-            {
-                rtn = new JobInfo(content, null, null);
             }
-            else if (children != null)
-            {
-                if (children.size() == 1)
-                {
-                    try
-                    {
+            if (content.length() > 0) {
+                rtn = new JobInfo(content, null, null);
+            } else if (children != null) {
+                if (children.size() == 1) {
+                    try {
                         Element ce = (Element) children.get(0);
                         Document jiDoc = new Document((Element) ce.detach());
                         XMLOutputter outputter = new XMLOutputter();
@@ -399,9 +371,7 @@ public class JobReader
                         sw.close();
                         rtn = new JobInfo(sw.toString(), null, null);
 
-                    }
-                    catch(IOException ex)
-                    {
+                    } catch (IOException ex) {
                         throw new RuntimeException("BUG while writing element to string", ex);
                     }
                 }

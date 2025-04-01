@@ -65,8 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
-
+ */
 
 package ca.nrc.cadc.uws;
 
@@ -78,24 +77,23 @@ import java.util.Date;
  * @author majorb
  *
  */
-public class JobRef
-{
+public class JobRef {
+
     private String jobID;
     private ExecutionPhase executionPhase;
     private Date creationTime;
     private String runID;
     private String ownerID;
 
-    public JobRef() { }
+    public JobRef() {
+    }
 
     public JobRef(String jobID,
-                ExecutionPhase executionPhase)
-    {
+            ExecutionPhase executionPhase) {
         this(jobID, executionPhase, null, null, null);
     }
 
-    public JobRef(String jobID, ExecutionPhase executionPhase, Date creationTime, String runID, String ownerID)
-    {
+    public JobRef(String jobID, ExecutionPhase executionPhase, Date creationTime, String runID, String ownerID) {
         this.jobID = jobID;
         this.executionPhase = executionPhase;
         this.creationTime = creationTime;
@@ -103,53 +101,43 @@ public class JobRef
         this.ownerID = ownerID;
     }
 
-    public ExecutionPhase getExecutionPhase()
-    {
+    public ExecutionPhase getExecutionPhase() {
         return executionPhase;
     }
 
-    public void setExecutionPhase(ExecutionPhase executionPhase)
-    {
+    public void setExecutionPhase(ExecutionPhase executionPhase) {
         this.executionPhase = executionPhase;
     }
 
-    public String getJobID()
-    {
+    public String getJobID() {
         return jobID;
     }
 
-    public Date getCreationTime()
-    {
+    public Date getCreationTime() {
         return creationTime;
     }
 
-    public void setCreationTime(Date creationTime)
-    {
+    public void setCreationTime(Date creationTime) {
         this.creationTime = creationTime;
     }
 
-    public String getRunID()
-    {
+    public String getRunID() {
         return runID;
     }
 
-    public void setRunID(String runID)
-    {
+    public void setRunID(String runID) {
         this.runID = runID;
     }
 
-    public String getOwnerID()
-    {
+    public String getOwnerID() {
         return ownerID;
     }
 
-    public void setOwnerID(String ownerID)
-    {
+    public void setOwnerID(String ownerID) {
         this.ownerID = ownerID;
     }
 
-    public String toString()
-    {
+    public String toString() {
         return "JobRef: " + jobID;
     }
 

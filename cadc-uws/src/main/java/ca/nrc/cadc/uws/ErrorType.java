@@ -65,11 +65,10 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws;
 
-public enum ErrorType
-{
+public enum ErrorType {
     FATAL, TRANSIENT
 }
