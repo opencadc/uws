@@ -65,7 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.conformance.uws;
 
@@ -79,22 +79,20 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * Test that the /joblist resource appears to be empty (no jobs).  This test is
+ * Test that the /joblist resource appears to be empty (no jobs). This test is
  * not part of the UWSASyncTestSuite since it is not applicable in all deployments.
  *
  * @author pdowler
  */
-public class PrivateJobListTest extends AbstractUWSTest
-{
+public class PrivateJobListTest extends AbstractUWSTest {
+
     private static Logger log = Logger.getLogger(PrivateJobListTest.class);
 
-    static
-    {
+    static {
         Log4jInit.setLevel("ca.nrc.cadc", Level.INFO);
     }
 
-    public PrivateJobListTest()
-    {
+    public PrivateJobListTest() {
         super();
     }
 
@@ -103,30 +101,22 @@ public class PrivateJobListTest extends AbstractUWSTest
      * has been restarted. It expects that the UWS service has no Jobs.
      */
     @Test
-    public void testForbidden()
-    {
+    public void testForbidden() {
         log.debug("testForbidden");
-        try
-        {
+        try {
             // Request the UWS service.
             WebConversation conversation = new WebConversation();
             WebResponse response = get(conversation, serviceUrl);
             int code = response.getResponseCode();
             Assert.assertEquals(403, code);
-            
-        }
-        catch(HttpException expected)
-        {
+
+        } catch (HttpException expected) {
             log.debug("caught expected exception: " + expected);
             Assert.assertEquals(403, expected.getResponseCode());
-        }
-        catch (Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
-
-
 
 }

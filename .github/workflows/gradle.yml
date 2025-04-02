@@ -24,4 +24,4 @@ jobs:
       run: cd cadc-uws-server && ../gradlew clean build javadoc checkstyleMain install
 
     - name: buld and test cadc-test-uws
-      run: cd cadc-test-uws && ../gradlew clean build javadoc install
+      run: cd cadc-test-uws && ../gradlew clean build javadoc checkstyleMain install

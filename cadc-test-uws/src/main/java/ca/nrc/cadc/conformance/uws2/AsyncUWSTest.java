@@ -65,14 +65,11 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.conformance.uws2;
 
-
-import ca.nrc.cadc.auth.AuthMethod;
 import ca.nrc.cadc.conformance.uws.TestProperties;
-import ca.nrc.cadc.reg.Standards;
 import java.net.URI;
 import java.net.URL;
 import org.apache.log4j.Logger;
@@ -83,60 +80,54 @@ import org.junit.Test;
  * Async test runner. This class iterates through the TestProperties, creates,
  * and executes each test job in async mode. Subclasses should override
  * validateResponse() to check (make assertions) as this class does no checking.
- * 
+ *
  * @author pdowler
  */
-public class AsyncUWSTest extends AbstractUWSTest2
-{
+public class AsyncUWSTest extends AbstractUWSTest2 {
+
     private static final Logger log = Logger.getLogger(AsyncUWSTest.class);
 
     private final long timeout;
-    
+
     public AsyncUWSTest(URI resourceID, URI standardID, long timeout) {
         super(resourceID, standardID);
         this.timeout = timeout;
     }
-    
-    public AsyncUWSTest(URI resourceID, URI standardID, URI interfaceType, long timeout) 
-    { 
+
+    public AsyncUWSTest(URI resourceID, URI standardID, URI interfaceType, long timeout) {
         super(resourceID, standardID, interfaceType, null);
         this.timeout = timeout;
     }
-    
+
     /**
      * Specify an endpoint name for cases where the standardID corresponds to the baseURL (e.g. TAP).
+     *
      * @param resourceID
      * @param standardID
      * @param interfaceType
      * @param timeout
-     * @param endPointName 
+     * @param endPointName
      */
-    public AsyncUWSTest(URI resourceID, URI standardID, URI interfaceType, long timeout, String endPointName) 
-    { 
+    public AsyncUWSTest(URI resourceID, URI standardID, URI interfaceType, long timeout, String endPointName) {
         super(resourceID, standardID, interfaceType, endPointName);
         this.timeout = timeout;
     }
-    
+
     @Test
-    public void testJob()
-    {
-        try
-        {
-            for ( TestProperties tp : super.testPropertiesList.propertiesList)
-            {
+    public void testJob() {
+        try {
+            for (TestProperties tp : super.testPropertiesList.propertiesList) {
                 JobResultWrapper result = new JobResultWrapper(tp.filename);
-                
+
                 URL jobURL = createAsyncParamJob(tp.filename, tp.getParameters());
                 result.job = executeAsyncJob(tp.filename, jobURL, timeout);
-                
+
                 validateResponse(result);
             }
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
-    
+
 }

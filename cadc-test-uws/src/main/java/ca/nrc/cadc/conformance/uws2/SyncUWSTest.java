@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.conformance.uws2;
 
@@ -80,103 +80,86 @@ import org.junit.Test;
  * Sync test runner. This class iterates through the TestProperties and executes
  * the test jobs as sync GET requests. Subclasses should override
  * validateResponse() to check (make assertions) as this class does no checking.
- * 
+ *
  * @author pdowler
  */
-public class SyncUWSTest extends AbstractUWSTest2
-{
+public class SyncUWSTest extends AbstractUWSTest2 {
+
     private static final Logger log = Logger.getLogger(SyncUWSTest.class);
 
     private boolean enablePost = true;
     private boolean enableGet = true;
-    
+
     /**
-     * 
+     *
      * @param resourceID service to test
      * @param standardID feature of service to test
      */
-    public SyncUWSTest(URI resourceID, URI standardID) 
-    { 
+    public SyncUWSTest(URI resourceID, URI standardID) {
         this(resourceID, standardID, Standards.INTERFACE_PARAM_HTTP);
     }
-    
-    public SyncUWSTest(URI resourceID, URI standardID, URI interfaceType) 
-    { 
+
+    public SyncUWSTest(URI resourceID, URI standardID, URI interfaceType) {
         this(resourceID, standardID, interfaceType, null);
     }
-    
+
     /**
      * Specify an endpoint name for cases where the standardID corresponds to the baseURL (e.g. TAP).
-     * 
+     *
      * @param resourceID
      * @param standardID
      * @param interfaceType
-     * @param endpointName 
+     * @param endpointName
      */
-    public SyncUWSTest(URI resourceID, URI standardID, URI interfaceType, String endpointName) 
-    { 
+    public SyncUWSTest(URI resourceID, URI standardID, URI interfaceType, String endpointName) {
         super(resourceID, standardID, interfaceType, endpointName);
     }
 
     /**
      * @param enablePost true to run test using HTTP POST, false to disable
      */
-    public void setEnablePost(boolean enablePost)
-    {
+    public void setEnablePost(boolean enablePost) {
         this.enablePost = enablePost;
     }
 
     /**
      * @param enableGet true to run test using HTTP GET, false to disable
      */
-    public void setEnableGet(boolean enableGet)
-    {
+    public void setEnableGet(boolean enableGet) {
         this.enableGet = enableGet;
     }
-    
+
     @Test
-    public void testGET()
-    {
-        if (!enableGet)
-        {
+    public void testGET() {
+        if (!enableGet) {
             log.debug("testGet: skip");
             return;
         }
-        
-        try
-        {
-            for ( TestProperties tp : super.testPropertiesList.propertiesList)
-            {
+
+        try {
+            for (TestProperties tp : super.testPropertiesList.propertiesList) {
                 JobResultWrapper result = createAndExecuteSyncParamJobGET(tp.filename, tp.getParameters());
                 validateResponse(result);
             }
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
-    
+
     @Test
-    public void testPOST()
-    {
-        if (!enablePost)
-        {
+    public void testPOST() {
+        if (!enablePost) {
             log.debug("testPost: skip");
             return;
         }
-        
-        try
-        {
-            for ( TestProperties tp : super.testPropertiesList.propertiesList)
-            {
+
+        try {
+            for (TestProperties tp : super.testPropertiesList.propertiesList) {
                 JobResultWrapper result = createAndExecuteSyncParamJobPOST(tp.filename, tp.getParameters());
                 validateResponse(result);
             }
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }

@@ -65,47 +65,37 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.conformance.uws;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
+import ca.nrc.cadc.util.Log4jInit;
+import com.meterware.httpunit.WebConversation;
+import com.meterware.httpunit.WebResponse;
 import java.util.List;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.Namespace;
+import org.junit.Assert;
 import org.junit.Test;
 
-import ca.nrc.cadc.util.Log4jInit;
+public class JobIdTest extends AbstractUWSTest {
 
-import com.meterware.httpunit.WebConversation;
-import com.meterware.httpunit.WebResponse;
-
-public class JobIdTest extends AbstractUWSTest
-{
     private static Logger log = Logger.getLogger(JobIdTest.class);
 
-    static
-    {
+    static {
         Log4jInit.setLevel("ca.nrc.cadc", Level.INFO);
     }
 
-    public JobIdTest()
-    {
+    public JobIdTest() {
         super();
     }
 
     @Test
-    public void testJobID() throws Exception
-    {
-        try
-        {
+    public void testJobID() throws Exception {
+        try {
             // Create a new Job.
             WebConversation conversation = new WebConversation();
             String jobId = createJob(conversation);
@@ -120,26 +110,24 @@ public class JobIdTest extends AbstractUWSTest
 
             // Get the document root.
             Element root = document.getRootElement();
-            assertNotNull("XML returned from GET of " + resourceUrl + " missing root element", root);
+            Assert.assertNotNull("XML returned from GET of " + resourceUrl + " missing root element", root);
             Namespace namespace = root.getNamespace();
             log.debug("namespace: " + namespace);
 
             // List of jobId elements.
             List list = root.getChildren("jobId", namespace);
-            assertNotNull("XML returned from GET of " + resourceUrl + " missing uws:jobId element", list);
+            Assert.assertNotNull("XML returned from GET of " + resourceUrl + " missing uws:jobId element", list);
 
             // Validate the jobId.
             Element element = (Element) list.get(0);
             log.debug("uws:jobId: " + element.getText());
-            assertEquals("Incorrect uws:jobId element in XML returned from GET of " + resourceUrl, jobId, element.getText());
+            Assert.assertEquals("Incorrect uws:jobId element in XML returned from GET of " + resourceUrl, jobId, element.getText());
 
             // Delete the job.
             deleteJob(conversation, jobId);
 
             log.info("JobIdTest.testJobId completed.");
-        }
-        catch (Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             throw unexpected;
         }

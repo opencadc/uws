@@ -65,54 +65,37 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.conformance.uws;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import java.util.List;
-
-import org.apache.log4j.Logger;
-import org.jdom2.Document;
-import org.jdom2.Element;
-import org.jdom2.Namespace;
-import org.junit.Test;
 
 import com.meterware.httpunit.PostMethodWebRequest;
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebRequest;
 import com.meterware.httpunit.WebResponse;
+import java.util.List;
+import org.apache.log4j.Logger;
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.Namespace;
+import org.junit.Assert;
+import org.junit.Test;
 
-public class ErrorXmlTest extends AbstractUWSXmlTest
-{
+public class ErrorXmlTest extends AbstractUWSXmlTest {
+
     protected static Logger log = Logger.getLogger(ErrorXmlTest.class);
     protected static final String XML_TEST_FILE_PREFIX = "ErrorTest";
 
-    public ErrorXmlTest()
-    {
+    public ErrorXmlTest() {
         super(XML_TEST_FILE_PREFIX);
     }
-    /*
-     * Create a new Job with a RUNFOR parameter that will cause an
-     * error state, then verify the error.
-     */
+
     @Test
-    public void testError()
-    {
+    public void testError() {
         super.testFileList();
     }
 
-    /**
-     * This is the actual test implentation.
-     * 
-     * @param xml:  XML string to be posted to the SampleUWS Server.
-     * 
-     */
-    protected void testImpl(String xml) throws Exception
-    {
+    protected void testImpl(String xml) throws Exception {
         // Create a new job
         WebConversation conversation = new WebConversation();
         String jobId = createJob(conversation, xml);
@@ -126,8 +109,8 @@ public class ErrorXmlTest extends AbstractUWSXmlTest
         // Get the redirect.
         String location = response.getHeaderField("Location");
         log.debug("Location: " + location);
-        assertNotNull(" POST response to " + resourceUrl + " location header not set", location);
-        //            assertEquals(propertiesFilename + " POST response to " + resourceUrl + " location header incorrect", baseUrl + "/" + jobId, location);
+        Assert.assertNotNull(" POST response to " + resourceUrl 
+                + " location header not set", location);
 
         // Follow the redirect.
         response = get(conversation, location);
@@ -144,8 +127,7 @@ public class ErrorXmlTest extends AbstractUWSXmlTest
         List list = null;
         Namespace namespace = null;
         boolean done = false;
-        while (!done)
-        {
+        while (!done) {
             // Wait for 1 second.
             Thread.sleep(1000);
 
@@ -158,41 +140,41 @@ public class ErrorXmlTest extends AbstractUWSXmlTest
 
             // Root element of the document.
             root = document.getRootElement();
-            assertNotNull(" no XML returned from GET of " + resourceUrl, root);
+            Assert.assertNotNull(" no XML returned from GET of " + resourceUrl, root);
             namespace = root.getNamespace();
 
             // Get the error element.
             list = root.getChildren("phase", namespace);
-            assertEquals(
+            Assert.assertEquals(
                     " phase element should only have a single element in XML returned from GET of "
-                            + resourceUrl, 1, list.size());
+                    + resourceUrl, 1, list.size());
             Element phase = (Element) list.get(0);
             String phaseText = phase.getText();
 
             // ERROR phase, continue with test.
-            if (phaseText.equals("ERROR"))
+            if (phaseText.equals("ERROR")) {
                 break;
-
-            // Fail if phase is COMPLETED or ABORTED.
-            else if (phaseText.equals("COMPLETED") || phaseText.equals("ABORTED"))
-                fail(" phase should be ERROR, not " + phaseText + ", in XML returned from GET of "
+            } else if (phaseText.equals("COMPLETED") 
+                    || phaseText.equals("ABORTED")) {
+                Assert.fail(" phase should be ERROR, not " + phaseText + ", in XML returned from GET of "
                         + resourceUrl);
-
-            // Check phase, if still PENDING or QUEUED after x seconds, fail.
-            else if (phaseText.equals("PENDING") || phaseText.equals("QUEUED")
-                    || phaseText.equals("EXECUTING")) continue;
+            } else if (phaseText.equals("PENDING") 
+                    || phaseText.equals("QUEUED")
+                    || phaseText.equals("EXECUTING")) {
+                continue;
+            }
         }
 
         list = root.getChildren("errorSummary", namespace);
-        assertEquals(
+        Assert.assertEquals(
                 " errorSummary element should only have a single element in XML returned from GET of "
-                        + resourceUrl, 1, list.size());
+                + resourceUrl, 1, list.size());
 
         Element errorSummary = (Element) list.get(0);
         list = errorSummary.getChildren("message", namespace);
-        assertEquals(
+        Assert.assertEquals(
                 " errorSummary message element should only have a single element in XML returned from GET of "
-                        + resourceUrl, 1, list.size());
+                + resourceUrl, 1, list.size());
 
         deleteJob(conversation, jobId);
 

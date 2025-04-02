@@ -65,38 +65,33 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.conformance.uws;
 
-import static org.junit.Assert.fail;
-
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.junit.Test;
-
 import ca.nrc.cadc.util.Log4jInit;
-
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebResponse;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Test owner of job.
- * 
+ *
  * @author zhangsa
  *
  */
-public class OwnerTest extends AbstractUWSTest
-{
+public class OwnerTest extends AbstractUWSTest {
+
     private static Logger log = Logger.getLogger(OwnerTest.class);
 
-    static
-    {
+    static {
         Log4jInit.setLevel("ca.nrc.cadc", Level.INFO);
     }
 
-    public OwnerTest()
-    {
+    public OwnerTest() {
         super();
     }
 
@@ -104,10 +99,8 @@ public class OwnerTest extends AbstractUWSTest
      * Create a new Job, then test the owner info from GET.
      */
     @Test
-    public void testOwner()
-    {
-        try
-        {
+    public void testOwner() {
+        try {
             // Create a new Job.
             WebConversation conversation = new WebConversation();
             String jobId = createJob(conversation);
@@ -122,12 +115,10 @@ public class OwnerTest extends AbstractUWSTest
             deleteJob(conversation, jobId);
 
             log.info("OwnerTest.testOwner completed.");
-        }
-        catch (Throwable t)
-        {
+        } catch (Throwable t) {
             log.error(t);
             t.printStackTrace();
-            fail(t.getMessage());
+            Assert.fail(t.getMessage());
         }
     }
 

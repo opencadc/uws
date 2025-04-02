@@ -65,23 +65,21 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.conformance.uws;
 
 import com.meterware.httpunit.HeaderOnlyWebRequest;
 import java.net.URL;
 
-public class DeleteMethodWebRequest extends HeaderOnlyWebRequest
-{
-    public DeleteMethodWebRequest(String urlString)
-    {
+public class DeleteMethodWebRequest extends HeaderOnlyWebRequest {
+
+    public DeleteMethodWebRequest(String urlString) {
         super(urlString);
         this.setMethod("DELETE");
     }
 
-    public DeleteMethodWebRequest(URL baseUrl, String urlString)
-    {
+    public DeleteMethodWebRequest(URL baseUrl, String urlString) {
         super(baseUrl, urlString);
         this.setMethod("DELETE");
     }

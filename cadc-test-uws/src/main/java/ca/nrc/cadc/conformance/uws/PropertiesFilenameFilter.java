@@ -65,46 +65,40 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.conformance.uws;
 
 import java.io.File;
 import java.io.FilenameFilter;
 
-public class PropertiesFilenameFilter implements FilenameFilter
-{
+public class PropertiesFilenameFilter implements FilenameFilter {
+
     private static final String PROPERTIES = ".PROPERTIES";
     private String filename;
     private String invalid;
 
-    public PropertiesFilenameFilter(String filename)
-    {
+    public PropertiesFilenameFilter(String filename) {
         this(filename, null);
     }
 
-    public PropertiesFilenameFilter(String filename, String invalid)
-    {
+    public PropertiesFilenameFilter(String filename, String invalid) {
         this.filename = filename;
         this.invalid = invalid;
     }
 
-    public boolean accept(File dir, String name)
-    {
-        if (name.toUpperCase().startsWith(filename.toUpperCase()) &&
-            name.toUpperCase().endsWith(PROPERTIES))
-        {
-            if (invalid == null)
-            {
+    public boolean accept(File dir, String name) {
+        if (name.toUpperCase().startsWith(filename.toUpperCase())
+                && name.toUpperCase().endsWith(PROPERTIES)) {
+            if (invalid == null) {
                 return true;
-            }
-            else
-            {
-                if (!name.toUpperCase().startsWith(invalid.toUpperCase()))
+            } else {
+                if (!name.toUpperCase().startsWith(invalid.toUpperCase())) {
                     return true;
+                }
             }
         }
         return false;
     }
-    
+
 }

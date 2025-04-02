@@ -65,7 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.conformance.uws;
 
@@ -77,8 +77,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class TestProperties
-{
+public class TestProperties {
+
     public static final String NEW_LINE = System.getProperty("line.separator");
 
     public String filename;
@@ -86,24 +86,24 @@ public class TestProperties
     public Map<String, List<String>> preconditions;
     public Map<String, List<String>> expectations;
 
-    public TestProperties()
-    {
+    public TestProperties() {
         super();
     }
 
-    public Map<String,Object> getParameters()
-    {
-        Map<String,Object> ret = new HashMap<String,Object>();
+    public Map<String, Object> getParameters() {
+        Map<String, Object> ret = new HashMap<String, Object>();
         ret.putAll(parameters);
         return ret;
     }
-    
-    public void load(Reader reader, String propertiesFilename) throws IOException
-    {
-        String strLine, key, value;
+
+    public void load(Reader reader, String propertiesFilename) throws IOException {
+        String key;
+        String value;
         char firstChar;
         List<String> valueList;
-        int idxColon, idxEquals, lineLength;
+        int idxColon;
+        int idxEquals;
+        int lineLength;
         Map<String, List<String>> targetMap = null;
 
         parameters = new HashMap<String, List<String>>();
@@ -111,41 +111,42 @@ public class TestProperties
         expectations = new HashMap<String, List<String>>();
 
         BufferedReader br = new BufferedReader(reader);
-        //Read File Line By Line
-        while ((strLine = br.readLine()) != null)
-        {
+        String strLine;
+        while ((strLine = br.readLine()) != null) {
             strLine = strLine.trim();
             targetMap = parameters;
-            
+
             lineLength = strLine.length();
-            if (lineLength == 0)
+            if (lineLength == 0) {
                 continue;
+            }
 
             firstChar = strLine.charAt(0);
-            if (firstChar == '#' || firstChar == '!') //comment line
+            if (firstChar == '#' || firstChar == '!') { //comment line
                 continue;
-            
+            }
+
             idxEquals = strLine.indexOf('=');
             idxColon = strLine.indexOf(':');
-            if (idxColon != -1 && idxColon < idxEquals) // precondition or expectation
-            {
-                if (strLine.startsWith("expect"))
+            if (idxColon != -1 && idxColon < idxEquals) { // precondition or expectation
+                if (strLine.startsWith("expect")) {
                     targetMap = expectations;
-                else if (strLine.startsWith("precond"))
+                } else if (strLine.startsWith("precond")) {
                     targetMap = preconditions;
+                }
                 strLine = strLine.substring(idxColon + 1);
                 idxEquals = strLine.indexOf('=');
             }
-            
-            if (idxEquals == 0) // "=foo"
+
+            if (idxEquals == 0) { // "=foo"
                 continue;
+            }
 
             key = strLine.substring(0, idxEquals).trim();
             value = strLine.substring(idxEquals + 1).trim();
 
             valueList = targetMap.get(key);
-            if (valueList == null) // the key is not in parameters yet 
-            {
+            if (valueList == null) { // the key is not in parameters yet 
                 valueList = new ArrayList<String>();
                 targetMap.put(key, valueList);
             }
@@ -157,17 +158,14 @@ public class TestProperties
         filename = propertiesFilename;
     }
 
-    public String toString()
-    {
+    public String toString() {
         List<String> valueList;
 
         StringBuilder sb = new StringBuilder();
         List<String> keyList = new ArrayList<String>(parameters.keySet());
-        for (String key : keyList)
-        {
+        for (String key : keyList) {
             valueList = parameters.get(key);
-            for (String value : valueList)
-            {
+            for (String value : valueList) {
                 sb.append(key).append('=').append(value).append(NEW_LINE);
             }
         }

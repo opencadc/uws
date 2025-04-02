@@ -65,10 +65,9 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.conformance.uws2;
-
 
 import ca.nrc.cadc.uws.Job;
 import org.apache.log4j.Logger;
@@ -77,29 +76,28 @@ import org.apache.log4j.Logger;
  *
  * @author pdowler
  */
-public class JobResultWrapper 
-{
+public class JobResultWrapper {
+
     private static final Logger log = Logger.getLogger(JobResultWrapper.class);
 
     public String name;
-    
+
     public int responseCode;
     public String contentType;
     public String contentEncoding;
     public Throwable throwable;
-    
+
     /**
      * The Job object for async jobs.
      */
     public Job job;
-    
+
     /**
      * The response body for sync jobs.
      */
     public byte[] syncOutput;
-    
-    public JobResultWrapper(String name) 
-    { 
+
+    public JobResultWrapper(String name) {
         this.name = name;
     }
 }

@@ -65,7 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.conformance.uws;
 
@@ -82,20 +82,18 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class DestructionTest extends AbstractUWSTest
-{
+public class DestructionTest extends AbstractUWSTest {
+
     private static Logger log = Logger.getLogger(DestructionTest.class);
 
-    static
-    {
+    static {
         Log4jInit.setLevel("ca.nrc.cadc", Level.INFO);
     }
 
     // Destruction date passed to UWS service.
     DateFormat dateFormat = UWS.getDateFormat();
 
-    public DestructionTest()
-    {
+    public DestructionTest() {
         super();
     }
 
@@ -103,10 +101,8 @@ public class DestructionTest extends AbstractUWSTest
      * Create a new Job, then update and verify the Destruction date.
      */
     @Test
-    public void testDestruction()
-    {
-        try
-        {
+    public void testDestruction() {
+        try {
             // Create a new Job.
             WebConversation conversation = new WebConversation();
             WebResponse response;
@@ -120,16 +116,16 @@ public class DestructionTest extends AbstractUWSTest
             Assert.assertEquals("GET response Content-Type header to " + resourceUrl + " is incorrect",
                     "text/plain", response.getContentType());
             String str = response.getText();
-            if (str != null)
+            if (str != null) {
                 str = str.trim();
+            }
             Date origDestruction = dateFormat.parse(str);
-
 
             Date now = new Date();
             long t1 = now.getTime();
             long t2 = origDestruction.getTime();
             Assert.assertTrue("default destruction in future", (t1 < t2));
-            Date destroy = new Date((t1 + t2)/2); // request mid way between
+            Date destroy = new Date((t1 + t2) / 2); // request mid way between
             String destruction = dateFormat.format(destroy);
 
             // POST request to the destruction resource.
@@ -155,22 +151,22 @@ public class DestructionTest extends AbstractUWSTest
             Assert.assertEquals("GET response Content-Type header to " + resourceUrl + " is incorrect",
                     "text/plain", response.getContentType());
             str = response.getText();
-            if (str != null)
+            if (str != null) {
                 str = str.trim();
-            
+            }
+
             Date rtnDestr = dateFormat.parse(str);
             long dt = rtnDestr.getTime() - destroy.getTime();
-            if (dt < 0)
+            if (dt < 0) {
                 dt *= -1L;
+            }
             Assert.assertTrue("result destruction is approx requested value", (dt < 3L));
-            
+
             // Delete the job.
             deleteJob(conversation, jobId);
 
             log.info("DestructionTest.testDestruction completed.");
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             log.error("unexpected exception", ex);
             Assert.fail("unexpected exception: " + ex);
         }

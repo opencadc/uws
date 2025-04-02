@@ -65,36 +65,31 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.conformance.uws;
 
-import org.junit.Assert;
-
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.junit.Test;
-
 import ca.nrc.cadc.util.Log4jInit;
-
 import com.meterware.httpunit.PostMethodWebRequest;
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebRequest;
 import com.meterware.httpunit.WebResponse;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
-public class ExecutionDurationTest extends AbstractUWSTest
-{
+public class ExecutionDurationTest extends AbstractUWSTest {
+
     private static Logger log = Logger.getLogger(ExecutionDurationTest.class);
 
-    static
-    {
+    static {
         Log4jInit.setLevel("ca.nrc.cadc", Level.INFO);
     }
 
     private static final String EXECUTIONDURATION = "99999";
 
-    public ExecutionDurationTest()
-    {
+    public ExecutionDurationTest() {
         super();
     }
 
@@ -102,10 +97,8 @@ public class ExecutionDurationTest extends AbstractUWSTest
      * Create a new Job, then update and verify the executionduration.
      */
     @Test
-    public void testExecutionDuration()
-    {
-        try
-        {
+    public void testExecutionDuration() {
+        try {
             // Create a new Job.
             WebConversation conversation = new WebConversation();
             String jobId = createJob(conversation);
@@ -139,23 +132,19 @@ public class ExecutionDurationTest extends AbstractUWSTest
                     "text/plain", response.getContentType());
 
             String str = response.getText();
-            if (str != null)
+            if (str != null) {
                 str = str.trim();
-            try
-            {
+            }
+            try {
                 Long dur = new Long(str);
 
-            }
-            catch(NumberFormatException ex)
-            {
+            } catch (NumberFormatException ex) {
                 Assert.fail("expected execution duration to be an integer value, got: " + str);
             }
 
             // Delete the job.
             deleteJob(conversation, jobId);
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             log.error("unexpected exception", ex);
             Assert.fail("unexpected exception: " + ex);
         }
