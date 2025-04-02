@@ -65,7 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.server;
 
@@ -73,16 +73,15 @@ package ca.nrc.cadc.uws.server;
  *
  * @author pdowler
  */
-public class JobNotFoundException extends Exception
-{
+public class JobNotFoundException extends Exception {
+
     private static final long serialVersionUID = 201106281230L;
 
-    private JobNotFoundException()
-    {
+    private JobNotFoundException() {
         super();
     }
-    public JobNotFoundException(String jobID)
-    {
+
+    public JobNotFoundException(String jobID) {
         super("not found: " + jobID);
     }
 }

@@ -63,7 +63,7 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.server.impl;
 
@@ -78,17 +78,17 @@ import org.apache.log4j.Logger;
  * database. This class currently only supports PostgreSQL. If you use this
  * class to initialise the UWS tables, you must also set JobSchema.storeOwnerASCII
  * when creating the JobSchema (e.g. via the PostgresJobPersistence).
- * 
+ *
  * @author pdowler
  */
 public class InitDatabaseUWS extends InitDatabase {
     private static final Logger log = Logger.getLogger(InitDatabaseUWS.class);
-    
+
     public static final String MODEL_NAME = "UWS";
     public static final String MODEL_VERSION = "1.2.18";
     public static final String PREV_MODEL_VERSION = "1.2.16";
 
-    public static final String[] CREATE_SQL = new String[] {
+    public static final String[] CREATE_SQL = new String[]{
         "uws.ModelVersion.sql",
         "uws.Job.sql",
         "uws.JobDetail.sql",
@@ -99,8 +99,8 @@ public class InitDatabaseUWS extends InitDatabase {
     public static final String[] UPGRADE_SQL = new String[]{
         "uws.upgrade-1.2.18.sql"
     };
-    
-    public static final String[] MAINT_SQL = new String[] {
+
+    public static final String[] MAINT_SQL = new String[]{
         "uws.rollover.sql",
         "uws.Job.sql",
         "uws.JobDetail.sql",
@@ -127,8 +127,6 @@ public class InitDatabaseUWS extends InitDatabase {
         }
         return super.doMaintenance(lastModified, tag);
     }
-    
-    
 
     @Override
     protected URL findSQL(String fname) {

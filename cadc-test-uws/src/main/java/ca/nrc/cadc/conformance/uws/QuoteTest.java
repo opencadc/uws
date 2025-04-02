@@ -65,7 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.conformance.uws;
 
@@ -82,20 +82,18 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class QuoteTest extends AbstractUWSTest
-{
+public class QuoteTest extends AbstractUWSTest {
+
     private static Logger log = Logger.getLogger(QuoteTest.class);
 
-    static
-    {
+    static {
         Log4jInit.setLevel("ca.nrc.cadc", Level.INFO);
     }
 
     private Date testStartDate;
     private DateFormat dateFormat = UWS.getDateFormat();
 
-    public QuoteTest()
-    {
+    public QuoteTest() {
         super();
         Calendar cal = Calendar.getInstance();
         cal.setTimeZone(DateUtil.UTC);
@@ -104,10 +102,8 @@ public class QuoteTest extends AbstractUWSTest
     }
 
     @Test
-    public void testQuote()
-    {
-        try
-        {
+    public void testQuote() {
+        try {
             // Create a new Job.
             WebConversation conversation = new WebConversation();
             String jobId = createJob(conversation);
@@ -115,7 +111,6 @@ public class QuoteTest extends AbstractUWSTest
             // Get the quote resource.
             String resourceUrl = serviceUrl + "/" + jobId + "/quote";
             WebResponse response = get(conversation, resourceUrl, "text/plain");
-
 
             log.debug(Util.getResponseHeaders(response));
             log.debug("Response.getText():\r\n" + response.getText());
@@ -136,12 +131,10 @@ public class QuoteTest extends AbstractUWSTest
             deleteJob(conversation, jobId);
 
             log.info("QuoteTest.testQuote completed.");
-        }
-        catch (Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
-    
+
 }

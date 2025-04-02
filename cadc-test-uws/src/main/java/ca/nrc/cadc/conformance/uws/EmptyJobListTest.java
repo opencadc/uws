@@ -65,12 +65,14 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.conformance.uws;
 
+import ca.nrc.cadc.util.Log4jInit;
+import com.meterware.httpunit.WebConversation;
+import com.meterware.httpunit.WebResponse;
 import java.util.List;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
@@ -78,28 +80,21 @@ import org.jdom2.Element;
 import org.junit.Assert;
 import org.junit.Test;
 
-import ca.nrc.cadc.util.Log4jInit;
-
-import com.meterware.httpunit.WebConversation;
-import com.meterware.httpunit.WebResponse;
-
 /**
  * Test that the /joblist resource appears to be empty (no jobs). This test is
  * not part of the UWSASyncTestSuite since it is not applicable in all deployments.
  *
  * @author pdowler
  */
-public class EmptyJobListTest extends AbstractUWSTest
-{
+public class EmptyJobListTest extends AbstractUWSTest {
+
     private static Logger log = Logger.getLogger(EmptyJobListTest.class);
 
-    static
-    {
+    static {
         Log4jInit.setLevel("ca.nrc.cadc", Level.INFO);
     }
 
-    public EmptyJobListTest()
-    {
+    public EmptyJobListTest() {
         super();
     }
 
@@ -108,11 +103,9 @@ public class EmptyJobListTest extends AbstractUWSTest
      * has been restarted. It expects that the UWS service has no Jobs.
      */
     @Test
-    public void testEmptyJobs()
-    {
+    public void testEmptyJobs() {
         log.debug("testEmptyJobs");
-        try
-        {
+        try {
             // Request the UWS service.
             WebConversation conversation = new WebConversation();
             WebResponse response = get(conversation, serviceUrl);
@@ -126,14 +119,10 @@ public class EmptyJobListTest extends AbstractUWSTest
 
             List list = root.getChildren();
             Assert.assertEquals(0, list.size()); // should be no child elements
-        }
-        catch (Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
-    
-    
 }

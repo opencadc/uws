@@ -65,7 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws;
 
@@ -73,52 +73,44 @@ package ca.nrc.cadc.uws;
  *
  * @author jburke
  */
-public class JobInfo
-{
+public class JobInfo {
+
     private String content;
     private String contentType;
     private Boolean valid;
-    
-    public JobInfo(String content, String contentType, Boolean valid)
-    {
+
+    public JobInfo(String content, String contentType, Boolean valid) {
         this.content = content;
         this.contentType = contentType;
         this.valid = valid;
     }
-    
-    public void setContent(String content)
-    {
+
+    public void setContent(String content) {
         this.content = content;
     }
-    
-    public String getContent()
-    {
+
+    public String getContent() {
         return content;
     }
-    
-    public void setContentType(String contentType)
-    {
+
+    public void setContentType(String contentType) {
         this.contentType = contentType;
     }
-    
-    public String getContentType()
-    {
+
+    public String getContentType() {
         return contentType;
     }
-    
-    public void setValid(Boolean valid)
-    {
+
+    public void setValid(Boolean valid) {
         this.valid = valid;
     }
-    
-    public Boolean getValid()
-    {
+
+    public Boolean getValid() {
         return valid;
     }
-    
+
     @Override
-    public String toString()
-    {
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("JobInfo[");
         sb.append("content=");
@@ -130,5 +122,5 @@ public class JobInfo
         sb.append("]");
         return sb.toString();
     }
-    
+
 }

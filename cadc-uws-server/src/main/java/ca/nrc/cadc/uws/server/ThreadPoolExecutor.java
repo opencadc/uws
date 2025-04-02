@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.server;
 
@@ -87,15 +87,15 @@ import org.apache.log4j.Logger;
  * JobExecutor implementation that uses a pool of threads for execution. The
  * pool limits the number of jobs that run simultaneously, which may be beneficial
  * if resources are limited or contention would make aggregate execution times worse.
- * 
+ *
  * @author pdowler
  */
-public class ThreadPoolExecutor extends AbstractExecutor
-{
+public class ThreadPoolExecutor extends AbstractExecutor {
+
     private static final Logger log = Logger.getLogger(ThreadPoolExecutor.class);
 
-    private final Map<String,CurrentJob> currentJobs = new HashMap<String,CurrentJob>();
-    
+    private final Map<String, CurrentJob> currentJobs = new HashMap<>();
+
     private java.util.concurrent.ThreadPoolExecutor threadPool;
     private String poolName;
     private Subject poolSubject;
@@ -107,8 +107,7 @@ public class ThreadPoolExecutor extends AbstractExecutor
      * @param jobRunnerClass JobRunner implementation class
      * @param poolSize minimum (initial) number of running threads
      */
-    public ThreadPoolExecutor(JobUpdater jobUpdater, Class jobRunnerClass, int poolSize)
-    {
+    public ThreadPoolExecutor(JobUpdater jobUpdater, Class jobRunnerClass, int poolSize) {
         super(jobUpdater, jobRunnerClass);
         init(poolSize, ThreadPoolExecutor.class.getSimpleName());
     }
@@ -122,31 +121,30 @@ public class ThreadPoolExecutor extends AbstractExecutor
      * @param poolSize minimum (initial) number of running threads
      */
     public ThreadPoolExecutor(JobUpdater jobUpdater, Class jobRunnerClass,
-            int poolSize, String poolName)
-    {
+            int poolSize, String poolName) {
         super(jobUpdater, jobRunnerClass);
         init(poolSize, poolName);
     }
 
     @Override
     public void terminate()
-        throws InterruptedException
-    {
+            throws InterruptedException {
         log.info("shutting down ThreadPool...");
         threadPool.shutdown();
         threadPool.awaitTermination(120, TimeUnit.SECONDS);
         log.info("shutting down ThreadPool... [OK]");
     }
 
-    private void init(int poolSize, String poolName)
-    {
-        
-        if (poolName == null)
+    private void init(int poolSize, String poolName) {
+
+        if (poolName == null) {
             throw new IllegalArgumentException("poolName cannot be null");
-        if (poolSize < 1)
+        }
+        if (poolSize < 1) {
             throw new IllegalArgumentException("poolSize must be > 0");
+        }
         this.poolName = poolName + "-";
-        
+
         this.threadPool = new java.util.concurrent.ThreadPoolExecutor(poolSize, poolSize,
                 Long.MAX_VALUE, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
                 new DaemonThreadFactory());
@@ -156,11 +154,11 @@ public class ThreadPoolExecutor extends AbstractExecutor
         // the thread in InMemoryPersistence deletes jobs past their destructionTime
     }
 
-    private class DaemonThreadFactory implements ThreadFactory
-    {
+    private class DaemonThreadFactory implements ThreadFactory {
+
         private int num = 1;
-        public Thread newThread(Runnable r)
-        {
+
+        public Thread newThread(Runnable r) {
             Thread t = new Thread(r);
             t.setName(poolName + Integer.toString(num++));
             log.debug("created: " + t.getName());
@@ -177,25 +175,21 @@ public class ThreadPoolExecutor extends AbstractExecutor
      * @param jobRunner
      */
     @Override
-    protected final void executeAsync(Job job, JobRunner jobRunner)
-    {
+    protected final void executeAsync(Job job, JobRunner jobRunner) {
         AccessControlContext acContext = AccessController.getContext();
         Subject caller = Subject.getSubject(acContext);
 
         final CurrentJob cj = new CurrentJob(job, jobRunner, caller);
-        synchronized(currentJobs)
-        {
+        synchronized (currentJobs) {
             this.currentJobs.put(job.getID(), cj);
         }
         // IMPORTANT: run the submit using an internal poolSubject so lazily
         // spawned threads do not inherit the AccessControlContext of the caller
-        cj.future = Subject.doAs(poolSubject, new PrivilegedAction<Future>()
-            {
-                public Future run()
-                {
-                    return threadPool.submit(cj);
-                }
-            });
+        cj.future = Subject.doAs(poolSubject, new PrivilegedAction<Future>() {
+            public Future run() {
+                return threadPool.submit(cj);
+            }
+        });
     }
 
     /**
@@ -206,15 +200,11 @@ public class ThreadPoolExecutor extends AbstractExecutor
      * @param jobID
      */
     @Override
-    protected final void abortJob(String jobID)
-    {
-        synchronized(currentJobs)
-        {
+    protected final void abortJob(String jobID) {
+        synchronized (currentJobs) {
             CurrentJob r = currentJobs.remove(jobID);
-            if (r != null)
-            {
-                if (r.future != null)
-                {
+            if (r != null) {
+                if (r.future != null) {
                     r.future.cancel(true);     // try to interrupt running
                     //futureJobs.remove(r.future);
                 }
@@ -226,42 +216,40 @@ public class ThreadPoolExecutor extends AbstractExecutor
     /**
      * Simple wrapper to contain the job, jobRunner, and time.
      */
-    public final class CurrentJob implements Runnable
-    {
+    public final class CurrentJob implements Runnable {
+
         public Job job;
         public JobRunner runnable;
         private Future future;
         private Subject subject;
-        
-        CurrentJob(Job job, JobRunner runnable, Subject subject)
-        {
+
+        CurrentJob(Job job, JobRunner runnable, Subject subject) {
             this.job = job;
             this.runnable = runnable;
             this.subject = subject;
         }
 
         @Override
-        public int hashCode() { return job.getID().hashCode(); }
+        public int hashCode() {
+            return job.getID().hashCode();
+        }
 
         @Override
-        public boolean equals(Object o)
-        {
-            if (o instanceof CurrentJob)
-            {
+        public boolean equals(Object o) {
+            if (o instanceof CurrentJob) {
                 CurrentJob cj = (CurrentJob) o;
                 return job.getID().equals(cj.job.getID());
             }
             return false;
         }
 
-        public void run()
-        {
-            if (subject == null)
+        public void run() {
+            if (subject == null) {
                 runnable.run();
-            else
+            } else {
                 Subject.doAs(subject, new RunnableAction(runnable));
-            synchronized(currentJobs)
-            {
+            }
+            synchronized (currentJobs) {
                 currentJobs.remove(job.getID());
             }
         }

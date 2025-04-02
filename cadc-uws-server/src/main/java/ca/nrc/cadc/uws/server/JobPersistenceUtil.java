@@ -65,56 +65,53 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.server;
 
-import java.lang.reflect.Field;
-import java.util.Date;
-import java.util.Iterator;
-
-import org.apache.log4j.Logger;
-
 import ca.nrc.cadc.uws.ExecutionPhase;
 import ca.nrc.cadc.uws.Job;
-import ca.nrc.cadc.uws.JobRef;
-import java.util.NoSuchElementException;
+import java.lang.reflect.Field;
+import java.util.Date;
+import org.apache.log4j.Logger;
 
 /**
  * Static utility methods to help implement the JobPersistence interface.
  *
  * @author pdowler
  */
-public class JobPersistenceUtil 
-{
+public class JobPersistenceUtil {
+
     private static Logger log = Logger.getLogger(JobPersistenceUtil.class);
-    
+
     /**
      * Assign a jobID to the job using the specified ID generator.
-     * 
+     *
      * @param job
      * @param jobID
      */
-    public static void assignID(Job job, String jobID)
-    {
-        try
-        {
+    public static void assignID(Job job, String jobID) {
+        try {
             Field f = Job.class.getDeclaredField("jobID");
             f.setAccessible(true);
             f.set(job, jobID);
+        } catch (NoSuchFieldException fex) {
+            throw new RuntimeException("BUG", fex);
+        } catch (IllegalAccessException bug) {
+            throw new RuntimeException("BUG", bug);
         }
-        catch(NoSuchFieldException fex) { throw new RuntimeException("BUG", fex); }
-        catch(IllegalAccessException bug) { throw new RuntimeException("BUG", bug); }
     }
 
-    public static boolean isFinalPhase(ExecutionPhase ep)
-    {
-        if (ExecutionPhase.ABORTED.equals(ep))
+    public static boolean isFinalPhase(ExecutionPhase ep) {
+        if (ExecutionPhase.ABORTED.equals(ep)) {
             return true;
-        if (ExecutionPhase.COMPLETED.equals(ep))
+        }
+        if (ExecutionPhase.COMPLETED.equals(ep)) {
             return true;
-        if (ExecutionPhase.ERROR.equals(ep))
+        }
+        if (ExecutionPhase.ERROR.equals(ep)) {
             return true;
+        }
         return false;
     }
 
@@ -127,54 +124,60 @@ public class JobPersistenceUtil
      * @throws IllegalArgumentException if the transition is invalid
      */
     public static void constraintPhaseTransition(ExecutionPhase start, ExecutionPhase end)
-        throws IllegalArgumentException
-    {
-        if (ExecutionPhase.PENDING.equals(start) || ExecutionPhase.HELD.equals(start))
-        {
-            if (ExecutionPhase.QUEUED.equals(end))
+            throws IllegalArgumentException {
+        if (ExecutionPhase.PENDING.equals(start) || ExecutionPhase.HELD.equals(start)) {
+            if (ExecutionPhase.QUEUED.equals(end)) {
                 return;
-            if (ExecutionPhase.ERROR.equals(end))
+            }
+            if (ExecutionPhase.ERROR.equals(end)) {
                 return;
-            if (ExecutionPhase.ABORTED.equals(end))
+            }
+            if (ExecutionPhase.ABORTED.equals(end)) {
                 return;
-            throw new IllegalArgumentException("cannot change from " + start +  " -> " + end);
+            }
+            throw new IllegalArgumentException("cannot change from " + start + " -> " + end);
         }
-        if (ExecutionPhase.QUEUED.equals(start))
-        {
-            if (ExecutionPhase.EXECUTING.equals(end))
+        if (ExecutionPhase.QUEUED.equals(start)) {
+            if (ExecutionPhase.EXECUTING.equals(end)) {
                 return;
-            if (ExecutionPhase.ERROR.equals(end))
+            }
+            if (ExecutionPhase.ERROR.equals(end)) {
                 return;
-            if (ExecutionPhase.ABORTED.equals(end))
+            }
+            if (ExecutionPhase.ABORTED.equals(end)) {
                 return;
-            if (ExecutionPhase.PENDING.equals(end))
+            }
+            if (ExecutionPhase.PENDING.equals(end)) {
                 return;
-            throw new IllegalArgumentException("cannot change from " + start +  " -> " + end);
+            }
+            throw new IllegalArgumentException("cannot change from " + start + " -> " + end);
         }
-        if (ExecutionPhase.EXECUTING.equals(start))
-        {
-            if (ExecutionPhase.EXECUTING.equals(end)) // allow no-op to append intermediate results
+        if (ExecutionPhase.EXECUTING.equals(start)) {
+            if (ExecutionPhase.EXECUTING.equals(end)) {
+                // allow no-op to append intermediate results
                 return;
-            if (ExecutionPhase.COMPLETED.equals(end))
+            }
+            if (ExecutionPhase.COMPLETED.equals(end)) {
                 return;
-            if (ExecutionPhase.ERROR.equals(end))
+            }
+            if (ExecutionPhase.ERROR.equals(end)) {
                 return;
-            if (ExecutionPhase.ABORTED.equals(end))
+            }
+            if (ExecutionPhase.ABORTED.equals(end)) {
                 return;
-            if (ExecutionPhase.PENDING.equals(end))
+            }
+            if (ExecutionPhase.PENDING.equals(end)) {
                 return;
-            throw new IllegalArgumentException("cannot change from " + start +  " -> " + end);
+            }
+            throw new IllegalArgumentException("cannot change from " + start + " -> " + end);
         }
-        if (ExecutionPhase.ERROR.equals(start))
-        {
-            throw new IllegalArgumentException("cannot change from " + start +  " -> " + end);
+        if (ExecutionPhase.ERROR.equals(start)) {
+            throw new IllegalArgumentException("cannot change from " + start + " -> " + end);
         }
-        if (ExecutionPhase.ABORTED.equals(start))
-        {
-            throw new IllegalArgumentException("cannot change from " + start +  " -> " + end);
+        if (ExecutionPhase.ABORTED.equals(start)) {
+            throw new IllegalArgumentException("cannot change from " + start + " -> " + end);
         }
-        if (ExecutionPhase.UNKNOWN.equals(start))
-        {
+        if (ExecutionPhase.UNKNOWN.equals(start)) {
             return; // allow it
         }
         // other values possible of someone adds to ExecutionPhase enum: assume a BUG
@@ -187,23 +190,23 @@ public class JobPersistenceUtil
      * user is still interested in it.
      *
      * @param job
-     * @param minDestruction 
-     * @param maxDestruction 
+     * @param minDestruction
+     * @param maxDestruction
      */
-    public static void constrainDestruction(Job job, long minDestruction, long maxDestruction)
-    {
+    public static void constrainDestruction(Job job, long minDestruction, long maxDestruction) {
         Date orig = job.getDestructionTime();
         Date d = orig;
         Date now = new Date();
 
-        long min = now.getTime() + 1000*minDestruction;
-        long max = now.getTime() + 1000*maxDestruction;
-        if (d == null)
-            d = new Date(now.getTime() + 1000* maxDestruction);
-        else if (d.getTime() < min)
+        long min = now.getTime() + 1000 * minDestruction;
+        long max = now.getTime() + 1000 * maxDestruction;
+        if (d == null) {
+            d = new Date(now.getTime() + 1000 * maxDestruction);
+        } else if (d.getTime() < min) {
             d = new Date(min);
-        else if (d.getTime() > max)
+        } else if (d.getTime() > max) {
             d = new Date(max);
+        }
         log.debug("constrainDestruction: " + minDestruction + "," + maxDestruction
                 + "," + orig + " -> " + d);
         job.setDestructionTime(d);
@@ -214,18 +217,18 @@ public class JobPersistenceUtil
      *
      * @param job
      * @param minDuration
-     * @param maxDuration 
+     * @param maxDuration
      */
-    public static void constrainDuration(Job job, long minDuration, long maxDuration)
-    {
+    public static void constrainDuration(Job job, long minDuration, long maxDuration) {
         Long orig = job.getExecutionDuration();
         Long dur = orig;
-        if (dur == null)
+        if (dur == null) {
             dur = maxDuration;
-        else if ( dur < minDuration )
+        } else if (dur < minDuration) {
             dur = minDuration;
-        else if (dur > maxDuration)
+        } else if (dur > maxDuration) {
             dur = maxDuration;
+        }
         log.debug("constrainDuration: " + minDuration + "," + maxDuration
                 + "," + orig + " -> " + dur);
         job.setExecutionDuration(dur);
@@ -236,23 +239,23 @@ public class JobPersistenceUtil
      * Constrain the job quote to acceptable values.
      *
      * @param job
-     * @param minQuote 
+     * @param minQuote
      * @param maxQuote
      */
-    public static void constrainQuote(Job job, long minQuote, long maxQuote)
-    {
+    public static void constrainQuote(Job job, long minQuote, long maxQuote) {
         Date orig = job.getQuote();
         Date d = orig;
         Date now = new Date();
 
-        long min = now.getTime() + 1000*minQuote;
-        long max = now.getTime() + 1000*maxQuote;
-        if (d == null)
+        long min = now.getTime() + 1000 * minQuote;
+        long max = now.getTime() + 1000 * maxQuote;
+        if (d == null) {
             d = new Date(max); // TODO: use defaultQuote=unknown
-        else if (d.getTime() < min)
+        } else if (d.getTime() < min) {
             d = new Date(min);
-        else if (d.getTime() > max)
+        } else if (d.getTime() > max) {
             d = new Date(max);
+        }
         log.debug("constrainQuote: " + minQuote + "," + maxQuote
                 + "," + orig + " -> " + d);
         job.setQuote(d);
@@ -260,12 +263,11 @@ public class JobPersistenceUtil
 
     /**
      * Make a deep copy of the specified job, including the jobID.
-     * 
+     *
      * @param job
      * @return
      */
-    public static Job deepCopy(Job job)
-    {
+    public static Job deepCopy(Job job) {
         // the Job copy constructor is deep but does not copy the ID
         Job ret = new Job(job);
         assignID(ret, job.getID());

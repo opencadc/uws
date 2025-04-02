@@ -65,17 +65,17 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.conformance.uws;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
+import ca.nrc.cadc.util.Log4jInit;
+import com.meterware.httpunit.PostMethodWebRequest;
+import com.meterware.httpunit.WebConversation;
+import com.meterware.httpunit.WebRequest;
+import com.meterware.httpunit.WebResponse;
 import java.util.Iterator;
 import java.util.List;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jdom2.Attribute;
@@ -85,32 +85,23 @@ import org.jdom2.Namespace;
 import org.junit.Assert;
 import org.junit.Test;
 
-import ca.nrc.cadc.util.Log4jInit;
-
-import com.meterware.httpunit.PostMethodWebRequest;
-import com.meterware.httpunit.WebConversation;
-import com.meterware.httpunit.WebRequest;
-import com.meterware.httpunit.WebResponse;
-
 /**
  * Test the /joblist/jobid/parameters resource.
- * 
+ *
  * @author pdowler
  */
-public class ParametersTest extends AbstractUWSTest
-{
+public class ParametersTest extends AbstractUWSTest {
+
     private static Logger log = Logger.getLogger(ParametersTest.class);
 
-    static
-    {
+    static {
         Log4jInit.setLevel("ca.nrc.cadc", Level.INFO);
     }
 
     private static final String PARAMETER_NAME = "parameter name";
     private static final String PARAMETER_VALUE = "parameter value";
 
-    public ParametersTest()
-    {
+    public ParametersTest() {
         super();
     }
 
@@ -118,10 +109,8 @@ public class ParametersTest extends AbstractUWSTest
      * Create a job and POST parameters to the /joblist/jobiud/parameters resource.
      */
     @Test
-    public void testAddParametersToList()
-    {
-        try
-        {
+    public void testAddParametersToList() {
+        try {
             // Create a new Job.
             WebConversation conversation = new WebConversation();
             String jobId = createJob(conversation);
@@ -137,8 +126,8 @@ public class ParametersTest extends AbstractUWSTest
 
             // check redirect.
             String location = response.getHeaderField("Location");
-            assertNotNull("POST response to " + resourceUrl + " location header not set", location);
-            assertEquals(jobURL, location);
+            Assert.assertNotNull("POST response to " + resourceUrl + " location header not set", location);
+            Assert.assertEquals(jobURL, location);
 
             // get job state
             response = get(conversation, jobURL);
@@ -148,7 +137,6 @@ public class ParametersTest extends AbstractUWSTest
             Document doc = buildDocument(response.getText(), true);
 
             // TODO: verify that the parameters are in the parameter list
-
             // Get the parameters resource for this jobId.
             response = get(conversation, resourceUrl);
 
@@ -158,31 +146,28 @@ public class ParametersTest extends AbstractUWSTest
 
             // Get the document root.
             Element root = document.getRootElement();
-            assertNotNull("XML returned from GET of " + resourceUrl + " missing parameters element", root);
+            Assert.assertNotNull("XML returned from GET of " + resourceUrl + " missing parameters element", root);
             Namespace namespace = root.getNamespace();
             log.debug("namespace: " + namespace);
 
             // Validate the parameters.
             boolean found = false;
             List parameters = root.getChildren("parameter", namespace);
-            for (Iterator it = parameters.iterator(); it.hasNext(); )
-            {
+            for (Iterator it = parameters.iterator(); it.hasNext();) {
                 Element parameter = (Element) it.next();
                 Attribute attribute = parameter.getAttribute("id");
-                if (attribute == null)
+                if (attribute == null) {
                     continue;
-                if (attribute.getValue().equals(PARAMETER_NAME) &&
-                    parameter.getText().equals(PARAMETER_VALUE))
-                {
+                }
+                if (attribute.getValue().equals(PARAMETER_NAME)
+                        && parameter.getText().equals(PARAMETER_VALUE)) {
                     found = true;
                 }
             }
-            assertTrue("parameter " + PARAMETER_NAME + "=" + PARAMETER_VALUE + " not found", found);
+            Assert.assertTrue("parameter " + PARAMETER_NAME + "=" + PARAMETER_VALUE + " not found", found);
 
             deleteJob(conversation, jobId);
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
@@ -192,44 +177,30 @@ public class ParametersTest extends AbstractUWSTest
      * Create a job and include parameters in the job-creation POST.
      */
     @Test
-    public void testCreateJobWithParams()
-    {
-        try
-        {
+    public void testCreateJobWithParams() {
+        try {
             // create job
 
             // verify jobInfo is null
-
             // verify all the parameters are in the parameter list
-
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
-
     /**
      * Create a job and then POST parameters to the job URL.
      */
     @Test
-    public void testAddParamsToJob()
-    {
-        try
-        {
+    public void testAddParamsToJob() {
+        try {
             // create default job
 
             // post params to then job url
-
             // verify jobInfo is null
-
             // verify all the parameters are in the parameter list
-
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }

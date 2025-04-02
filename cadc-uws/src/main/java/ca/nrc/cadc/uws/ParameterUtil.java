@@ -65,7 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws;
 
@@ -75,41 +75,39 @@ import java.util.List;
 
 /**
  * Utility class related to Parameters.
- * 
+ *
  * @author zhangsa
  *
  */
-public class ParameterUtil
-{
+public class ParameterUtil {
+
     /*
      * Find String value from the Parameter List by its name.
      */
-    public static String findParameterValue(String name, List<Parameter> paramList)
-    {
-        for (Parameter parameter : paramList)
-        {
-            if (name.equalsIgnoreCase(parameter.getName())) return parameter.getValue();
+    public static String findParameterValue(String name, List<Parameter> paramList) {
+        for (Parameter parameter : paramList) {
+            if (name.equalsIgnoreCase(parameter.getName())) {
+                return parameter.getValue();
+            }
         }
         return null;
     }
 
     /**
      * Find all values for the specified parameter.
-     * 
+     *
      * @param name
      * @param paramList
      * @return List of values, possibly empty
      */
-    public static List<String> findParameterValues(String name, List<Parameter> paramList)
-    {
+    public static List<String> findParameterValues(String name, List<Parameter> paramList) {
         List<String> ret = new ArrayList<String>();
-        for (Parameter parameter : paramList)
-        {
-            if (name.equalsIgnoreCase(parameter.getName()))
-            {
+        for (Parameter parameter : paramList) {
+            if (name.equalsIgnoreCase(parameter.getName())) {
                 String str = parameter.getValue();
-                if ( !StringUtil.hasText(str) )
+                if (!StringUtil.hasText(str)) {
                     str = "";
+                }
                 ret.add(str);
             }
         }

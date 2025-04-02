@@ -65,7 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.server;
 
@@ -79,18 +79,18 @@ import ca.nrc.cadc.uws.Job;
  *
  * @author pdowler
  */
-public interface JobExecutor 
-{
+public interface JobExecutor {
+
     default void setAppName(String appName) {
         // no-op
     }
-    
+
     /**
      * Shutdown and release any resources. This includes ThreadPools, connections, open files, etc.
      */
     public void terminate()
-        throws InterruptedException;
-    
+            throws InterruptedException;
+
     /**
      * Execute the specified job in asynchronous mode.
      *
@@ -98,10 +98,10 @@ public interface JobExecutor
      * @throws JobNotFoundException
      * @throws JobPersistenceException
      * @throws JobPhaseException
-     * @throws TransientException 
+     * @throws TransientException
      */
     public void execute(Job job)
-        throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException;
+            throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException;
 
     /**
      * Execute the specified job in synchronous mode.
@@ -111,20 +111,20 @@ public interface JobExecutor
      * @throws JobNotFoundException
      * @throws JobPersistenceException
      * @throws JobPhaseException
-     * @throws TransientException 
+     * @throws TransientException
      */
     public void execute(Job job, SyncOutput sync)
-        throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException;
+            throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException;
 
     /**
      * Abrt the specified job.
-     * 
+     *
      * @param job
      * @throws JobNotFoundException
      * @throws JobPersistenceException
      * @throws JobPhaseException
-     * @throws TransientException 
+     * @throws TransientException
      */
     public void abort(Job job)
-        throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException;
+            throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException;
 }

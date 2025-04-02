@@ -65,7 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.util;
 
@@ -75,20 +75,20 @@ import ca.nrc.cadc.uws.Job;
 /**
  * Class to be used by job runners to log at INFO level the start and
  * end messages for each request.
- * 
+ *
  * @author majorb
  *
  */
-public class JobLogInfo extends WebServiceLogInfo
-{    
+public class JobLogInfo extends WebServiceLogInfo {
+
     private static final String METHOD_JOB = "UWS";
-    
+
     /**
      * JobLogInfo constructor.
+     *
      * @param job
      */
-    public JobLogInfo(Job job)
-    {
+    public JobLogInfo(Job job) {
         super();
         this.method = METHOD_JOB;
         this.ip = job.getRemoteIP();

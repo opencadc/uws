@@ -67,7 +67,6 @@
 
 package ca.nrc.cadc.uws.web;
 
-
 import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.server.JobNotFoundException;

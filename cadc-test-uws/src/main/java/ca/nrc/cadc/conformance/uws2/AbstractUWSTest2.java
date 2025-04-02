@@ -93,7 +93,6 @@ import java.util.TreeMap;
 import javax.security.auth.Subject;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
-import static org.junit.Assert.fail;
 
 /**
  * Base class that supports executing jobs as tests. This class has the low level
@@ -128,14 +127,14 @@ public abstract class AbstractUWSTest2 {
     public AbstractUWSTest2(URI resourceID, URI standardID, URI interfaceType) {
         this(resourceID, standardID, interfaceType, null);
     }
-    
+
     /**
      * Specify an endpoint name for cases where the standardID corresponds to the baseURL (e.g. TAP).
-     * 
+     *
      * @param resourceID
      * @param standardID
      * @param interfaceType
-     * @param endpointName 
+     * @param endpointName
      */
     public AbstractUWSTest2(URI resourceID, URI standardID, URI interfaceType, String endpointName) {
         this.resourceID = resourceID;
@@ -153,7 +152,7 @@ public abstract class AbstractUWSTest2 {
     protected void setSubject(Subject s) {
         this.subject = s;
     }
-    
+
     private URL getJobListURL() {
         AuthMethod am = AuthMethod.ANON;
         if (subject != null) {
@@ -195,8 +194,7 @@ public abstract class AbstractUWSTest2 {
             Assert.fail("test config fail: propertiesDir not specified");
         }
 
-        if (testFilePrefix == null) // the actual test class that is running
-        {
+        if (testFilePrefix == null) {
             testFilePrefix = this.getClass().getSimpleName();
         }
 
@@ -206,11 +204,11 @@ public abstract class AbstractUWSTest2 {
         try {
             testPropertiesList = new TestPropertiesList(propertiesDir.getPath(), testFilePrefix);
             if (testPropertiesList.propertiesList.isEmpty()) {
-                fail(testFilePrefix + ": no matching properties file(s) in " + propertiesDir);
+                Assert.fail(testFilePrefix + ": no matching properties file(s) in " + propertiesDir);
             }
         } catch (IOException e) {
             log.error(e);
-            fail(e.getMessage());
+            Assert.fail(e.getMessage());
         }
 
         log.info(testFilePrefix + ": found " + testPropertiesList.propertiesList.size() + " tests in " + propertiesDir);
@@ -236,25 +234,22 @@ public abstract class AbstractUWSTest2 {
     protected final JobResultWrapper createAndExecuteSyncParamJobPOST(String jobName, Map<String, Object> params) {
         URL jobListURL = getJobListURL();
         JobResultWrapper ret = new JobResultWrapper(jobName);
-        try {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            log.info(jobName);
-            HttpPost doit = new HttpPost(jobListURL, params, bos);
-            if (subject != null) {
-                Subject.doAs(subject, new RunnableAction(doit));
-            } else {
-                doit.run();
-            }
-
-            ret.job = null; // no formal way to get jobID
-            ret.throwable = doit.getThrowable();
-            ret.responseCode = doit.getResponseCode();
-            ret.contentType = doit.getContentType();
-            ret.contentEncoding = doit.getContentEncoding();
-            ret.syncOutput = bos.toByteArray();
-        } finally {
+        
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        log.info(jobName);
+        HttpPost doit = new HttpPost(jobListURL, params, bos);
+        if (subject != null) {
+            Subject.doAs(subject, new RunnableAction(doit));
+        } else {
+            doit.run();
         }
 
+        ret.job = null; // no formal way to get jobID
+        ret.throwable = doit.getThrowable();
+        ret.responseCode = doit.getResponseCode();
+        ret.contentType = doit.getContentType();
+        ret.contentEncoding = doit.getContentEncoding();
+        ret.syncOutput = bos.toByteArray();
         return ret;
     }
 
@@ -360,9 +355,9 @@ public abstract class AbstractUWSTest2 {
 
             JobReader r = new JobReader();
             // loop in case server limits block < timeout
-            long tRemain = (start + timeout * 1000L) - System.currentTimeMillis();
-            while (tRemain > 0) {
-                long block = tRemain / 1000L; // sec
+            long timeRemain = (start + timeout * 1000L) - System.currentTimeMillis();
+            while (timeRemain > 0) {
+                long block = timeRemain / 1000L; // sec
                 URL blockURL = new URL(jobURL.toExternalForm() + "?WAIT=" + block);
                 log.info(jobName + " wait " + blockURL);
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -376,7 +371,7 @@ public abstract class AbstractUWSTest2 {
                     Assert.fail("failed to check phase for " + jobURL + " reason: " + get.getThrowable());
                 }
 
-                tRemain = (start + timeout) - System.currentTimeMillis();
+                timeRemain = (start + timeout) - System.currentTimeMillis();
 
                 Job j = r.read(new ByteArrayInputStream(bos.toByteArray()));
                 if (!j.getExecutionPhase().isActive()) {

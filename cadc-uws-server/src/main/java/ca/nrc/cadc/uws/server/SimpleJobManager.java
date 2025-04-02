@@ -63,10 +63,9 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.server;
-
 
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.net.TransientException;
@@ -91,6 +90,7 @@ import org.apache.log4j.Logger;
  * @author pdowler
  */
 public class SimpleJobManager implements JobManager {
+
     private static final Logger log = Logger.getLogger(SimpleJobManager.class);
 
     protected JobPersistence jobPersistenceImpl;
@@ -99,10 +99,10 @@ public class SimpleJobManager implements JobManager {
     protected Long maxExecDuration = 3600L;
     protected Long maxQuote = 3600L;
     protected Long maxDestruction = 7 * 24 * 3600L;
-    
-    public SimpleJobManager() { 
+
+    public SimpleJobManager() {
     }
-    
+
     @Override
     public void terminate() throws InterruptedException {
         if (jobPersistenceImpl != null) {
@@ -120,11 +120,11 @@ public class SimpleJobManager implements JobManager {
             jobExecutorImpl.setAppName(appName);
         }
     }
-    
+
     /**
      * Set a single (global) JobPersistence instance to be used for all requests.
-     * 
-     * @param jobPersistence 
+     *
+     * @param jobPersistence
      */
     public void setJobPersistence(JobPersistence jobPersistence) {
         this.jobPersistenceImpl = jobPersistence;
@@ -132,8 +132,8 @@ public class SimpleJobManager implements JobManager {
 
     /**
      * Set a single (global) JobExecutor instance to be used for all requests.
-     * 
-     * @param jobExecutor 
+     *
+     * @param jobExecutor
      */
     public void setJobExecutor(JobExecutor jobExecutor) {
         this.jobExecutorImpl = jobExecutor;
@@ -141,14 +141,14 @@ public class SimpleJobManager implements JobManager {
             jobExecutorImpl.setAppName(appName);
         }
     }
-    
+
     protected JobPersistence getJobPersistence(String requestPath) {
-        if (jobPersistenceImpl != null) { 
+        if (jobPersistenceImpl != null) {
             return jobPersistenceImpl;
         }
         return null;
     }
-    
+
     protected JobExecutor getJobExecutor(String requestPath, JobUpdater jobUpdater) {
         if (jobExecutorImpl != null) {
             return jobExecutorImpl;
@@ -350,10 +350,10 @@ public class SimpleJobManager implements JobManager {
         if (caller != null) {
             Set<Principal> ownerPrincipals = job.ownerSubject.getPrincipals();
             Set<Principal> callerPrincipals = caller.getPrincipals();
-            for (Principal oPrin : ownerPrincipals) {
-                for (Principal cPrin : callerPrincipals) {
-                    log.debug("doAuthorizationCheck: " + oPrin + " vs " + cPrin);
-                    if (AuthenticationUtil.equals(oPrin, cPrin)) {
+            for (Principal ownerP : ownerPrincipals) {
+                for (Principal callerP : callerPrincipals) {
+                    log.debug("doAuthorizationCheck: " + ownerP + " vs " + callerP);
+                    if (AuthenticationUtil.equals(ownerP, callerP)) {
                         return; // caller===owner
                     }
                 }

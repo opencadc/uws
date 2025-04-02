@@ -65,7 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.server;
 
@@ -94,23 +94,21 @@ import org.apache.log4j.Logger;
  *
  * @author pdowler
  */
-public class MemoryJobPersistence implements JobPersistence, JobUpdater
-{
+public class MemoryJobPersistence implements JobPersistence, JobUpdater {
+
     private static final Logger log = Logger.getLogger(MemoryJobPersistence.class);
 
     protected StringIDGenerator idGenerator;
     protected IdentityManager identityManager;
     private Thread jobCleaner;
 
-    protected final Map<String,Job> jobs = new HashMap<String,Job>();
+    protected final Map<String, Job> jobs = new HashMap<String, Job>();
 
-    public MemoryJobPersistence()
-    {
+    public MemoryJobPersistence() {
         this(new RandomStringGenerator(16), new X500IdentityManager(), 30000L);
     }
 
-    public MemoryJobPersistence(StringIDGenerator idGenerator, IdentityManager identityManager, long jobCleanerInterval)
-    {
+    public MemoryJobPersistence(StringIDGenerator idGenerator, IdentityManager identityManager, long jobCleanerInterval) {
         this.idGenerator = idGenerator;
         this.identityManager = identityManager;
         setJobCleaner(jobCleanerInterval);
@@ -126,112 +124,92 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
      *
      * @param checkInterval time between checks (in milliseconds)
      */
-    public final void setJobCleaner(long checkInterval)
-    {
+    public final void setJobCleaner(long checkInterval) {
         terminate();
-        if (checkInterval > 0)
-        {
+        if (checkInterval > 0) {
             this.jobCleaner = new Thread(new JobCleaner(checkInterval));
             jobCleaner.setDaemon(true);
             jobCleaner.start();
         }
     }
 
-    public final void terminate()
-    {
-        if (jobCleaner != null)
-        {
-            try
-            {
+    public final void terminate() {
+        if (jobCleaner != null) {
+            try {
                 log.info("terminating JobCleaner...");
                 jobCleaner.interrupt();
                 jobCleaner.join();
                 log.info("terminating JobCleaner... [OK]");
-            }
-            catch(Throwable t)
-            {
+            } catch (Throwable t) {
                 log.error("failed to terminate jobCleaner thread", t);
-            }
-            finally
-            {
+            } finally {
                 jobCleaner = null;
             }
         }
     }
 
-    private class JobCleaner implements Runnable
-    {
+    private class JobCleaner implements Runnable {
+
         long dt = 60000L;
 
-        JobCleaner(long dt) { this.dt = dt; }
+        JobCleaner(long dt) {
+            this.dt = dt;
+        }
 
-        public void run()
-        {
-            while(true)
-            {
+        public void run() {
+            while (true) {
                 Date now = new Date();
-                try
-                {
-                    synchronized(jobs)
-                    {
+                try {
+                    synchronized (jobs) {
                         log.debug(this + ": looking for old jobs...");
-                        Iterator<Map.Entry<String,Job>> iter = jobs.entrySet().iterator();
-                        while ( iter.hasNext() )
-                        {
-                            if ( Thread.interrupted() )
+                        Iterator<Map.Entry<String, Job>> iter = jobs.entrySet().iterator();
+                        while (iter.hasNext()) {
+                            if (Thread.interrupted()) {
                                 return;
-                            Map.Entry<String,Job> me = iter.next();
+                            }
+                            Map.Entry<String, Job> me = iter.next();
                             Job job = me.getValue();
                             ExecutionPhase ep = job.getExecutionPhase();
                             Date t = job.getDestructionTime();
-                            if (now.after(t))
-                            {
+                            if (now.after(t)) {
                                 log.debug("delete: " + me.getKey() + " " + ep.getValue() + " destruction = " + t);
                                 iter.remove();
                             }
                         }
                     }
-                }
-                catch(ConcurrentModificationException ex)
-                {
+                } catch (ConcurrentModificationException ex) {
                     log.debug("caught ConcurrentModificationException, ignoring");
-                }
-                catch(Throwable t)
-                {
+                } catch (Throwable t) {
                     log.error("ignoring failure while cleaning job list", t);
                 }
 
-                try { 
+                try {
                     log.debug(this + " sleep: " + dt);
-                    Thread.sleep(dt); 
+                    Thread.sleep(dt);
+                } catch (InterruptedException ex) {
+                    return;
                 }
-                catch(InterruptedException ex) { return; }
             }
         }
     }
 
-
     public void addParameters(String jobID, List<Parameter> params)
-        throws JobNotFoundException
-    {
+            throws JobNotFoundException {
         expectNotNull("jobID", jobID);
         expectNotNull("params", params);
         Job job = getJobFromMap(jobID);
         job.getParameterList().addAll(params);
     }
 
-    public void delete(String jobID)
-    {
+    public void delete(String jobID) {
         expectNotNull("jobID", jobID);
-        synchronized(jobs)
-        {
+        synchronized (jobs) {
             jobs.remove(jobID);
         }
     }
 
     public Job get(String jobID)
-        throws JobNotFoundException
-    {
+            throws JobNotFoundException {
         expectNotNull("jobID", jobID);
         Job job = getJobFromMap(jobID);
         Job ret = JobPersistenceUtil.deepCopy(job);
@@ -239,14 +217,12 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
         return ret;
     }
 
-    public void getDetails(Job job)
-    {
+    public void getDetails(Job job) {
         // no-op
     }
 
     public ExecutionPhase getPhase(String jobID)
-        throws JobNotFoundException
-    {
+            throws JobNotFoundException {
         expectNotNull("jobID", jobID);
         Job job = getJobFromMap(jobID);
         return job.getExecutionPhase();
@@ -258,13 +234,11 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
      *
      * @return
      */
-    public Iterator<JobRef> iterator(String requestPath)
-    {
+    public Iterator<JobRef> iterator(String requestPath) {
         return iterator(requestPath);
     }
 
-    public Iterator<JobRef> iterator(String requestPath, List<ExecutionPhase> phases)
-    {
+    public Iterator<JobRef> iterator(String requestPath, List<ExecutionPhase> phases) {
         return iterator(requestPath, phases, null, null);
     }
 
@@ -274,38 +248,30 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
      *
      * @return
      */
-    public Iterator<JobRef> iterator(String requestPath, List<ExecutionPhase> phases, Date after, Integer last)
-    {
+    public Iterator<JobRef> iterator(String requestPath, List<ExecutionPhase> phases, Date after, Integer last) {
         //List<JobRef> tmp = new ArrayList<JobRef>();
 
-        Map<Date,JobRef> tmp = new TreeMap<Date,JobRef>();
+        Map<Date, JobRef> tmp = new TreeMap<Date, JobRef>();
         boolean skipArchived = (phases == null || phases.isEmpty());
         boolean filterOnPhase = (phases != null && !phases.isEmpty());
         Date nullStartTime = new Date(0);
         Date startDate = null;
 
-        synchronized(jobs)
-        {
-            for (Job j : jobs.values())
-            {
-                if (requestPath == null || j.getRequestPath().startsWith(requestPath))
-                {
-                    if ( (skipArchived && !ExecutionPhase.ARCHIVED.equals(j.getExecutionPhase()))
-                        || (filterOnPhase && phases.contains(j.getExecutionPhase())) )
-                    {
+        synchronized (jobs) {
+            for (Job j : jobs.values()) {
+                if (requestPath == null || j.getRequestPath().startsWith(requestPath)) {
+                    if ((skipArchived && !ExecutionPhase.ARCHIVED.equals(j.getExecutionPhase()))
+                            || (filterOnPhase && phases.contains(j.getExecutionPhase()))) {
                         startDate = j.getStartTime();
-                        if (startDate == null)
+                        if (startDate == null) {
                             startDate = nullStartTime;
+                        }
 
-                        if (after != null && j.getStartTime() != null)
-                        {
-                            if (after.before(j.getStartTime()))
-                            {
+                        if (after != null && j.getStartTime() != null) {
+                            if (after.before(j.getStartTime())) {
                                 tmp.put(startDate, new JobRef(j.getID(), j.getExecutionPhase()));
                             }
-                        }
-                        else
-                        {
+                        } else {
                             tmp.put(startDate, new JobRef(j.getID(), j.getExecutionPhase()));
                         }
                     }
@@ -313,8 +279,7 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
             }
         }
 
-        if (last != null && last >= 0)
-        {
+        if (last != null && last >= 0) {
             List<JobRef> all = new ArrayList<JobRef>(tmp.values());
             List<JobRef> lastN = all.subList(0, last);
             return lastN.iterator();
@@ -322,56 +287,77 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
         return tmp.values().iterator();
     }
 
-    public Job put(Job job)
-    {
+    public Job put(Job job) {
         expectNotNull("job", job);
 
         AccessControlContext acContext = AccessController.getContext();
         Subject caller = Subject.getSubject(acContext);
         String ownerID = null;
-        if (caller != null)
+        if (caller != null) {
             ownerID = identityManager.toDisplayString(caller);
+        }
         job.setOwnerID(ownerID);
-        if (job.getID() == null)
+        if (job.getID() == null) {
             JobPersistenceUtil.assignID(job, generateJobID());
+        }
         Job keep = JobPersistenceUtil.deepCopy(job);
-        if (ownerID != null)
+        if (ownerID != null) {
             keep.ownerSubject = caller;
-        synchronized(jobs)
-        {
+        }
+        synchronized (jobs) {
             jobs.put(keep.getID(), keep);
         }
         return job;
     }
 
     public void setPhase(String jobID, ExecutionPhase ep)
-        throws JobNotFoundException
-    {
+            throws JobNotFoundException {
         setPhase(jobID, null, ep);
     }
 
     public ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end)
-        throws JobNotFoundException
-    {
+            throws JobNotFoundException {
         return setPhase(jobID, start, end, null, null, null);
     }
 
     public ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end, Date date)
-        throws JobNotFoundException
-    {
+            throws JobNotFoundException {
         return setPhase(jobID, start, end, null, null, date);
     }
 
     public ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end, List<Result> results, Date date)
-        throws JobNotFoundException
-    {
+            throws JobNotFoundException {
         return setPhase(jobID, start, end, results, null, date);
     }
 
     public ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end, ErrorSummary error, Date date)
-        throws JobNotFoundException
-    {
+            throws JobNotFoundException {
         return setPhase(jobID, start, end, null, error, date);
+    }
+
+    private ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end,
+            List<Result> results, ErrorSummary error, Date date)
+            throws JobNotFoundException {
+        Job job = getJobFromMap(jobID);
+        expectNotNull("end", end);
+        if (start == null || job.getExecutionPhase().equals(start)) {
+            job.setExecutionPhase(end);
+            if (results != null) {
+                job.setResultsList(results);
+            }
+            if (error != null) {
+                job.setErrorSummary(error);
+            }
+            if (date != null) {
+                if (ExecutionPhase.EXECUTING.equals(end)) {
+                    job.setStartTime(date);
+                } else if (JobPersistenceUtil.isFinalPhase(end)) {
+                    job.setEndTime(date);
+                }
+            }
+            return end;
+        }
+        return null;
     }
 
     private String generateJobID() {
@@ -385,48 +371,23 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater
         }
     }
 
-    private ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end,
-            List<Result> results, ErrorSummary error, Date date)
-        throws JobNotFoundException
-    {
-        Job job = getJobFromMap(jobID);
-        expectNotNull("end", end);
-        if (start == null || job.getExecutionPhase().equals(start))
-        {
-            job.setExecutionPhase(end);
-            if (results != null)
-                job.setResultsList(results);
-            if (error != null)
-                job.setErrorSummary(error);
-            if (date != null)
-            {
-                if (ExecutionPhase.EXECUTING.equals(end))
-                    job.setStartTime(date);
-                else if ( JobPersistenceUtil.isFinalPhase(end) )
-                    job.setEndTime(date);
-            }
-            return end;
-        }
-        return null;
-    }
-
     private Job getJobFromMap(String jobID)
-        throws JobNotFoundException
-    {
-        if (jobID == null)
+            throws JobNotFoundException {
+        if (jobID == null) {
             throw new IllegalArgumentException("jobID cannot be null");
-        synchronized(jobs)
-        {
+        }
+        synchronized (jobs) {
             Job job = jobs.get(jobID);
-            if (job == null)
+            if (job == null) {
                 throw new JobNotFoundException("not found: " + jobID);
+            }
             return job;
         }
     }
 
-    private void expectNotNull(String name, Object value)
-    {
-        if (value == null)
+    private void expectNotNull(String name, Object value) {
+        if (value == null) {
             throw new IllegalArgumentException(name + " cannot be null");
+        }
     }
 }

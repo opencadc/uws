@@ -65,17 +65,14 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
-
+ */
 
 package ca.nrc.cadc.uws;
-
 
 /**
  * Job Attribute Enumeration to build an XML document.
  */
-public enum JobAttribute
-{
+public enum JobAttribute {
     JOB("job"),
     JOBS("jobs"),
     JOB_REF("jobref"),
@@ -103,12 +100,9 @@ public enum JobAttribute
     JOB_INFO("jobInfo"),
     VERSION("version");
 
-
     private String attributeName;
 
-
-    JobAttribute(final String attributeName)
-    {
+    JobAttribute(final String attributeName) {
         this.attributeName = attributeName;
     }
 
@@ -120,22 +114,17 @@ public enum JobAttribute
         }
         throw new IllegalArgumentException("invalid value: " + s);
     }
-    
+
     public String getValue() {
         return attributeName;
     }
-    
-    @Deprecated
-    public String getAttributeName()
-    {
-        return attributeName;
-    }
 
-    public static boolean isValue(String v)
-    {
-        for (JobAttribute ja : values())
-            if (ja.attributeName.equalsIgnoreCase(v))
+    public static boolean isValue(String v) {
+        for (JobAttribute ja : values()) {
+            if (ja.attributeName.equalsIgnoreCase(v)) {
                 return true;
+            }
+        }
         return false;
     }
 }

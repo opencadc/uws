@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.server;
 
@@ -80,30 +80,31 @@ import org.apache.log4j.Logger;
  *
  * @author pdowler
  */
-public abstract class AbstractExecutor  implements JobExecutor
-{
+public abstract class AbstractExecutor implements JobExecutor {
+
     private static final Logger log = Logger.getLogger(AbstractExecutor.class);
 
     protected JobUpdater jobUpdater;
     protected Class<JobRunner> jobRunnerClass;
     protected String appName;
 
-    private AbstractExecutor() { }
+    private AbstractExecutor() {
+    }
 
-    protected AbstractExecutor(JobUpdater jobUpdater, Class jobRunnerClass)
-    {
-        if (jobUpdater == null)
+    protected AbstractExecutor(JobUpdater jobUpdater, Class jobRunnerClass) {
+        if (jobUpdater == null) {
             throw new IllegalArgumentException("jobUpdater cannot be null");
-        if (jobRunnerClass == null)
+        }
+        if (jobRunnerClass == null) {
             throw new IllegalArgumentException("jobRunnerClass cannot be null");
+        }
         this.jobUpdater = jobUpdater;
         this.jobRunnerClass = jobRunnerClass;
     }
 
     @Override
     public void terminate()
-        throws InterruptedException
-    {
+            throws InterruptedException {
         // no-op
     }
 
@@ -113,21 +114,17 @@ public abstract class AbstractExecutor  implements JobExecutor
         this.appName = appName;
     }
 
-    
-    public void setJobUpdater(JobUpdater jobUpdater)
-    {
+    public void setJobUpdater(JobUpdater jobUpdater) {
         this.jobUpdater = jobUpdater;
     }
 
-    public void setJobRunnerClass(Class<JobRunner> jobRunnerClass)
-    {
+    public void setJobRunnerClass(Class<JobRunner> jobRunnerClass) {
         this.jobRunnerClass = jobRunnerClass;
     }
 
     @Override
     public final void execute(Job job)
-        throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException
-    {
+            throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException {
         execute(job, null);
     }
 
@@ -140,7 +137,7 @@ public abstract class AbstractExecutor  implements JobExecutor
      * Note for subclasses: the actual execution is performed by calling either
      * syncExecute or the asyncExecute method.
      * </p>
-     * 
+     *
      * @param job
      * @param sync
      * @throws JobNotFoundException
@@ -150,10 +147,10 @@ public abstract class AbstractExecutor  implements JobExecutor
      */
     @Override
     public final void execute(Job job, SyncOutput sync)
-        throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException
-    {
-        if (job == null)
+            throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException {
+        if (job == null) {
             throw new IllegalArgumentException("BUG: Job cannot be null");
+        }
         log.debug("execute: " + job.getID() + " sync=" + (sync != null));
         log.debug(job.getID() + ": PENDING -> QUEUED");
         ExecutionPhase ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.PENDING, ExecutionPhase.QUEUED);
@@ -172,42 +169,29 @@ public abstract class AbstractExecutor  implements JobExecutor
             log.debug(job.getID() + ": PENDING -> QUEUED [OK]");
         }
 
-        try
-        {
+        try {
             JobRunner jobRunner = getJobRunner();
             jobRunner.setJobUpdater(jobUpdater);
             jobRunner.setJob(job);
             jobRunner.setAppName(appName);
             jobRunner.setSyncOutput(sync);
 
-            if (sync != null)
-            {
+            if (sync != null) {
                 executeSync(jobRunner);
-            }
-            else
-            {
+            } else {
                 executeAsync(job, jobRunner);
             }
-        }
-        catch(InstantiationException ex)
-        {
+        } catch (InstantiationException ex) {
             throw new RuntimeException("configuration error: failed to load " + jobRunnerClass.getName(), ex);
-        }
-        catch(IllegalAccessException ex)
-        {
+        } catch (IllegalAccessException ex) {
             throw new RuntimeException("configuration error: failed to load " + jobRunnerClass.getName(), ex);
-        }
-        finally
-        {
-
         }
     }
 
     /**
-     * Create the new instance of a Job Runner.  Sub classes can override.
+     * Create the new instance of a Job Runner. Sub classes can override.
      */
-    protected JobRunner getJobRunner() throws InstantiationException, IllegalAccessException
-    {
+    protected JobRunner getJobRunner() throws InstantiationException, IllegalAccessException {
         log.debug("Creating " + jobRunnerClass.getName());
         return jobRunnerClass.newInstance();
     }
@@ -217,8 +201,7 @@ public abstract class AbstractExecutor  implements JobExecutor
      *
      * @param jobRunner
      */
-    protected void executeSync(JobRunner jobRunner)
-    {
+    protected void executeSync(JobRunner jobRunner) {
         jobRunner.run();
     }
 
@@ -236,7 +219,7 @@ public abstract class AbstractExecutor  implements JobExecutor
      * <p>
      * Note for subclasses: the actual kill is performed by calling the abortJob method.
      * </p>
-     * 
+     *
      * @param job
      * @throws JobNotFoundException
      * @throws JobPersistenceException
@@ -245,19 +228,17 @@ public abstract class AbstractExecutor  implements JobExecutor
      */
     @Override
     public void abort(Job job)
-        throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException
-    {
+            throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException {
         log.debug("abort: " + job.getID());
         // can plausibly go from PENDING, QUEUED, EXECUTING -> ABORTED
         ExecutionPhase ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.PENDING, ExecutionPhase.ABORTED, new Date());
-        if (!ExecutionPhase.ABORTED.equals(ep))
-        {
+        if (!ExecutionPhase.ABORTED.equals(ep)) {
             ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.QUEUED, ExecutionPhase.ABORTED, new Date());
-            if (!ExecutionPhase.ABORTED.equals(ep))
-            {
+            if (!ExecutionPhase.ABORTED.equals(ep)) {
                 ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.EXECUTING, ExecutionPhase.ABORTED, new Date());
-                if (!ExecutionPhase.ABORTED.equals(ep))
+                if (!ExecutionPhase.ABORTED.equals(ep)) {
                     return; // no phase change - do nothing
+                }
             }
         }
         job.setExecutionPhase(ep);

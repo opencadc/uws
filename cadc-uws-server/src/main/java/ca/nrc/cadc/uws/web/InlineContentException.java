@@ -65,19 +65,17 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.web;
 
-public class InlineContentException extends RuntimeException
-{
-    public InlineContentException(String message)
-    {
+public class InlineContentException extends RuntimeException {
+
+    public InlineContentException(String message) {
         super(message);
     }
 
-    public InlineContentException(String message, Throwable cause)
-    {
+    public InlineContentException(String message, Throwable cause) {
         super(message, cause);
     }
 

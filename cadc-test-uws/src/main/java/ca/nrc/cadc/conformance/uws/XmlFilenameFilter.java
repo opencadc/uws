@@ -65,7 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.conformance.uws;
 
@@ -73,29 +73,28 @@ import java.io.File;
 import java.io.FilenameFilter;
 
 /**
- * 
+ *
  * @see FilenameFilter
- * 
+ *
  * @author zhangsa
  *
  */
-public class XmlFilenameFilter implements FilenameFilter
-{
-    private static final String SUFFIX = ".XML"; 
-    private String prefix; 
+public class XmlFilenameFilter implements FilenameFilter {
 
-    public XmlFilenameFilter(String prefixArg)
-    {
+    private static final String SUFFIX = ".XML";
+    private String prefix;
+
+    public XmlFilenameFilter(String prefixArg) {
         this.prefix = prefixArg.toUpperCase();
     }
 
-    public boolean accept(File dir, String name)
-    {
+    public boolean accept(File dir, String name) {
         if (name.toUpperCase().startsWith(prefix.toUpperCase())
-                && name.toUpperCase().endsWith(SUFFIX))
+                && name.toUpperCase().endsWith(SUFFIX)) {
             return true;
-        else
+        } else {
             return false;
+        }
     }
 
 }

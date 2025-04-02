@@ -65,21 +65,9 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.server;
-
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-
-import javax.naming.NamingException;
-import javax.security.auth.Subject;
-import javax.sql.DataSource;
-
-import org.apache.log4j.Logger;
 
 import ca.nrc.cadc.auth.IdentityManager;
 import ca.nrc.cadc.auth.X500IdentityManager;
@@ -90,6 +78,15 @@ import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.JobRef;
 import ca.nrc.cadc.uws.Parameter;
 import ca.nrc.cadc.uws.Result;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import javax.naming.NamingException;
+import javax.security.auth.Subject;
+import javax.sql.DataSource;
+import org.apache.log4j.Logger;
 
 /**
  * JobPersistence implementation that uses an underlying relational database
@@ -99,8 +96,8 @@ import ca.nrc.cadc.uws.Result;
  *
  * @author pdowler
  */
-public abstract class DatabaseJobPersistence implements JobPersistence, JobUpdater
-{
+public abstract class DatabaseJobPersistence implements JobPersistence, JobUpdater {
+
     private static final Logger log = Logger.getLogger(DatabaseJobPersistence.class);
 
     protected StringIDGenerator idGenerator;
@@ -109,8 +106,7 @@ public abstract class DatabaseJobPersistence implements JobPersistence, JobUpdat
     /**
      * Constructor. This uses a RandomStringGenerator(16) as the ID generator.
      */
-    protected DatabaseJobPersistence()
-    {
+    protected DatabaseJobPersistence() {
         this(new RandomStringGenerator(16), new X500IdentityManager());
     }
 
@@ -120,32 +116,24 @@ public abstract class DatabaseJobPersistence implements JobPersistence, JobUpdat
      * @param idGenerator
      * @param identityManager
      */
-    protected DatabaseJobPersistence(StringIDGenerator idGenerator, IdentityManager identityManager)
-    {
+    protected DatabaseJobPersistence(StringIDGenerator idGenerator, IdentityManager identityManager) {
         this.idGenerator = idGenerator;
         this.identityManager = identityManager;
     }
 
-    public void terminate() throws InterruptedException
-    {
+    public void terminate() throws InterruptedException {
         // no-op: assume this relies on JNDI data sources that are managed externally
     }
 
-
     protected JobDAO getDAO()
-        throws JobPersistenceException
-    {
-        try
-        {
+            throws JobPersistenceException {
+        try {
             DataSource ds = getDataSource();
             JobDAO.JobSchema js = getJobSchema();
             return new JobDAO(ds, js, identityManager, idGenerator);
-        }
-        catch(NamingException ex)
-        {
+        } catch (NamingException ex) {
             throw new JobPersistenceException("failed to find/create DataSource", ex);
         }
-        finally { }
 
     }
 
@@ -162,42 +150,38 @@ public abstract class DatabaseJobPersistence implements JobPersistence, JobUpdat
      * @return
      */
     protected abstract DataSource getDataSource()
-        throws NamingException;
+            throws NamingException;
 
     public Job get(String jobID)
-        throws JobNotFoundException, JobPersistenceException, TransientException
-    {
+            throws JobNotFoundException, JobPersistenceException, TransientException {
         JobDAO dao = getDAO();
         return dao.get(jobID);
     }
 
     public void getDetails(Job job)
-        throws JobPersistenceException, TransientException
-    {
+            throws JobPersistenceException, TransientException {
         JobDAO dao = getDAO();
         dao.getDetails(job);
     }
 
     public Iterator<JobRef> iterator(String requestPath)
-        throws JobPersistenceException, TransientException
-    {
+            throws JobPersistenceException, TransientException {
         return iterator(requestPath, null, null, null);
     }
+
     public Iterator<JobRef> iterator(String requestPath, List<ExecutionPhase> phases)
-        throws JobPersistenceException, TransientException
-    {
+            throws JobPersistenceException, TransientException {
         return iterator(requestPath, phases, null, null);
     }
+
     public Iterator<JobRef> iterator(String requestPath, List<ExecutionPhase> phases, Date after, Integer last)
-            throws JobPersistenceException, TransientException
-    {
+            throws JobPersistenceException, TransientException {
         JobDAO dao = getDAO();
         return dao.iterator(requestPath, phases, after, last);
     }
 
     public Job put(Job job)
-        throws JobPersistenceException, TransientException
-    {
+            throws JobPersistenceException, TransientException {
         AccessControlContext acContext = AccessController.getContext();
         Subject caller = Subject.getSubject(acContext);
         JobDAO dao = getDAO();
@@ -205,35 +189,34 @@ public abstract class DatabaseJobPersistence implements JobPersistence, JobUpdat
     }
 
     public void addParameters(String jobID, List<Parameter> params)
-        throws JobNotFoundException, JobPersistenceException, TransientException
-    {
+            throws JobNotFoundException, JobPersistenceException, TransientException {
         log.debug("addParameters: " + jobID + "," + toString(params));
         JobDAO dao = getDAO();
         dao.addParameters(jobID, params);
     }
-    private String toString(List list)
-    {
-        if (list==null)
+
+    private String toString(List list) {
+        if (list == null) {
             return "null";
-        return "List[" + list.size() +"]";
+        }
+        return "List[" + list.size() + "]";
     }
 
     public void delete(String jobID)
-        throws JobPersistenceException, TransientException
-    {
+            throws JobPersistenceException, TransientException {
         JobDAO dao = getDAO();
         dao.delete(jobID);
     }
 
     public ExecutionPhase getPhase(String jobID)
-        throws JobNotFoundException, JobPersistenceException, TransientException
-    {
+            throws JobNotFoundException, JobPersistenceException, TransientException {
         JobDAO dao = getDAO();
         return dao.getPhase(jobID);
     }
 
     /**
      * Set the phase.
+     *
      * @param jobID
      * @param ep
      * @throws JobNotFoundException
@@ -241,8 +224,7 @@ public abstract class DatabaseJobPersistence implements JobPersistence, JobUpdat
      * @throws TransientException
      */
     public void setPhase(String jobID, ExecutionPhase ep)
-        throws JobNotFoundException, JobPersistenceException, TransientException
-    {
+            throws JobNotFoundException, JobPersistenceException, TransientException {
         setPhase(jobID, null, ep);
     }
 
@@ -257,15 +239,13 @@ public abstract class DatabaseJobPersistence implements JobPersistence, JobUpdat
      * @throws TransientException
      */
     public ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end)
-        throws JobNotFoundException, JobPersistenceException, TransientException
-    {
+            throws JobNotFoundException, JobPersistenceException, TransientException {
         JobDAO dao = getDAO();
         return dao.set(jobID, start, end, null);
     }
 
     public ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end, Date date)
-        throws JobNotFoundException, JobPersistenceException, TransientException
-    {
+            throws JobNotFoundException, JobPersistenceException, TransientException {
         JobDAO dao = getDAO();
         return dao.set(jobID, start, end, date);
     }
@@ -283,15 +263,13 @@ public abstract class DatabaseJobPersistence implements JobPersistence, JobUpdat
      * @throws TransientException
      */
     public ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end, List<Result> results, Date date)
-        throws JobNotFoundException, JobPersistenceException, TransientException
-    {
+            throws JobNotFoundException, JobPersistenceException, TransientException {
         JobDAO dao = getDAO();
         return dao.set(jobID, start, end, results, date);
     }
 
     public ExecutionPhase setPhase(String jobID, ExecutionPhase start, ExecutionPhase end, ErrorSummary error, Date date)
-        throws JobNotFoundException, JobPersistenceException, TransientException
-    {
+            throws JobNotFoundException, JobPersistenceException, TransientException {
         JobDAO dao = getDAO();
         return dao.set(jobID, start, end, error, date);
     }

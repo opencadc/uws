@@ -65,7 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.server;
 
@@ -74,15 +74,15 @@ import ca.nrc.cadc.uws.Job;
 
 /**
  * Interface for the code that implements the actual job execution.
- * 
+ *
  * @author pdowler
  */
-public interface JobRunner extends Runnable
-{
+public interface JobRunner extends Runnable {
+
     default void setAppName(String appName) {
         // no-op
     }
-    
+
     public void setJobUpdater(JobUpdater jobUpdater);
 
     public void setJob(Job job);
@@ -90,7 +90,7 @@ public interface JobRunner extends Runnable
     /**
      * Set the job runner to do synchronous output to the specified
      * output.
-     * 
+     *
      * @param output
      */
     public void setSyncOutput(SyncOutput output);
@@ -99,6 +99,5 @@ public interface JobRunner extends Runnable
      * Execute the job.
      */
     public void run();
-
 
 }

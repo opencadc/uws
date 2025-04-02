@@ -65,36 +65,29 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.server;
 
 /**
  * Exception thrown when a JobPersistence implementation fails to store or retrieve
  * a job.
- * 
+ *
  * @author pdowler
  */
-public class JobPersistenceException extends Exception
-{
+public class JobPersistenceException extends Exception {
+
     private static final long serialVersionUID = 201107081045L;
-    
-     /**
+
+    /**
      * Constructs a new runtime exception with the specified detail message and
-     * cause.  <p>Note that the detail message associated with
-     * <code>cause</code> is <i>not</i> automatically incorporated in
-     * this runtime exception's detail message.
+     * cause. Note that the detail message associated with <code>cause</code> 
+     * is <i>not</i> automatically incorporated in the detail message.
      *
-     * @param message the detail message (which is saved for later retrieval
-     *                by the {@link #getMessage()} method).
-     * @param cause   the cause (which is saved for later retrieval by the
-     *                {@link #getCause()} method).  (A null value is
-     *                permitted, and indicates that the cause is nonexistent or
-     *                unknown.)
-     * @since 1.4
+     * @param message the detail message
+     * @param cause the underlying cause
      */
-    public JobPersistenceException(String message, Throwable cause)
-    {
+    public JobPersistenceException(String message, Throwable cause) {
         super(message, cause);
     }
 
@@ -103,11 +96,9 @@ public class JobPersistenceException extends Exception
      * The cause is not initialized, and may subsequently be initialized by a
      * call to {@link #initCause}.
      *
-     * @param message the detail message. The detail message is saved for
-     *                later retrieval by the {@link #getMessage()} method.
+     * @param message the detail message
      */
-    public JobPersistenceException(String message)
-    {
+    public JobPersistenceException(String message) {
         super(message);
     }
 

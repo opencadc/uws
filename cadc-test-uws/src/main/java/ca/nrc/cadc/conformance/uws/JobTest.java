@@ -65,19 +65,21 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.conformance.uws;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
+import ca.nrc.cadc.util.Log4jInit;
+import com.meterware.httpunit.GetMethodWebRequest;
+import com.meterware.httpunit.HttpNotFoundException;
+import com.meterware.httpunit.WebConversation;
+import com.meterware.httpunit.WebRequest;
+import com.meterware.httpunit.WebResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
@@ -87,39 +89,27 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
-import ca.nrc.cadc.util.Log4jInit;
-
-import com.meterware.httpunit.GetMethodWebRequest;
-import com.meterware.httpunit.HttpNotFoundException;
-import com.meterware.httpunit.WebConversation;
-import com.meterware.httpunit.WebRequest;
-import com.meterware.httpunit.WebResponse;
-
 /**
  * Test the /joblist/jobid resource.
- * 
+ *
  * @author pdowler
  */
-public class JobTest extends AbstractUWSTest
-{
+public class JobTest extends AbstractUWSTest {
+
     private static Logger log = Logger.getLogger(JobTest.class);
 
-    static
-    {
+    static {
         Log4jInit.setLevel("ca.nrc.cadc", Level.INFO);
     }
 
-    public JobTest()
-    {
+    public JobTest() {
         super();
     }
 
     @Test
-    public void testCreateDefaultJob()
-    {
+    public void testCreateDefaultJob() {
         log.debug("testCreateDefaultJob");
-        try
-        {
+        try {
             // Create a new Job.
             WebConversation conversation = new WebConversation();
             String jobId = createJob(conversation);
@@ -134,113 +124,89 @@ public class JobTest extends AbstractUWSTest
 
             // Get the document root.
             Element root = document.getRootElement();
-            assertNotNull("XML returned from GET of " + resourceUrl + " missing root element", root);
+            Assert.assertNotNull("XML returned from GET of " + resourceUrl + " missing root element", root);
             Namespace namespace = root.getNamespace();
             log.debug("namespace: " + namespace);
 
             // List of jobId elements.
             List list = root.getChildren("jobId", namespace);
-            assertNotNull("XML returned from GET of " + resourceUrl + " missing uws:jobId element", list);
+            Assert.assertNotNull("XML returned from GET of " + resourceUrl + " missing uws:jobId element", list);
 
             // Validate the jobId.
             Element element = (Element) list.get(0);
             log.debug("uws:jobId: " + element.getText());
-            assertEquals("Incorrect uws:jobId element in XML returned from GET of " + resourceUrl, jobId, element.getText());
+            Assert.assertEquals("Incorrect uws:jobId element in XML returned from GET of " + resourceUrl, jobId, element.getText());
 
             // TODO: verify that there is no JobInfo
-
             // TODO: verify that there are no parameters
-
             // TODO: verify there is no runID
-
             deleteJob(conversation, jobId);
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
-    
-    private void verifyDeletedJob(WebConversation conversation, String jobId) throws IOException, SAXException
-    {
+    private void verifyDeletedJob(WebConversation conversation, String jobId) throws IOException, SAXException {
         // Get the job again; it should return 404 since it's deleted already.
         // GET request to the jobId resource.
         String resourceUrl = serviceUrl + "/" + jobId;
         conversation.clearContents();
-        WebRequest getRequest = new GetMethodWebRequest(resourceUrl) ;
-        try
-        {
+        WebRequest getRequest = new GetMethodWebRequest(resourceUrl);
+        try {
             conversation.getResponse(getRequest);
             Assert.fail("404 error is expected for request to deleted job.");
-        }
-        catch (HttpNotFoundException e)
-        {
+        } catch (HttpNotFoundException e) {
             // expected.
         }
     }
-    
+
     /**
      * Delete a job through HTTP DELETE.
-     * 
+     *
      * @author zhangsa
      */
     @Test
-    public void testDeleteJob()
-    {
-        try
-        {
+    public void testDeleteJob() {
+        try {
             // Create a new Job.
             WebConversation conversation = new WebConversation();
             String jobId = createJob(conversation);
             deleteJobWithDeleteRequest(conversation, jobId);
             verifyDeletedJob(conversation, jobId);
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
-    
-    
     /**
      * Delete a job through POST.
-     * 
+     *
      * @author zhangsa
      */
     @Test
-    public void testDeleteJobbyPost()
-    {
-        try
-        {
+    public void testDeleteJobbyPost() {
+        try {
             // Create a new Job.
             WebConversation conversation = new WebConversation();
 
             String jobId = createJob(conversation);
-            
+
             deleteJobWithPostRequest(conversation, jobId);
             verifyDeletedJob(conversation, jobId);
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
-    
-    
-    
+
     /**
      * Create a job with RUNID.
      */
     @Test
-    public void testCreateJobWithRunID()
-    {
-        try
-        {
+    public void testCreateJobWithRunID() {
+        try {
             // Create Map of Job parameters.
             Map<String, List<String>> parameters = new HashMap<String, List<String>>();
             List<String> values = new ArrayList<String>();
@@ -261,29 +227,24 @@ public class JobTest extends AbstractUWSTest
 
             // Get the document root.
             Element root = document.getRootElement();
-            assertNotNull("XML returned from GET of " + resourceUrl + " missing root element", root);
+            Assert.assertNotNull("XML returned from GET of " + resourceUrl + " missing root element", root);
             Namespace namespace = root.getNamespace();
             log.debug("namespace: " + namespace);
 
             // List of jobId elements.
             List list = root.getChildren("jobId", namespace);
-            assertNotNull("XML returned from GET of " + resourceUrl + " missing uws:jobId element", list);
+            Assert.assertNotNull("XML returned from GET of " + resourceUrl + " missing uws:jobId element", list);
 
             // Validate the jobId.
             Element element = (Element) list.get(0);
             log.debug("uws:jobId: " + element.getText());
-            assertEquals("Incorrect uws:jobId element in XML returned from GET of " + resourceUrl, jobId, element.getText());
+            Assert.assertEquals("Incorrect uws:jobId element in XML returned from GET of " + resourceUrl, jobId, element.getText());
 
             // TODO: verify that there is no JobInfo
-
             // TODO: verify that there are no parameters
-
             // TODO: verify the runID
-
             deleteJob(conversation, jobId);
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }

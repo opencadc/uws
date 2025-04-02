@@ -65,63 +65,57 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.conformance.uws;
 
-import static org.junit.Assert.fail;
-
+import ca.nrc.cadc.util.Log4jInit;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jdom2.input.SAXBuilder;
+import org.junit.Assert;
 import org.junit.Before;
-
-import ca.nrc.cadc.util.Log4jInit;
 
 /**
  * Abstract class for UWS XML job test.
- * 
+ *
  * @author zhangsa
  *
  */
-public abstract class AbstractUWSXmlTest extends AbstractUWSTest
-{
+public abstract class AbstractUWSXmlTest extends AbstractUWSTest {
+
     protected static Logger log = Logger.getLogger(AbstractUWSXmlTest.class);
 
-    static
-    {
+    static {
         Log4jInit.setLevel("ca.nrc.cadc", Level.INFO);
     }
 
     protected List<File> testFileList;
-   
+
     protected String xmlTestFilePrefix = null;
 
-    protected AbstractUWSXmlTest(String xslTestFilePrefix)
-    {
+    protected AbstractUWSXmlTest(String xslTestFilePrefix) {
         super();
         this.xmlTestFilePrefix = xslTestFilePrefix;
     }
-    
-    @Before
-    public void before()
-    {
-        String directoryPath = System.getProperty("properties.directory");
-        if (directoryPath == null) fail("properties.directory System property not set");
-        
-        if (xmlTestFilePrefix == null)
-            throw new RuntimeException("XML test file prefix must be specified.");
 
-        try
-        {
-            testFileList = Util.loadXmlFileList(directoryPath, xmlTestFilePrefix);
+    @Before
+    public void before() {
+        String directoryPath = System.getProperty("properties.directory");
+        if (directoryPath == null) {
+            Assert.fail("properties.directory System property not set");
         }
-        catch (IOException e1)
-        {
+
+        if (xmlTestFilePrefix == null) {
+            throw new RuntimeException("XML test file prefix must be specified.");
+        }
+
+        try {
+            testFileList = Util.loadXmlFileList(directoryPath, xmlTestFilePrefix);
+        } catch (IOException e1) {
             e1.printStackTrace();
             throw new RuntimeException("Cannot load test files.");
         }
@@ -129,36 +123,31 @@ public abstract class AbstractUWSXmlTest extends AbstractUWSTest
 
     /**
      * Load a list of test XML files, for each of them, execute the testImpl(), which is implemented in child class.
-     * 
+     *
      * @author zhangsa
      */
-    public void testFileList()
-    {
-        try
-        {
+    public void testFileList() {
+        try {
             SAXBuilder saxBuilder = new SAXBuilder();
 
-            for (File testFile : testFileList)
-            {
+            for (File testFile : testFileList) {
                 log.debug("**************************************************");
                 log.debug("processing xml test file: " + testFile.getName());
                 log.debug("**************************************************");
 
                 //String xml = Util.getXmlString(saxBuilder.build(testFile));
                 String xml = Util.readFileAsString(testFile);
-                
+
                 log.debug(xml);
 
                 testImpl(xml);  // call the actual test implementation method for the given XML string in each file.
             }
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             log.error(ex);
-            fail(ex.getMessage());
+            Assert.fail(ex.getMessage());
         }
     }
 
-    abstract protected void testImpl(String xml) throws Exception;
+    protected abstract void testImpl(String xml) throws Exception;
 
 }

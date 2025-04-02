@@ -65,10 +65,10 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
+
 package ca.nrc.cadc.conformance.uws;
 
-import static ca.nrc.cadc.conformance.uws.AbstractUWSTest.serviceUrl;
 import ca.nrc.cadc.util.Log4jInit;
 import com.meterware.httpunit.PostMethodWebRequest;
 import com.meterware.httpunit.WebConversation;
@@ -80,34 +80,28 @@ import org.apache.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.Namespace;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * 
+ *
  * @author jburke
  */
-public class ShutdownCommandTest extends AbstractUWSTest
-{
+public class ShutdownCommandTest extends AbstractUWSTest {
+
     private static Logger log = Logger.getLogger(ShutdownCommandTest.class);
 
-    static
-    {
+    static {
         Log4jInit.setLevel("ca.nrc.cadc", Level.INFO);
     }
 
-    public ShutdownCommandTest()
-    {
+    public ShutdownCommandTest() {
         super();
     }
 
     @Test
-    public void testShutdownCommand()
-    {
-        try
-        {
+    public void testShutdownCommand() {
+        try {
             // Create a new Job.
             WebConversation conversation = new WebConversation();
             String jobId = createJob(conversation);
@@ -121,7 +115,7 @@ public class ShutdownCommandTest extends AbstractUWSTest
             // Get the redirect.
             String location = response.getHeaderField("Location");
             log.debug("Location: " + location);
-            assertNotNull("POST response to " + resourceUrl + " location header not set", location);
+            Assert.assertNotNull("POST response to " + resourceUrl + " location header not set", location);
 
             // Follow the redirect.
             response = get(conversation, location);
@@ -132,28 +126,26 @@ public class ShutdownCommandTest extends AbstractUWSTest
 
             // Get the document root.
             Element root = document.getRootElement();
-            assertNotNull("XML returned from GET of " + resourceUrl + " missing root element", root);
+            Assert.assertNotNull("XML returned from GET of " + resourceUrl + " missing root element", root);
             Namespace namespace = root.getNamespace();
             log.debug("Namespace: " + namespace);
 
             // Get the phase.
             List list = root.getChildren("phase", namespace);
-            assertEquals("uws:phase element not found in XML returned from GET of " + resourceUrl, 1, list.size());
+            Assert.assertEquals("uws:phase element not found in XML returned from GET of " + resourceUrl, 1, list.size());
 
             // Valiate the phase.
             Element phase = (Element) list.get(0);
             log.debug("uws:phase: " + phase.getText());
-            assertEquals("uws:phase should be ABORTED", "ABORTED", phase.getText());
+            Assert.assertEquals("uws:phase should be ABORTED", "ABORTED", phase.getText());
 
             // Delete the Job.
             deleteJob(conversation, jobId);
 
             log.info("ShutdownCommandTest.testShutdownCommand completed.");
-        }
-        catch (Throwable t)
-        {
+        } catch (Throwable t) {
             log.error(t);
-            fail(t.getMessage());
+            Assert.fail(t.getMessage());
         }
     }
 

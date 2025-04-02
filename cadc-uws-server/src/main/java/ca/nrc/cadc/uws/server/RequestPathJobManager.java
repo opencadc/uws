@@ -86,8 +86,8 @@ public class RequestPathJobManager extends SimpleJobManager {
 
     private static final Logger log = Logger.getLogger(RequestPathJobManager.class);
 
-    protected final Map<String,JobPersistence> jobPersistenceMap = new TreeMap<>();
-    protected final Map<String,JobExecutor> jobExecutorMap = new TreeMap<>();
+    protected final Map<String, JobPersistence> jobPersistenceMap = new TreeMap<>();
+    protected final Map<String, JobExecutor> jobExecutorMap = new TreeMap<>();
 
     public RequestPathJobManager() {
         super();
@@ -106,23 +106,23 @@ public class RequestPathJobManager extends SimpleJobManager {
     }
 
     /**
-     * Create a JobPersistence instance for the specified request path.  The same
-     * instance (e.g. a PostgresJobPersistence) can be returned if you want to use a 
-     * single instance (e.g. single connection pool and single database) for one 
-     * or more sub-paths. 
-     * 
+     * Create a JobPersistence instance for the specified request path. The same
+     * instance (e.g. a PostgresJobPersistence) can be returned if you want to use a
+     * single instance (e.g. single connection pool and single database) for one
+     * or more sub-paths.
+     *
      * @param requestPath
      * @return a JobPersistence instance
      */
-    protected JobPersistence createJobPersistence(String requestPath) { 
+    protected JobPersistence createJobPersistence(String requestPath) {
         return null;
     }
-    
+
     /**
      * Create a JobExecutor instance for the specified request path. The same
      * instance (e.g. a ThreadPoolExecutor) if you want to use a single instance
      * for one or more sub-paths.
-     * 
+     *
      * @param requestPath
      * @param jobUpdater
      * @return a JobExecutor instance
@@ -130,7 +130,7 @@ public class RequestPathJobManager extends SimpleJobManager {
     protected JobExecutor createJobExecutor(String requestPath, JobUpdater jobUpdater) {
         return null;
     }
-    
+
     @Override
     protected JobPersistence getJobPersistence(String requestPath) {
         JobPersistence ret = super.getJobPersistence(requestPath);
@@ -143,7 +143,7 @@ public class RequestPathJobManager extends SimpleJobManager {
         }
         return ret;
     }
-    
+
     @Override
     protected JobExecutor getJobExecutor(String requestPath, JobUpdater jobUpdater) {
         JobExecutor ret = super.getJobExecutor(requestPath, jobUpdater);

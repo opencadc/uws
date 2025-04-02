@@ -65,31 +65,26 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.conformance.uws;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-import org.apache.log4j.Logger;
-import org.jdom2.Attribute;
-import org.jdom2.Document;
-import org.jdom2.Element;
-import org.jdom2.Namespace;
-import org.junit.Test;
 
 import com.meterware.httpunit.PostMethodWebRequest;
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebRequest;
 import com.meterware.httpunit.WebResponse;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import org.apache.log4j.Logger;
+import org.jdom2.Attribute;
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.Namespace;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * For each file in the specified testing directory with specified prefix,
@@ -97,31 +92,22 @@ import com.meterware.httpunit.WebResponse;
  *
  * @author zhangsa
  */
-public class ResultsXmlTest extends AbstractUWSXmlTest
-{
+public class ResultsXmlTest extends AbstractUWSXmlTest {
+
     protected static Logger log = Logger.getLogger(ResultsXmlTest.class);
     protected static final String XML_TEST_FILE_PREFIX = "ResultsTest";
 
-    public ResultsXmlTest()
-    {
+    public ResultsXmlTest() {
         super(XML_TEST_FILE_PREFIX);
     }
-    
+
     @Test
-    public void testResults()
-    {
+    public void testResults() {
         super.testFileList();
     }
 
-    /**
-     * This is the actual test implentation.
-     * 
-     * @param xml:  XML string to be posted to the SampleUWS Server.
-     * 
-     */
-    protected void testImpl(String xml) throws Exception
-    {
-        
+    protected void testImpl(String xml) throws Exception {
+
         WebConversation conversation = new WebConversation();
         String jobId = createJob(conversation, xml);
 
@@ -134,7 +120,7 @@ public class ResultsXmlTest extends AbstractUWSXmlTest
         // Get the redirect.
         String location = response.getHeaderField("Location");
         log.debug("Location: " + location);
-        assertNotNull(" POST response to " + resourceUrl + " location header not set", location);
+        Assert.assertNotNull(" POST response to " + resourceUrl + " location header not set", location);
 
         // Follow the redirect.
         response = get(conversation, location);
@@ -152,8 +138,7 @@ public class ResultsXmlTest extends AbstractUWSXmlTest
         Namespace namespace = null;
         boolean done = false;
         Long start = System.currentTimeMillis();
-        while (!done)
-        {
+        while (!done) {
             // Wait for 1 second.
             Thread.sleep(1000);
 
@@ -166,39 +151,38 @@ public class ResultsXmlTest extends AbstractUWSXmlTest
 
             // Root element of the document.
             root = document.getRootElement();
-            assertNotNull(" no XML returned from GET of " + resourceUrl, root);
+            Assert.assertNotNull(" no XML returned from GET of " + resourceUrl, root);
 
             // Get the phase element.
             list = root.getChildren("phase", namespace);
-            assertEquals(
+            Assert.assertEquals(
                     " phase element should only have a single element in XML returned from GET of "
-                            + resourceUrl, 1, list.size());
+                    + resourceUrl, 1, list.size());
             Element phase = (Element) list.get(0);
             String phaseText = phase.getText();
 
             // Check if request timeout exceeded.
-            if ((System.currentTimeMillis() - start) > (REQUEST_TIMEOUT * 1000))
-                fail(" request timeout exceeded in GET of " + resourceUrl);
+            if ((System.currentTimeMillis() - start) > (REQUEST_TIMEOUT * 1000)) {
+                Assert.fail(" request timeout exceeded in GET of " + resourceUrl);
+            }
 
             // COMPLETED phase, continue with test.
-            if (phaseText.equals("COMPLETED"))
+            if (phaseText.equals("COMPLETED")) {
                 break;
-
-            // Fail if phase is ERROR or ABORTED.
-            else if (phaseText.equals("ERROR") || phaseText.equals("ABORTED"))
-                fail(" phase should not be " + phaseText + ", in XML returned from GET of "
+            } else if (phaseText.equals("ERROR") || phaseText.equals("ABORTED")) {
+                Assert.fail(" phase should not be " + phaseText + ", in XML returned from GET of "
                         + resourceUrl);
-
-            // Check phase, if still PENDING or QUEUED after x seconds, fail.
-            else if (phaseText.equals("PENDING") || phaseText.equals("QUEUED")
-                    || phaseText.equals("EXECUTING")) continue;
+            } else if (phaseText.equals("PENDING") || phaseText.equals("QUEUED")
+                    || phaseText.equals("EXECUTING")) {
+                continue;
+            }
         }
 
         // Get the results element.
         list = root.getChildren("results", namespace);
-        assertEquals(
+        Assert.assertEquals(
                 " uws:results element should only have a single element in XML returned from GET of "
-                        + resourceUrl, 1, list.size());
+                + resourceUrl, 1, list.size());
 
         // Get the list of result elements.
         Element results = (Element) list.get(0);
@@ -206,34 +190,27 @@ public class ResultsXmlTest extends AbstractUWSXmlTest
 
         // Get a List of URL's for the result href attribute.
         List<URL> resultUrls = new ArrayList<URL>();
-        for (Iterator it = list.iterator(); it.hasNext();)
-        {
+        for (Iterator it = list.iterator(); it.hasNext();) {
             Element element = (Element) it.next();
             List attributes = element.getAttributes();
-            for (Iterator itt = attributes.iterator(); itt.hasNext();)
-            {
+            for (Iterator itt = attributes.iterator(); itt.hasNext();) {
                 Attribute attribute = (Attribute) itt.next();
                 if (attribute.getNamespacePrefix().equals("xlink")
-                        && attribute.getName().equals("href"))
-                {
-                    try
-                    {
+                        && attribute.getName().equals("href")) {
+                    try {
                         // Try and create an URL from the href and add to list.
                         URL url = new URL(attribute.getValue());
                         resultUrls.add(url);
-                    }
-                    catch (MalformedURLException mue)
-                    {
+                    } catch (MalformedURLException mue) {
                         log.error(mue);
-                        fail(mue.getMessage());
+                        Assert.fail(mue.getMessage());
                     }
                 }
             }
         }
 
         // Do a HEAD request on each result url.
-        for (URL url : resultUrls)
-        {
+        for (URL url : resultUrls) {
             head(conversation, url.toString());
         }
         deleteJob(conversation, jobId);

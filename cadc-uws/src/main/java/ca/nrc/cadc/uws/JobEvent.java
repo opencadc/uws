@@ -65,7 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws;
 
@@ -73,115 +73,105 @@ import java.util.EventObject;
 
 /**
  * Event to indicate that Job has changed execution phases.
- * 
+ *
  * @author majorb
  *
  */
-public class JobEvent extends EventObject
-{
+public class JobEvent extends EventObject {
 
     // For serialization
     private static final long serialVersionUID = -7622359494477404254L;
-    
+
     // Event attributes
     private String eventID;
     private String jobID;
     private ExecutionPhase executionPhase;
     private ErrorSummary errorSummary;
-    
+
     /**
      * Convenience constructor for COMPLETED job events.
-     * 
+     *
      * @param source
      * @param eventID
      * @param jobID
      */
-    public JobEvent(Object source, String eventID, String jobID)
-    {
+    public JobEvent(Object source, String eventID, String jobID) {
         this(source, eventID, jobID, ExecutionPhase.COMPLETED, null);
     }
 
     /**
      * Convenience constructor for ERROR job events.
-     * 
+     *
      * @param source
      * @param eventID
      * @param jobID
      * @param errorSummary
      */
-    public JobEvent(Object source, String eventID, String jobID, ErrorSummary errorSummary)
-    {
+    public JobEvent(Object source, String eventID, String jobID, ErrorSummary errorSummary) {
         this(source, eventID, jobID, ExecutionPhase.ERROR, errorSummary);
     }
-    
+
     /**
      * Convenience constructor for other non-ERROR job events.
-     * 
+     *
      * @param source
      * @param eventID
      * @param jobID
      * @param executionPhase
      */
-    public JobEvent(Object source, String eventID, String jobID, ExecutionPhase executionPhase)
-    {
+    public JobEvent(Object source, String eventID, String jobID, ExecutionPhase executionPhase) {
         this(source, eventID, jobID, executionPhase, null);
     }
-    
+
     /**
      * Construct the JobEvent object.
      */
-    private JobEvent(Object source, String eventID, String jobID, ExecutionPhase executionPhase, ErrorSummary errorSummary)
-    {
+    private JobEvent(Object source, String eventID, String jobID, ExecutionPhase executionPhase, ErrorSummary errorSummary) {
         super(source);
         this.eventID = eventID;
         this.jobID = jobID;
         this.executionPhase = executionPhase;
         this.errorSummary = errorSummary;
     }
-    
-    public String toString()
-    {
+
+    public String toString() {
         return String.format("Job (JobID=[%s] ExecutionPhase=[%s] ErrorSummary=[%s])",
                 jobID, executionPhase, errorSummary);
     }
 
     /**
      * Get the eventID.
-     * 
+     *
      * @return
      */
-    public String getEventID()
-    {
+    public String getEventID() {
         return eventID;
     }
 
     /**
      * Get the jobID.
-     * 
+     *
      * @return
      */
-    public String getJobID()
-    {
+    public String getJobID() {
         return jobID;
     }
 
     /**
      * Get the new execution phase.
-     * 
+     *
      * @return
      */
-    public ExecutionPhase getExecutionPhase()
-    {
+    public ExecutionPhase getExecutionPhase() {
         return executionPhase;
     }
 
     /**
      * Get the error summary (if applicable.)
-     * 
+     *
      * @return
      */
-    public ErrorSummary getErrorSummary()
-    {
+    public ErrorSummary getErrorSummary() {
         return errorSummary;
     }
 

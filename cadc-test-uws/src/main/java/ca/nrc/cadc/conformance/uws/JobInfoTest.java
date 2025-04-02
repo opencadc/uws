@@ -65,17 +65,15 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.conformance.uws;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
+import ca.nrc.cadc.util.Log4jInit;
+import com.meterware.httpunit.WebConversation;
+import com.meterware.httpunit.WebResponse;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
@@ -86,45 +84,36 @@ import org.jdom2.output.XMLOutputter;
 import org.junit.Assert;
 import org.junit.Test;
 
-import ca.nrc.cadc.util.Log4jInit;
-
-import com.meterware.httpunit.WebConversation;
-import com.meterware.httpunit.WebResponse;
-
 /**
  * Test the /joblist and /joblist/jobid resources handling of POSTed XML into the JobInfo.
  * This test is suitable for async job lists only.
- * 
+ *
  * @author pdowler
  */
-public class JobInfoTest extends AbstractUWSTest
-{
+public class JobInfoTest extends AbstractUWSTest {
+
     private static Logger log = Logger.getLogger(JobInfoTest.class);
 
-    static
-    {
+    static {
         Log4jInit.setLevel("ca.nrc.cadc", Level.INFO);
     }
-    
-    public JobInfoTest()
-    {
+
+    public JobInfoTest() {
         super();
-        
+
     }
 
     /**
      * Create a job and include XML in the job-creation POST.
      */
     @Test
-    public void testCreateJobWithXML()
-    {
-        try
-        {
+    public void testCreateJobWithXML() {
+        try {
             // JobInfo XML
             String expectedJobInfo = "<target><name>name</name><position>position</position></target>";
-            String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                    expectedJobInfo;
-            
+            String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                    + expectedJobInfo;
+
             // Create a new Job.
             WebConversation conversation = new WebConversation();
             String jobId = createJob(conversation, xml);
@@ -139,45 +128,41 @@ public class JobInfoTest extends AbstractUWSTest
 
             // Get the document root.
             Element root = document.getRootElement();
-            assertNotNull("XML returned from GET of " + resourceUrl + " missing root element", root);
+            Assert.assertNotNull("XML returned from GET of " + resourceUrl + " missing root element", root);
             Namespace namespace = root.getNamespace();
             log.debug("namespace: " + namespace);
 
             // List of jobInfo elements.
             Element jobInfo = root.getChild("jobInfo", namespace);
             Element content = (Element) jobInfo.getChildren().get(0);
-            assertNotNull("XML returned from GET of " + resourceUrl + " missing uws:jobInfo element", jobInfo);
+            Assert.assertNotNull("XML returned from GET of " + resourceUrl + " missing uws:jobInfo element", jobInfo);
 
             // Validate the jobInfo.        
             XMLOutputter outputter = new XMLOutputter(Format.getCompactFormat());
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
-            outputter.output(content, pw);            
+            outputter.output(content, pw);
             log.debug("jobInfo: " + sw.toString());
-            assertEquals("Incorrect uws:jobInfo content in XML returned from GET of " + resourceUrl, expectedJobInfo, sw.toString());
+            Assert.assertEquals("Incorrect uws:jobInfo content in XML returned from GET of " + resourceUrl, expectedJobInfo, sw.toString());
 
             // Delete the job.
             deleteJob(conversation, jobId);
 
             log.info("JobTest.testCreateJobInfo completed.");
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
     @Test
-    public void testCreateJobWithNamespaceXML()
-    {
-        try
-        {
+    public void testCreateJobWithNamespaceXML() {
+        try {
             // JobInfo XML
             String expectedJobInfo = "<target><name>name</name><position>position</position></target>";
-            String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                    expectedJobInfo;
-            
+            String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                    + expectedJobInfo;
+
             // Create a new Job.
             WebConversation conversation = new WebConversation();
             String jobId = createJob(conversation, xml);
@@ -192,32 +177,30 @@ public class JobInfoTest extends AbstractUWSTest
 
             // Get the document root.
             Element root = document.getRootElement();
-            assertNotNull("XML returned from GET of " + resourceUrl + " missing root element", root);
+            Assert.assertNotNull("XML returned from GET of " + resourceUrl + " missing root element", root);
             Namespace namespace = root.getNamespace();
             log.debug("namespace: " + namespace);
 
             // List of jobInfo elements.
             Element jobInfo = root.getChild("jobInfo", namespace);
             Element content = (Element) jobInfo.getChildren().get(0);
-            assertNotNull("XML returned from GET of " + resourceUrl + " missing uws:jobInfo element", jobInfo);
+            Assert.assertNotNull("XML returned from GET of " + resourceUrl + " missing uws:jobInfo element", jobInfo);
 
             // Validate the jobInfo.        
             XMLOutputter outputter = new XMLOutputter(Format.getCompactFormat());
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
-            outputter.output(content, pw);            
+            outputter.output(content, pw);
             log.debug("jobInfo: " + sw.toString());
-            assertEquals("Incorrect uws:jobInfo content in XML returned from GET of " + resourceUrl, expectedJobInfo, sw.toString());
+            Assert.assertEquals("Incorrect uws:jobInfo content in XML returned from GET of " + resourceUrl, expectedJobInfo, sw.toString());
 
             // Delete the job.
             deleteJob(conversation, jobId);
 
             log.info("JobTest.testCreateJobInfoWithNamespace completed.");
-        }
-        catch (Throwable t)
-        {
+        } catch (Throwable t) {
             log.error(t);
-            fail(t.getMessage());
+            Assert.fail(t.getMessage());
         }
     }
 
@@ -225,21 +208,14 @@ public class JobInfoTest extends AbstractUWSTest
      * Create a job and then POST XML to the job URL.
      */
     @Test
-    public void testCreateJobAddXML()
-    {
-        try
-        {
+    public void testCreateJobAddXML() {
+        try {
             // create default job
 
             // post xml to the job url
-
             // verify jobInfo equal to the XML
-
             // verify that there are no parameters
-
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
@@ -249,27 +225,17 @@ public class JobInfoTest extends AbstractUWSTest
      * Create a job with XML, then replace it with different XML.
      */
     @Test
-    public void testReplaceJobInfoXML()
-    {
-        try
-        {
+    public void testReplaceJobInfoXML() {
+        try {
             // create default job
 
             // post XML to the job url
-
             // verify jobInfo equal to the XML
-
             // verify that there are no parameters
-
             // post different xml to the job url
-
             // verify jobInfo equal to the new XML
-
             // verify that there are no parameters
-
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }

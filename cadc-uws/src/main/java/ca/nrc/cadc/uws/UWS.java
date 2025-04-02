@@ -65,7 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws;
 
@@ -84,12 +84,11 @@ import org.jdom2.Namespace;
  * @author zhangsa
  *
  */
-public abstract class UWS
-{
+public abstract class UWS {
     public static final String UWS_XSD_FILE = "UWS-v1.1.xsd"; // local xsd file name
     public static final String UWS_NAMESPACE = "http://www.ivoa.net/xml/UWS/v1.0";
     public static final String UWS_VERSION = "1.1";
-    
+
     public static final String XLINK_NAMESPACE = "http://www.w3.org/1999/xlink";
     public static final String XLINK_XSD_FILE = "XLINK.xsd";
 
@@ -98,17 +97,17 @@ public abstract class UWS
     public static final Namespace XSI_NS = Namespace.getNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance");
 
     public static final String UWS_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
-    
+
     public static final DateFormat getDateFormat() {
         return new MultiDateFormat();
     }
-    
+
     // possibly temporary class to support multiple input formats for backwards compatibility
     private static class MultiDateFormat extends DateFormat {
-        
+
         final DateFormat outputFmt = DateUtil.getDateFormat(UWS_DATE_FORMAT, DateUtil.UTC);
         final List<DateFormat> inputFmts = new ArrayList<>();
-        
+
         MultiDateFormat() {
             inputFmts.add(outputFmt);
             inputFmts.add(DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC));

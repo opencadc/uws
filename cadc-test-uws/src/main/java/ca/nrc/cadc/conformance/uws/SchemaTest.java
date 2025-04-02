@@ -65,13 +65,11 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.conformance.uws;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
+import ca.nrc.cadc.util.Log4jInit;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.custommonkey.xmlunit.Diff;
@@ -79,48 +77,42 @@ import org.custommonkey.xmlunit.XMLUnit;
 import org.jdom2.Attribute;
 import org.jdom2.Document;
 import org.jdom2.Element;
+import org.junit.Assert;
 import org.junit.Test;
 
-import ca.nrc.cadc.util.Log4jInit;
+public class SchemaTest extends AbstractUWSTest {
 
-public class SchemaTest extends AbstractUWSTest
-{
     private static Logger log = Logger.getLogger(SchemaTest.class);
 
-    static
-    {
+    static {
         Log4jInit.setLevel("ca.nrc.cadc", Level.INFO);
     }
 
-    public SchemaTest()
-    {
+    public SchemaTest() {
         super();
     }
 
     @Test
-    public void testSchema()
-    {
-        try
-        {
+    public void testSchema() {
+        try {
             // Create DOM document from XML.
             String serviceSchema = schemaMap.get("http://www.ivoa.net/xml/UWS/v1.0");
 
             String schema = urlToString(serviceSchema);
             Document document = buildDocument(schema, false);
-            assertNotNull("Unable to build a DOM document from the schema", document);
+            Assert.assertNotNull("Unable to build a DOM document from the schema", document);
             log.debug("document xml: " + document.toString());
 
             // Get the root element of the document.
             Element root = document.getRootElement();
-            assertNotNull("XML from schema missing root element", root);
+            Assert.assertNotNull("XML from schema missing root element", root);
 
             // Look for the targetNamespace attribute of the schema.
             Attribute targetNamespace = root.getAttribute("targetNamespace");
             log.debug("targetNamespace: " + targetNamespace);
 
             // Test can not proceed if the schema hasn't specified a targetNamespace.
-            if (targetNamespace == null)
-            {
+            if (targetNamespace == null) {
                 log.debug("Aborting test because the targetNamespace was not specified in the UWS Schema.");
                 return;
             }
@@ -128,17 +120,15 @@ public class SchemaTest extends AbstractUWSTest
             // Build a document of the XSD referenced in the schema.
             String target = urlToString(targetNamespace.getValue());
             Document doc = buildDocument(target, false);
-            assertNotNull("Unable to build a DOM document from " + targetNamespace, doc);
+            Assert.assertNotNull("Unable to build a DOM document from " + targetNamespace, doc);
 
             // Compare the two documents and get a diff.
             Diff diff = XMLUnit.compareXML(schema, target);
-            assertTrue("The UWS Schema and the UWS targetNamespace Schema are not similar: " + diff.toString(), diff.similar());
-            assertTrue("The UWS Schema and the UWS targetNamespace Schema are not identical: " + diff.toString(), diff.identical());
+            Assert.assertTrue("The UWS Schema and the UWS targetNamespace Schema are not similar: " + diff.toString(), diff.similar());
+            Assert.assertTrue("The UWS Schema and the UWS targetNamespace Schema are not identical: " + diff.toString(), diff.identical());
 
             log.info("SchemaTest.testSchema completed.");
-        }
-        catch (Throwable t)
-        {
+        } catch (Throwable t) {
             log.warn(t);
         }
     }

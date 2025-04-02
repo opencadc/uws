@@ -79,7 +79,7 @@ import java.util.List;
 
 /**
  * New JobManager API that supports job persistence and execution routing based on request path.
- * 
+ *
  * @author pdowler
  */
 public interface JobManager {
@@ -87,32 +87,32 @@ public interface JobManager {
     default void setAppName(String appName) {
         // no-op
     }
-    
+
     void terminate() throws InterruptedException;
-    
-    Job create(String requestPath, Job job) 
-        throws JobPersistenceException, TransientException;
 
-    void delete(String requestPath, String jobID) 
-        throws JobNotFoundException, JobPersistenceException, TransientException;
+    Job create(String requestPath, Job job)
+            throws JobPersistenceException, TransientException;
 
-    Job get(String requestPath, String jobID) 
-        throws JobNotFoundException, JobPersistenceException, TransientException;
+    void delete(String requestPath, String jobID)
+            throws JobNotFoundException, JobPersistenceException, TransientException;
 
-    Iterator<JobRef> iterator(String requestPath) 
-        throws JobPersistenceException, TransientException;
+    Job get(String requestPath, String jobID)
+            throws JobNotFoundException, JobPersistenceException, TransientException;
 
-    Iterator<JobRef> iterator(String requestPath, List<ExecutionPhase> phases) 
-        throws JobPersistenceException, TransientException;
+    Iterator<JobRef> iterator(String requestPath)
+            throws JobPersistenceException, TransientException;
 
-    Iterator<JobRef> iterator(String requestPath, List<ExecutionPhase> phases, Date after, Integer last) 
-        throws JobPersistenceException, TransientException;
-    
-    void update(String requestPath, String jobID, Date destruction, Long duration, Date quote) 
-        throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException;
+    Iterator<JobRef> iterator(String requestPath, List<ExecutionPhase> phases)
+            throws JobPersistenceException, TransientException;
 
-    void update(String requestPath, String jobID, List<Parameter> params) 
-        throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException;
+    Iterator<JobRef> iterator(String requestPath, List<ExecutionPhase> phases, Date after, Integer last)
+            throws JobPersistenceException, TransientException;
+
+    void update(String requestPath, String jobID, Date destruction, Long duration, Date quote)
+            throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException;
+
+    void update(String requestPath, String jobID, List<Parameter> params)
+            throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException;
 
     /**
      * Max elapsed time from job creation to destruction.
@@ -135,18 +135,18 @@ public interface JobManager {
      */
     void setMaxQuote(Long maxQuote);
 
-    void execute(String requestPath, String jobID) 
-        throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException;
+    void execute(String requestPath, String jobID)
+            throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException;
 
-    void execute(String requestPath, Job job) 
-        throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException;
+    void execute(String requestPath, Job job)
+            throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException;
 
-    void execute(String requestPath, String jobID, SyncOutput output) 
-        throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException;
+    void execute(String requestPath, String jobID, SyncOutput output)
+            throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException;
 
-    void execute(String requestPath, Job job, SyncOutput output) 
-        throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException;
-    
-    void abort(String requestPath, String jobID) 
-        throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException;
+    void execute(String requestPath, Job job, SyncOutput output)
+            throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException;
+
+    void abort(String requestPath, String jobID)
+            throws JobNotFoundException, JobPersistenceException, JobPhaseException, TransientException;
 }

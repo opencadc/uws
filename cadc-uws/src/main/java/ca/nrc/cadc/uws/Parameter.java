@@ -65,46 +65,39 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
-
+ */
 
 package ca.nrc.cadc.uws;
-
 
 /**
  * Default implementation for a Parameter.
  */
-public class Parameter
-{
+public class Parameter {
+
     private String name;
     private String value;
-
 
     /**
      * Default constructor.
      *
-     * @param name      The name.
-     * @param value     Value for this parameter.
+     * @param name The name.
+     * @param value Value for this parameter.
      */
-    public Parameter(final String name, final String value)
-    {
+    public Parameter(final String name, final String value) {
         this.name = name;
         this.value = value;
     }
-
 
     /**
      * This parameter's name.
      *
      * @return The name of this Parameter.
      */
-    public String getName()
-    {
+    public String getName() {
         return this.name;
     }
 
-    public void setName(final String name)
-    {
+    public void setName(final String name) {
         this.name = name;
     }
 
@@ -113,52 +106,44 @@ public class Parameter
      *
      * @return The value of this Parameter.
      */
-    public String getValue()
-    {
+    public String getValue() {
         return this.value;
     }
 
-    public void setValue(final String value)
-    {
+    public void setValue(final String value) {
         this.value = value;
     }
 
     @Override
-    public boolean equals(Object o)
-    {
-        if (this == o)
-        {
+    public boolean equals(Object o) {
+        if (this == o) {
             return true;
         }
 
-        if ((o == null) || (getClass() != o.getClass()))
-        {
+        if ((o == null) || (getClass() != o.getClass())) {
             return false;
         }
 
         final Parameter parameter = (Parameter) o;
 
         return !((name != null)
-                 ? !name.equals(parameter.name)
-                 : (parameter.name != null))
-               && !((value != null)
-                    ? !value.equals(parameter.value)
-                    : (parameter.value != null));
+                ? !name.equals(parameter.name)
+                : (parameter.name != null))
+                && !((value != null)
+                        ? !value.equals(parameter.value)
+                        : (parameter.value != null));
 
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         int result = name != null ? name.hashCode() : 0;
         result = 31 * result + (value != null ? value.hashCode() : 0);
         return result;
     }
 
-
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "Parameter [name=" + name + ", value=" + value + "]";
     }
 }

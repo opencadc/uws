@@ -65,45 +65,15 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
-
+ */
 
 package ca.nrc.cadc.uws;
 
-
 /**
  * The job is treated as a state machine with the Execution Phase naming the
- * state. The phases are;
- *
- * PENDING: the job is accepted by the service but not yet committed for
- *          execution by the client. In this state, the job quote can be read
- *          and evaluated. This is the state into which a job enters when it
- *          is first created.
- *
- * QUEUED: the job is committed for execution by the client but the service
- *         has not yet assigned it to a processor. No Results are produced in
- *         this phase.
- *
- * EXECUTING: the job has been assigned to a processor. Results may be produced
- *            at any time during this phase.
- *
- * COMPLETED: the execution of the job is over. The Results may be collected.
- *
- * ERROR: the job failed to complete. No further work will be done nor Results
- *        produced. Results may be unavailable or available but invalid; either
- *        way the Results should not be trusted.
- *
- * UNKNOWN: the job is in an unknown state.
- *
- * HELD: The job is HELD pending execution and will not automatically be
- *       executed (cf pending). 
- *
- * ABORTED: the job has been manually aborted by the user, or the system has
- *          aborted the job due to lack of or overuse of resources.
- * 
+ * state.
  */
-public enum ExecutionPhase
-{
+public enum ExecutionPhase {
     PENDING("PENDING"),
     QUEUED("QUEUED"),
     EXECUTING("EXECUTING"),
@@ -117,23 +87,28 @@ public enum ExecutionPhase
 
     private String value;
 
-    private ExecutionPhase(String value) { this.value = value; }
+    private ExecutionPhase(String value) {
+        this.value = value;
+    }
 
-    public static ExecutionPhase toValue(String s)
-    {
-        for (ExecutionPhase d : values())
-            if (d.value.equals(s))
+    public static ExecutionPhase toValue(String s) {
+        for (ExecutionPhase d : values()) {
+            if (d.value.equals(s)) {
                 return d;
+            }
+        }
         throw new IllegalArgumentException("invalid value: " + s);
     }
 
-    public String getValue() { return value; }
-    
-    public boolean isActive()
-    {
+    public String getValue() {
+        return value;
+    }
+
+    public boolean isActive() {
         // the default compareTo order is the order of value declarations above
-        if (this.compareTo(COMPLETED) < 0)
+        if (this.compareTo(COMPLETED) < 0) {
             return true;
+        }
         return false;
     }
 }

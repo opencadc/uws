@@ -65,53 +65,45 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.conformance.uws;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.junit.Test;
-
 import ca.nrc.cadc.util.Log4jInit;
-
 import com.meterware.httpunit.PostMethodWebRequest;
 import com.meterware.httpunit.WebConversation;
 import com.meterware.httpunit.WebRequest;
 import com.meterware.httpunit.WebResponse;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * GET phase status should return only a short string, other than a long XML.
- * 
+ *
  * @author zhangsa
  *
  */
-public class GetPhaseTest extends AbstractUWSTest
-{
+public class GetPhaseTest extends AbstractUWSTest {
+
     private static Logger log = Logger.getLogger(GetPhaseTest.class);
-    static
-    {
+
+    static {
         Log4jInit.setLevel("ca.nrc.cadc", Level.INFO);
     }
 
-    public GetPhaseTest()
-    {
+    public GetPhaseTest() {
         super();
     }
 
     @Test
-    public void testPhase() throws Throwable
-    {
-        try
-        {
+    public void testPhase() throws Throwable {
+        try {
             // Create a new Job.
             WebConversation conversation = new WebConversation();
             String jobId = createJob(conversation);
@@ -122,16 +114,13 @@ public class GetPhaseTest extends AbstractUWSTest
             deleteJob(conversation, jobId);
 
             log.info("GetPhaseTest.testPhase completed.");
-        }
-        catch (Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             throw unexpected;
         }
     }
 
-    private void verifyPhase(WebConversation conversation, String jobId, String expectedPhase) throws Throwable
-    {
+    private void verifyPhase(WebConversation conversation, String jobId, String expectedPhase) throws Throwable {
         // GET request to the phase resource.
         String resourceUrl = serviceUrl + "/" + jobId + "/phase";
         WebResponse response = get(conversation, resourceUrl, "text/plain");
@@ -139,21 +128,19 @@ public class GetPhaseTest extends AbstractUWSTest
         log.debug(Util.getResponseHeaders(response));
         log.debug("Response.getText():\r\n" + response.getText());
 
-        assertEquals("GET response Content-Type header to " + resourceUrl + " is incorrect",
+        Assert.assertEquals("GET response Content-Type header to " + resourceUrl + " is incorrect",
                 "text/plain", response.getContentType());
 
-        assertEquals("response should return only a string of the phase.", expectedPhase,
+        Assert.assertEquals("response should return only a string of the phase.", expectedPhase,
                 response.getText());
     }
 
     // canot have a run test without knowing job params; the ones here are for the example-uws 
     //@Test
-    public void testRunPhase() throws Throwable
-    {
-        try
-        {
+    public void testRunPhase() throws Throwable {
+        try {
             // Create a new Job.
-            WebConversation conversation = new WebConversation();
+            final WebConversation conversation = new WebConversation();
             Map<String, List<String>> parameters = new HashMap<String, List<String>>();
             List<String> pass = new ArrayList<String>();
             pass.add("FALSE");
@@ -177,19 +164,15 @@ public class GetPhaseTest extends AbstractUWSTest
             deleteJob(conversation, jobId);
 
             log.info("GetPhaseTest.testRunPhase completed.");
-        }
-        catch (Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             throw unexpected;
         }
     }
 
     @Test
-    public void testAbortPhase() throws Throwable
-    {
-        try
-        {
+    public void testAbortPhase() throws Throwable {
+        try {
             // Create a new Job.
             WebConversation conversation = new WebConversation();
             String jobId = createJob(conversation);
@@ -206,9 +189,7 @@ public class GetPhaseTest extends AbstractUWSTest
             deleteJob(conversation, jobId);
 
             log.info("GetPhaseTest.testAbortPhase completed.");
-        }
-        catch (Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             throw unexpected;
         }

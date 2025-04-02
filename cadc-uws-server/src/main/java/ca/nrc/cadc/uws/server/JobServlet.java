@@ -63,7 +63,7 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.server;
 
@@ -80,12 +80,13 @@ import org.apache.log4j.Logger;
  * @author pdowler
  */
 public class JobServlet extends RestServlet {
+
     private static final Logger log = Logger.getLogger(JobServlet.class);
 
     private JobManager jobManager;
     private String jndiKey;
-    
-    public JobServlet() { 
+
+    public JobServlet() {
         super();
     }
 
@@ -96,16 +97,14 @@ public class JobServlet extends RestServlet {
         String cname = config.getInitParameter(JobManager.class.getName());
         initJobManager(cname);
     }
-    
+
     protected void initJobManager(String cname) {
-        if (cname != null)
-        {
-            try
-            {
+        if (cname != null) {
+            try {
                 Class<JobManager> clazz = (Class<JobManager>) Class.forName(cname);
                 this.jobManager = clazz.newInstance();
                 jobManager.setAppName(appName);
-                
+
                 Context ctx = new InitialContext();
                 try {
                     ctx.unbind(jndiKey);
@@ -113,19 +112,18 @@ public class JobServlet extends RestServlet {
                     log.debug("unbind previous JobManager failed... ignoring");
                 }
                 ctx.bind(jndiKey, jobManager);
-                
+
                 log.info("create: " + jndiKey + " " + cname + " [OK]");
-            } catch(Exception ex) {
+            } catch (Exception ex) {
                 log.error("create: " + jndiKey + " " + cname + " [FAILED]", ex);
             }
         } else {
             log.error("CONFIG: no JobManager configured in " + componentID);
         }
     }
-    
+
     @Override
-    public void destroy()
-    {
+    public void destroy() {
         if (jobManager != null) {
             try {
                 jobManager.terminate();

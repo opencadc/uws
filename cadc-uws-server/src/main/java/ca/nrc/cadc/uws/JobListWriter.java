@@ -65,10 +65,12 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws;
 
+import ca.nrc.cadc.xml.ContentConverter;
+import ca.nrc.cadc.xml.IterableContent;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -76,30 +78,24 @@ import java.io.Writer;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.Iterator;
-
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 
-import ca.nrc.cadc.date.DateUtil;
-import ca.nrc.cadc.xml.ContentConverter;
-import ca.nrc.cadc.xml.IterableContent;
-
 /**
  * Writes a JobList as XML.
  *
  * @author majorb
  */
-public class JobListWriter
-{
+public class JobListWriter {
+
     private static Logger log = Logger.getLogger(JobListWriter.class);
 
     private final DateFormat dateFormat;
 
-    public JobListWriter()
-    {
+    public JobListWriter() {
         this.dateFormat = UWS.getDateFormat();
     }
 
@@ -111,8 +107,7 @@ public class JobListWriter
      * @throws IOException if the writer fails to write.
      */
     protected void writeDocument(Element root, Writer writer)
-        throws IOException
-    {
+            throws IOException {
         XMLOutputter outputter = new XMLOutputter();
         outputter.setFormat(Format.getPrettyFormat());
         Document document = new Document(root);
@@ -127,8 +122,7 @@ public class JobListWriter
      * @throws IOException if the writer fails to write.
      */
     public void write(Iterator<JobRef> jobs, OutputStream out)
-        throws IOException
-    {
+            throws IOException {
         write(jobs, new OutputStreamWriter(out));
     }
 
@@ -140,8 +134,7 @@ public class JobListWriter
      * @throws IOException if the writer fails to write.
      */
     public void write(Iterator<JobRef> jobs, Writer writer)
-        throws IOException
-    {
+            throws IOException {
         Element root = getRootElement(jobs);
         XMLOutputter outputter = new XMLOutputter();
         outputter.setFormat(Format.getPrettyFormat());
@@ -149,33 +142,29 @@ public class JobListWriter
         outputter.output(document, writer);
     }
 
-    public Element getRootElement(Iterator<JobRef> jobs)
-    {
-        ContentConverter<Element, JobRef> contentConverter =
-            new ContentConverter<Element, JobRef>()
-            {
-                @Override
-                public Element convert(final JobRef jobRef)
-                {
-                    return getShortJobDescription(jobRef);
-                }
-            };
+    public Element getRootElement(Iterator<JobRef> jobs) {
+        ContentConverter<Element, JobRef> contentConverter = new ContentConverter<>() {
+            @Override
+            public Element convert(final JobRef jobRef) {
+                return getShortJobDescription(jobRef);
+            }
+        };
 
-        Element root = new IterableContent<Element, JobRef>(JobAttribute.JOBS.getAttributeName(), UWS.NS, jobs, contentConverter);
+        Element root = new IterableContent<Element, JobRef>(JobAttribute.JOBS.getValue(), UWS.NS, jobs, contentConverter);
         root.addNamespaceDeclaration(UWS.NS);
         root.addNamespaceDeclaration(UWS.XLINK_NS);
-        root.setAttribute(JobAttribute.VERSION.getAttributeName(), UWS.UWS_VERSION);
+        root.setAttribute(JobAttribute.VERSION.getValue(), UWS.UWS_VERSION);
         return root;
     }
 
     /**
      * Create the XML for a short job description.
+     *
      * @param jobRef
      * @return
      */
-    public Element getShortJobDescription(JobRef jobRef)
-    {
-        Element shortJobDescription = new Element(JobAttribute.JOB_REF.getAttributeName(), UWS.NS);
+    public Element getShortJobDescription(JobRef jobRef) {
+        Element shortJobDescription = new Element(JobAttribute.JOB_REF.getValue(), UWS.NS);
         shortJobDescription.setAttribute("id", jobRef.getJobID());
         shortJobDescription.addContent(getPhase(jobRef));
         Element runID = getRunID(jobRef);
@@ -195,9 +184,8 @@ public class JobListWriter
      *
      * @return The Job phase Element.
      */
-    private Element getPhase(JobRef jobRef)
-    {
-        Element element = new Element(JobAttribute.EXECUTION_PHASE.getAttributeName(), UWS.NS);
+    private Element getPhase(JobRef jobRef) {
+        Element element = new Element(JobAttribute.EXECUTION_PHASE.getValue(), UWS.NS);
         element.addContent(jobRef.getExecutionPhase().toString());
         return element;
     }
@@ -207,11 +195,10 @@ public class JobListWriter
      *
      * @return The runID element.
      */
-    private Element getRunID(JobRef jobRef)
-    {
+    private Element getRunID(JobRef jobRef) {
         String runID = jobRef.getRunID();
         if (runID != null) {
-            Element element = new Element(JobAttribute.RUN_ID.getAttributeName(), UWS.NS);
+            Element element = new Element(JobAttribute.RUN_ID.getValue(), UWS.NS);
             element.addContent(runID);
             return element;
         }
@@ -223,11 +210,10 @@ public class JobListWriter
      *
      * @return The creation time element.
      */
-    private Element getCreationTime(JobRef jobRef)
-    {
+    private Element getCreationTime(JobRef jobRef) {
         Date creationTime = jobRef.getCreationTime();
         if (creationTime != null) {
-            Element element = new Element(JobAttribute.CREATION_TIME.getAttributeName(), UWS.NS);
+            Element element = new Element(JobAttribute.CREATION_TIME.getValue(), UWS.NS);
             element.addContent(dateFormat.format(jobRef.getCreationTime()));
             return element;
         }
@@ -239,14 +225,10 @@ public class JobListWriter
      *
      * @return The owner ID Element.
      */
-    private Element getOwnerID(JobRef jobRef)
-    {
-        Element element = new Element(JobAttribute.OWNER_ID.getAttributeName(), UWS.NS);
+    private Element getOwnerID(JobRef jobRef) {
+        Element element = new Element(JobAttribute.OWNER_ID.getValue(), UWS.NS);
         element.addContent(jobRef.getOwnerID());
         return element;
     }
 
-
-
 }
-

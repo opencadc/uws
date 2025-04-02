@@ -95,11 +95,11 @@ import org.apache.log4j.Logger;
 
 /**
  * Simple class used to read job description from the request and create a new Job.
-
+ *
  * @author pdowler
  */
-public class JobCreator 
-{
+public class JobCreator {
+
     private static final Logger log = Logger.getLogger(JobCreator.class);
 
     protected static final DateFormat dateFormat = UWS.getDateFormat();
@@ -123,7 +123,7 @@ public class JobCreator
                 processJobParameter(job, pname, input.getParameters(pname));
             }
         }
-        
+
         for (String cname : input.getContentNames()) {
             if (UWSInlineContentHandler.CONTENT_JOBINFO.equals(cname)) {
                 JobInfo ji = (JobInfo) input.getContent(cname);
@@ -152,59 +152,47 @@ public class JobCreator
                 }
             }
         }
-        
+
         job.setRequestPath(input.getRequestPath());
         job.setRemoteIP(input.getClientIP());
         return job;
     }
-    
+
     // old restlet based create method
     @Deprecated
     public Job create(HttpServletRequest request, InlineContentHandler inlineContentHandler)
-        throws FileUploadException, IOException
-    {
+            throws FileUploadException, IOException {
         Job job = new Job();
         job.setExecutionPhase(ExecutionPhase.PENDING);
         job.setParameterList(new ArrayList<Parameter>());
 
-        if (request.getMethod().equals("GET"))
-        {
+        if (request.getMethod().equals("GET")) {
             Enumeration<String> names = request.getParameterNames();
-            while (names.hasMoreElements())
-            {
+            while (names.hasMoreElements()) {
                 String name = names.nextElement();
                 processParameter(job, name, request.getParameterValues(name));
             }
-        }
-        else
-        {
+        } else {
             String contentType = request.getContentType();
-            if (contentType != null)
-            {
+            if (contentType != null) {
                 int i = contentType.indexOf(';');
-                if (i > 0)
+                if (i > 0) {
                     contentType = contentType.substring(0, i);
+                }
             }
             log.debug("Content-Type: " + contentType);
-            if (contentType != null && contentType.equalsIgnoreCase(URLENCODED))
-            {
+            if (contentType != null && contentType.equalsIgnoreCase(URLENCODED)) {
                 Enumeration<String> names = request.getParameterNames();
-                while (names.hasMoreElements())
-                {
+                while (names.hasMoreElements()) {
                     String name = names.nextElement();
                     processParameter(job, name, request.getParameterValues(name));
                 }
-            }
-            else if (inlineContentHandler != null)
-            {
-                if (contentType != null && contentType.startsWith(MULTIPART))
-                {
+            } else if (inlineContentHandler != null) {
+                if (contentType != null && contentType.startsWith(MULTIPART)) {
                     ServletFileUpload upload = new ServletFileUpload();
                     FileItemIterator itemIterator = upload.getItemIterator(request);
                     processMultiPart(job, itemIterator, inlineContentHandler);
-                }
-                else
-                {
+                } else {
                     processStream(null, contentType, request.getInputStream(), inlineContentHandler);
                 }
 
@@ -214,22 +202,18 @@ public class JobCreator
             }
         }
 
-        try
-        {
+        try {
             URL u = new URL(request.getRequestURL().toString());
             job.setRequestPath(u.getPath());
-        }
-        catch(MalformedURLException oops)
-        {
+        } catch (MalformedURLException oops) {
             log.error("failed to get request path", oops);
         }
-        
+
         job.setRemoteIP(NetUtil.getClientIP(request));
         return job;
     }
-    
-    protected void processParameter(Job job, String name, String[] values)
-    {
+
+    protected void processParameter(Job job, String name, String[] values) {
         if (JobAttribute.isValue(name)) {
             if (values != null && values.length > 0) {
                 processUWSParameter(job, name, values[0]);
@@ -239,82 +223,60 @@ public class JobCreator
         }
     }
 
-    private void processUWSParameter(Job job, String name, String value)
-    {
-        if (name.equalsIgnoreCase(JobAttribute.RUN_ID.getAttributeName()))
-        {
+    private void processUWSParameter(Job job, String name, String value) {
+        if (name.equalsIgnoreCase(JobAttribute.RUN_ID.getValue())) {
             job.setRunID(value);
-        }
-        else if (name.equalsIgnoreCase(JobAttribute.DESTRUCTION_TIME.getAttributeName()))
-        {
-            if (StringUtil.hasText(value))
-            {
-                try
-                {
+        } else if (name.equalsIgnoreCase(JobAttribute.DESTRUCTION_TIME.getValue())) {
+            if (StringUtil.hasText(value)) {
+                try {
                     job.setDestructionTime(dateFormat.parse(value));
-                }
-                catch (ParseException e)
-                {
+                } catch (ParseException e) {
                     log.error("Cannot parse Destruction Time to IVOA date format " + value, e);
                     throw new IllegalArgumentException("Cannot parse Destruction Time to IVOA date format " + value, e);
                 }
-            }
-            else
-            {
+            } else {
                 job.setDestructionTime(null);
             }
-        }
-        else if(name.equalsIgnoreCase(JobAttribute.EXECUTION_DURATION.getAttributeName()))
-        {
-            if (StringUtil.hasText(value))
+        } else if (name.equalsIgnoreCase(JobAttribute.EXECUTION_DURATION.getValue())) {
+            if (StringUtil.hasText(value)) {
                 job.setExecutionDuration(Long.parseLong(value));
-        }
-        else if (name.equalsIgnoreCase(JobAttribute.QUOTE.getAttributeName()))
-        {
-            if (StringUtil.hasText(value))
-            {
-                try
-                {
+            }
+        } else if (name.equalsIgnoreCase(JobAttribute.QUOTE.getValue())) {
+            if (StringUtil.hasText(value)) {
+                try {
                     job.setQuote(dateFormat.parse(value));
-                }
-                catch (ParseException e)
-                {
+                } catch (ParseException e) {
                     log.error("Cannot parse Quote to IVOA date format " + value, e);
                     throw new IllegalArgumentException("Cannot parse Quote to IVOA date format " + value, e);
                 }
-            }
-            else
-            {
+            } else {
                 job.setQuote(null);
             }
         }
     }
 
-    protected void processJobParameter(Job job, String name, Iterable<String> values)
-    {
+    protected void processJobParameter(Job job, String name, Iterable<String> values) {
         for (String value : values) {
             job.getParameterList().add(new Parameter(name, value));
         }
     }
 
     protected void processMultiPart(Job job, FileItemIterator itemIterator, InlineContentHandler ich)
-        throws FileUploadException, IOException
-    {
-        while (itemIterator.hasNext())
-        {
+            throws FileUploadException, IOException {
+        while (itemIterator.hasNext()) {
             FileItemStream item = itemIterator.next();
             String name = item.getFieldName();
             InputStream stream = item.openStream();
-            if (item.isFormField())
-                processParameter(job, name, new String[] { Streams.asString(stream) });
-            else
+            if (item.isFormField()) {
+                processParameter(job, name, new String[]{Streams.asString(stream)});
+            } else {
                 processStream(name, item.getContentType(), stream, ich);
+            }
         }
     }
 
     protected void processStream(String name, String contentType, InputStream inputStream, InlineContentHandler ich)
-        throws IOException
-    {
+            throws IOException {
         ich.accept(name, contentType, inputStream);
     }
 

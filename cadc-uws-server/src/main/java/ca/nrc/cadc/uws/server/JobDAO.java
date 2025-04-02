@@ -65,10 +65,23 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.uws.server;
 
+import ca.nrc.cadc.auth.IdentityManager;
+import ca.nrc.cadc.date.DateUtil;
+import ca.nrc.cadc.db.DBUtil;
+import ca.nrc.cadc.net.TransientException;
+import ca.nrc.cadc.profiler.Profiler;
+import ca.nrc.cadc.uws.ErrorSummary;
+import ca.nrc.cadc.uws.ErrorType;
+import ca.nrc.cadc.uws.ExecutionPhase;
+import ca.nrc.cadc.uws.Job;
+import ca.nrc.cadc.uws.JobInfo;
+import ca.nrc.cadc.uws.JobRef;
+import ca.nrc.cadc.uws.Parameter;
+import ca.nrc.cadc.uws.Result;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -85,16 +98,13 @@ import java.sql.Types;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
 import javax.security.auth.Subject;
 import javax.sql.DataSource;
-
 import org.apache.log4j.Logger;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -106,21 +116,6 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
-import ca.nrc.cadc.auth.IdentityManager;
-import ca.nrc.cadc.date.DateUtil;
-import ca.nrc.cadc.db.DBUtil;
-import ca.nrc.cadc.net.TransientException;
-import ca.nrc.cadc.profiler.Profiler;
-import ca.nrc.cadc.uws.ErrorSummary;
-import ca.nrc.cadc.uws.ErrorType;
-import ca.nrc.cadc.uws.ExecutionPhase;
-import ca.nrc.cadc.uws.Job;
-import ca.nrc.cadc.uws.JobInfo;
-import ca.nrc.cadc.uws.JobRef;
-import ca.nrc.cadc.uws.Parameter;
-import ca.nrc.cadc.uws.Result;
-import java.util.UUID;
-
 /**
  * JobDAO class that stores the jobs in a RDBMS. This is an abstract class;
  * users of this class must implement the abstract methods to return the names of tables
@@ -130,33 +125,33 @@ import java.util.UUID;
  * Users must create at least 3 tables (possibly multiple parameter tables) with the
  * following columns. TODO: List the required columns for each table.
  * </p>
- * 
+ *
  * @author pdowler, jburke
  */
-public class JobDAO
-{
+public class JobDAO {
+
     private static Logger log = Logger.getLogger(JobDAO.class);
 
     private static final int BATCH_SIZE = 1000;
     private static final String TYPE_PARAMETER = "P";
     private static final String TYPE_RESULT = "R";
 
-    private static String[] JOB_COLUMNS =
-    {
-        // jobID must be first
-        // creationTime must be last
+    private static String[] JOB_COLUMNS
+            = {
+                // jobID must be first
+                // creationTime must be last
 
-        "jobID","creationTime", "executionPhase","executionDuration","destructionTime",
-        "quote", "startTime", "endTime",
-        "error_summaryMessage", "error_type", "error_documentURL",
-        "ownerID", "runID", "requestPath", "remoteIP",
-        "jobInfo_content", "jobInfo_contentType", "jobInfo_valid",
-        "lastModified"
-    };
-    private static String[] DETAIL_COLUMNS =
-    {
-        "jobID", "type", "name", "value"
-    };
+                "jobID", "creationTime", "executionPhase", "executionDuration", "destructionTime",
+                "quote", "startTime", "endTime",
+                "error_summaryMessage", "error_type", "error_documentURL",
+                "ownerID", "runID", "requestPath", "remoteIP",
+                "jobInfo_content", "jobInfo_contentType", "jobInfo_valid",
+                "lastModified"
+            };
+    private static String[] DETAIL_COLUMNS
+            = {
+                "jobID", "type", "name", "value"
+            };
 
     private JobSchema jobSchema;
     private IdentityManager identManager;
@@ -179,13 +174,13 @@ public class JobDAO
      * Simple class that describes the database implementation. The caller can
      * specify the names for the job and job details tables.
      */
-    public static class JobSchema
-    {
+    public static class JobSchema {
+
         public String jobTable;
         public String detailTable;
         boolean limitWithTop;
         boolean storeOwnerASCII = false;
-        
+
         /*
          * Map of columns that have size limits in the jobTable imposed by the
          * underlying database system.
@@ -198,7 +193,7 @@ public class JobDAO
          * have an extra column named jobInfo_content_text of type TEXT for longer
          * values.
          */
-        public Map<String,Integer> jobColumnLimits;
+        public Map<String, Integer> jobColumnLimits;
 
         /*
          * Map of columns that have size limits in the detailTable imposed by the
@@ -212,33 +207,29 @@ public class JobDAO
          * have an extra column named jobInfo_content_text of type TEXT for longer
          * values.
          */
-        public Map<String,Integer> detailColumnLimits;
+        public Map<String, Integer> detailColumnLimits;
 
         // Map of alternate columns when the size limit in <code>columnLimits</code>
-        private Map<String,String> alternateJobColumns;
-        private Map<String,String> alternateDetailColumns;
+        private Map<String, String> alternateJobColumns;
+        private Map<String, String> alternateDetailColumns;
         private List<String> jobColumns;
         private List<String> detailColumns;
 
-        public JobSchema(String jobTable, String detailTable, boolean limitWithTop)
-        {
+        public JobSchema(String jobTable, String detailTable, boolean limitWithTop) {
             this(jobTable, detailTable, limitWithTop, null, null);
         }
-        
-        public JobSchema(String jobTable, String detailTable, boolean limitWithTop, boolean storeOwnerASCII)
-        {
+
+        public JobSchema(String jobTable, String detailTable, boolean limitWithTop, boolean storeOwnerASCII) {
             this(jobTable, detailTable, limitWithTop, storeOwnerASCII, null, null);
         }
-        
+
         public JobSchema(String jobTable, String detailTable, boolean limitWithTop,
-                Map<String,Integer> jobColumnLimits, Map<String,Integer> detailColumnLimits)
-        {
+                Map<String, Integer> jobColumnLimits, Map<String, Integer> detailColumnLimits) {
             this(jobTable, detailTable, limitWithTop, false, jobColumnLimits, detailColumnLimits);
         }
-        
+
         public JobSchema(String jobTable, String detailTable, boolean limitWithTop, boolean storeOwnerASCII,
-                Map<String,Integer> jobColumnLimits, Map<String,Integer> detailColumnLimits)
-        {
+                Map<String, Integer> jobColumnLimits, Map<String, Integer> detailColumnLimits) {
             this.jobTable = jobTable;
             this.detailTable = detailTable;
             this.limitWithTop = limitWithTop;
@@ -246,69 +237,77 @@ public class JobDAO
             this.jobColumnLimits = jobColumnLimits;
             this.detailColumnLimits = detailColumnLimits;
 
-            if (this.jobColumnLimits == null)
-                this.jobColumnLimits = new HashMap<String,Integer>();
-            this.alternateJobColumns = new HashMap<String,String>();
-            for (String col : this.jobColumnLimits.keySet())
-                alternateJobColumns.put(col, col+"_text");
+            if (this.jobColumnLimits == null) {
+                this.jobColumnLimits = new HashMap<String, Integer>();
+            }
+            this.alternateJobColumns = new HashMap<String, String>();
+            for (String col : this.jobColumnLimits.keySet()) {
+                alternateJobColumns.put(col, col + "_text");
+            }
 
-            if (this.detailColumnLimits == null)
-                this.detailColumnLimits = new HashMap<String,Integer>();
-            this.alternateDetailColumns = new HashMap<String,String>();
-            for (String col : this.detailColumnLimits.keySet())
-                alternateDetailColumns.put(col, col+"_text");
+            if (this.detailColumnLimits == null) {
+                this.detailColumnLimits = new HashMap<String, Integer>();
+            }
+            this.alternateDetailColumns = new HashMap<String, String>();
+            for (String col : this.detailColumnLimits.keySet()) {
+                alternateDetailColumns.put(col, col + "_text");
+            }
 
             this.jobColumns = new ArrayList<String>();
-            for (String col : JOB_COLUMNS)
-            {
+            for (String col : JOB_COLUMNS) {
                 jobColumns.add(col);
                 String alt = alternateJobColumns.get(col);
-                if (alt != null)
+                if (alt != null) {
                     jobColumns.add(alt);
+                }
             }
-            this.detailColumns =  new ArrayList<String>();
-            for (String col : DETAIL_COLUMNS)
-            {
+            this.detailColumns = new ArrayList<String>();
+            for (String col : DETAIL_COLUMNS) {
                 detailColumns.add(col);
                 String alt = alternateDetailColumns.get(col);
-                if (alt != null)
+                if (alt != null) {
                     detailColumns.add(alt);
+                }
             }
         }
 
         @Override
-        public String toString() { return jobTable + "/" + detailTable + "/" + jobColumnLimits.size(); }
+        public String toString() {
+            return jobTable + "/" + detailTable + "/" + jobColumnLimits.size();
+        }
 
         /**
-        * Get the physical column length in the database. The default implementation always
-        * returns null (no limit).
-        *
-        * @param tableName
-        * @param columnName
-        * @return max string size that can be stored, or null for no limit
-        */
-        public Integer getColumnLength(String tableName, String columnName)
-        {
-            if (jobColumnLimits != null && jobTable.equals(tableName))
+         * Get the physical column length in the database. The default implementation always
+         * returns null (no limit).
+         *
+         * @param tableName
+         * @param columnName
+         * @return max string size that can be stored, or null for no limit
+         */
+        public Integer getColumnLength(String tableName, String columnName) {
+            if (jobColumnLimits != null && jobTable.equals(tableName)) {
                 return jobColumnLimits.get(columnName);
-            if (detailColumnLimits != null && detailTable.equals(tableName))
+            }
+            if (detailColumnLimits != null && detailTable.equals(tableName)) {
                 return detailColumnLimits.get(columnName);
+            }
             return null; // no limit
         }
-        public String getAlternateColumn(String tableName, String columnName)
-        {
+
+        public String getAlternateColumn(String tableName, String columnName) {
             String ret = null;
-            if (alternateJobColumns != null && jobTable.equals(tableName))
+            if (alternateJobColumns != null && jobTable.equals(tableName)) {
                 ret = alternateJobColumns.get(columnName);
-            if (alternateDetailColumns != null && detailTable.equals(tableName))
+            }
+            if (alternateDetailColumns != null && detailTable.equals(tableName)) {
                 ret = alternateDetailColumns.get(columnName);
+            }
             return ret;
         }
 
     }
 
-    public JobDAO(DataSource dataSource, JobSchema jobSchema, IdentityManager identManager, StringIDGenerator idGenerator)
-    {
+    public JobDAO(DataSource dataSource, JobSchema jobSchema, IdentityManager identManager, StringIDGenerator idGenerator) {
         this.jobSchema = jobSchema;
         this.identManager = identManager;
         this.idGenerator = idGenerator;
@@ -320,15 +319,13 @@ public class JobDAO
         this.jdbc = new JdbcTemplate(dataSource);
     }
 
-
-
     /**
      * Start a transaction to the data source.
      */
-    protected void startTransaction()
-    {
-        if (transactionStatus != null)
+    protected void startTransaction() {
+        if (transactionStatus != null) {
             throw new IllegalStateException("transaction already in progress");
+        }
         log.debug("startTransaction");
         this.transactionStatus = transactionManager.getTransaction(defaultTransactionDef);
         this.inTransaction = true;
@@ -338,10 +335,10 @@ public class JobDAO
     /**
      * Commit the transaction to the data source.
      */
-    protected void commitTransaction()
-    {
-        if (transactionStatus == null)
+    protected void commitTransaction() {
+        if (transactionStatus == null) {
             throw new IllegalStateException("no transaction in progress");
+        }
         log.debug("commitTransaction");
         transactionManager.commit(transactionStatus);
         this.transactionStatus = null;
@@ -352,12 +349,13 @@ public class JobDAO
     /**
      * Rollback the transaction to the data source.
      */
-    protected void rollbackTransaction()
-    {
-        if (!inTransaction)
+    protected void rollbackTransaction() {
+        if (!inTransaction) {
             throw new IllegalStateException("no transaction in progress");
-        if (transactionStatus == null) // the startTransaction failed
+        }
+        if (transactionStatus == null) {
             return;
+        }
         log.debug("rollbackTransaction");
         transactionManager.rollback(transactionStatus);
         this.transactionStatus = null;
@@ -375,20 +373,16 @@ public class JobDAO
      * @throws TransientException
      */
     public Job get(String jobID)
-        throws JobNotFoundException, JobPersistenceException, TransientException
-    {
+            throws JobNotFoundException, JobPersistenceException, TransientException {
         log.debug("get: " + jobID);
-        try
-        {
+        try {
             JobSelectStatementCreator sc = new JobSelectStatementCreator();
             sc.setJobID(jobID);
             Job ret = (Job) jdbc.query(sc, new JobExtractor(jobSchema));
             prof.checkpoint("JobSelectStatementCreator");
-            if (ret != null)
-            {
+            if (ret != null) {
                 // call IdentityManager outside the resource lock to avoid deadlock
-                if (ret.appData != null)
-                {
+                if (ret.appData != null) {
                     Subject s = identManager.toSubject(ret.appData);
                     ret.setOwnerID(identManager.toDisplayString(s));
                     ret.ownerSubject = s; // for later authorization checks
@@ -398,13 +392,12 @@ public class JobDAO
                 return ret;
             }
 
-        }
-        catch(Throwable t)
-        {
-            if (DBUtil.isTransientDBException(t))
+        } catch (Throwable t) {
+            if (DBUtil.isTransientDBException(t)) {
                 throw new TransientException("failed to get job: " + jobID, t);
-            else
+            } else {
                 throw new JobPersistenceException("failed to get job: " + jobID, t);
+            }
         }
         throw new JobNotFoundException(jobID);
     }
@@ -417,28 +410,26 @@ public class JobDAO
      * @throws TransientException
      */
     public void getDetails(Job job)
-        throws JobPersistenceException, TransientException
-    {
+            throws JobPersistenceException, TransientException {
         log.debug("getDetails: " + job.getID());
         expectPersistentJob(job);
-        try
-        {
+        try {
             JobDetailSelectStatementCreator sc = new JobDetailSelectStatementCreator();
             sc.setJobID(job.getID());
             jdbc.query(sc, new DetailExtractor(jobSchema, job)); // ignore unnecessary return value
             prof.checkpoint("JobDetailSelectStatementCreator");
-        }
-        catch(Throwable t)
-        {
-            if (DBUtil.isTransientDBException(t))
+        } catch (Throwable t) {
+            if (DBUtil.isTransientDBException(t)) {
                 throw new TransientException("failed to get job details: " + job.getID(), t);
-            else
+            } else {
                 throw new JobPersistenceException("failed to get job details: " + job.getID(), t);
+            }
         }
     }
 
     /**
      * Get the current execution phase.
+     *
      * @param jobID
      * @return the current phase
      * @throws JobNotFoundException
@@ -446,24 +437,22 @@ public class JobDAO
      * @throws TransientException
      */
     public ExecutionPhase getPhase(String jobID)
-        throws JobNotFoundException, JobPersistenceException, TransientException
-    {
+            throws JobNotFoundException, JobPersistenceException, TransientException {
         log.debug("getPhase: " + jobID);
-        try
-        {
+        try {
             JobPhaseSelectStatementCreator sc = new JobPhaseSelectStatementCreator();
             sc.setJobID(jobID);
             ExecutionPhase ret = (ExecutionPhase) jdbc.query(sc, new PhaseExtractor());
             prof.checkpoint("JobPhaseSelectStatementCreator");
-            if (ret != null)
+            if (ret != null) {
                 return ret;
-        }
-        catch(Throwable t)
-        {
-            if (DBUtil.isTransientDBException(t))
+            }
+        } catch (Throwable t) {
+            if (DBUtil.isTransientDBException(t)) {
                 throw new TransientException("failed to get job phase: " + jobID, t);
-            else
+            } else {
                 throw new JobPersistenceException("failed to get job phase: " + jobID, t);
+            }
         }
         throw new JobNotFoundException(jobID);
     }
@@ -478,8 +467,7 @@ public class JobDAO
      * @throws TransientException
      */
     public void set(String jobID, ExecutionPhase ep)
-        throws JobNotFoundException, JobPersistenceException, TransientException
-    {
+            throws JobNotFoundException, JobPersistenceException, TransientException {
         set(jobID, null, ep, null, null, null);
     }
 
@@ -497,8 +485,7 @@ public class JobDAO
      * @throws TransientException
      */
     public ExecutionPhase set(String jobID, ExecutionPhase start, ExecutionPhase end, Date date)
-        throws JobNotFoundException, JobPersistenceException, TransientException
-    {
+            throws JobNotFoundException, JobPersistenceException, TransientException {
         log.debug("set: " + jobID + "," + start + "," + end + "," + date);
         return set(jobID, start, end, null, null, date);
     }
@@ -520,8 +507,7 @@ public class JobDAO
      * @throws TransientException
      */
     public ExecutionPhase set(String jobID, ExecutionPhase start, ExecutionPhase end, List<Result> results, Date date)
-        throws JobNotFoundException, JobPersistenceException, TransientException
-    {
+            throws JobNotFoundException, JobPersistenceException, TransientException {
         log.debug("set: " + jobID + "," + start + "," + end + ", <results>," + date);
         return set(jobID, start, end, null, results, date);
     }
@@ -543,8 +529,7 @@ public class JobDAO
      * @throws TransientException
      */
     public ExecutionPhase set(String jobID, ExecutionPhase start, ExecutionPhase end, ErrorSummary error, Date date)
-        throws JobNotFoundException, JobPersistenceException, TransientException
-    {
+            throws JobNotFoundException, JobPersistenceException, TransientException {
         log.debug("set: " + jobID + "," + start + "," + end + ", <error>," + date);
         return set(jobID, start, end, error, null, date);
     }
@@ -553,7 +538,7 @@ public class JobDAO
      * Conditionally set the phase from <em>start</em> to <em>end</em> and set the
      * results and/or error. The transition is successful IFF the current phase is equal to the
      * starting phase. Results are only set if the phase transition is successful.
-     *  Note: this method is unconditional when <em>start</em> is null.
+     * Note: this method is unconditional when <em>start</em> is null.
      *
      * @param jobID
      * @param start
@@ -567,70 +552,65 @@ public class JobDAO
      * @throws TransientException
      */
     public ExecutionPhase set(String jobID, ExecutionPhase start, ExecutionPhase end, ErrorSummary error, List<Result> results, Date date)
-        throws JobNotFoundException, JobPersistenceException, TransientException
-    {
+            throws JobNotFoundException, JobPersistenceException, TransientException {
         log.debug("set: " + jobID + "," + start + "," + end + ", <error>, <results>, " + date);
         boolean txn = false; // need explicit transaction or autocommit?
-        if (results != null && results.size() > 0)
+        if (results != null && results.size() > 0) {
             txn = true;
-        try
-        {
-            if (txn)
+        }
+        try {
+            if (txn) {
                 startTransaction();
+            }
             JobPhaseUpdateStatementCreator sc = new JobPhaseUpdateStatementCreator();
             sc.setValues(jobID, start, end, error, date);
             int n = jdbc.update(sc);
             prof.checkpoint("JobPhaseUpdateStatementCreator");
-            if (n == 1)
-            {
-                if (results != null && results.size() > 0)
-                {
+            if (n == 1) {
+                if (results != null && results.size() > 0) {
                     DetailInsertStatementCreator disc = new DetailInsertStatementCreator();
-                    for (Result r : results)
-                    {
+                    for (Result r : results) {
                         disc.setValues(jobID, r);
                         jdbc.update(disc);
                         prof.checkpoint("DetailInsertStatementCreator");
                     }
                 }
             }
-            if (txn)
-            {
+            if (txn) {
                 commitTransaction();
                 prof.checkpoint("commit.JobPhaseUpdateStatementCreator");
             }
-            if (n == 1)
+            if (n == 1) {
                 return end;
+            }
             return null;
-        }
-        catch(Throwable t)
-        {
+        } catch (Throwable t) {
             log.error("rollback for job: " + jobID, t);
-            try
-            {
-                if (txn)
-                {
+            try {
+                if (txn) {
                     rollbackTransaction();
                     prof.checkpoint("rollback.JobPhaseUpdateStatementCreator");
                 }
+            } catch (Throwable oops) {
+                log.error("failed to rollback transaction", oops);
             }
-            catch(Throwable oops) { log.error("failed to rollback transaction", oops); }
 
-            if (DBUtil.isTransientDBException(t))
-            	throw new TransientException("failed to persist job: " + jobID, t);
-            else
+            if (DBUtil.isTransientDBException(t)) {
+                throw new TransientException("failed to persist job: " + jobID, t);
+            } else {
                 throw new JobPersistenceException("failed to persist job: " + jobID, t);
-        }
-        finally
-        {
-            if (transactionStatus != null)
-                try
-                {
+            }
+        } finally {
+            if (transactionStatus != null) {
+                try {
                     log.warn("put: BUG - transaction still open in finally... calling rollback");
-                    if (txn)
+                    if (txn) {
                         rollbackTransaction();
+                    }
+                } catch (Throwable oops) {
+                    log.error("failed to rollback transaction in finally", oops);
                 }
-                catch(Throwable oops) { log.error("failed to rollback transaction in finally", oops); }
+            }
         }
     }
 
@@ -646,8 +626,7 @@ public class JobDAO
      * @throws TransientException
      */
     public Iterator<JobRef> iterator(String requestPath, List<ExecutionPhase> phases, Date after, Integer last)
-        throws TransientException, JobPersistenceException
-    {
+            throws TransientException, JobPersistenceException {
         AccessControlContext acContext = AccessController.getContext();
         Subject subject = Subject.getSubject(acContext);
         return iterator(subject, requestPath, phases, after, last);
@@ -663,23 +642,20 @@ public class JobDAO
      * @return job iterator
      */
     public Iterator<JobRef> iterator(Subject subject, String requestPath, List<ExecutionPhase> phases, Date after, Integer last)
-        throws TransientException, JobPersistenceException
-    {
+            throws TransientException, JobPersistenceException {
         Object owner = identManager.toOwner(subject);
         log.debug("iterator(" + owner + ")");
 
-        try
-        {
+        try {
             JobListIterator jobListIterator = new JobListIterator(jdbc, owner, requestPath, phases, after, last);
             prof.checkpoint("JobListStatementCreator");
             return jobListIterator;
-        }
-        catch(Throwable t)
-        {
-            if (DBUtil.isTransientDBException(t))
+        } catch (Throwable t) {
+            if (DBUtil.isTransientDBException(t)) {
                 throw new TransientException("failed to get job list for owner: " + owner, t);
-            else
+            } else {
                 throw new JobPersistenceException("failed to get job list for owner: " + owner, t);
+            }
         }
     }
 
@@ -693,21 +669,17 @@ public class JobDAO
      * @throws TransientException
      */
     public Job put(Job job, Subject owner)
-        throws JobPersistenceException, TransientException
-    {
-        try
-        {
+            throws JobPersistenceException, TransientException {
+        try {
             boolean update = (job.getID() != null);
-            if (!update) // insert
-            {
+            if (!update) {
                 JobPersistenceUtil.assignID(job, idGenerator.getID());
                 job.setCreationTime(new Date());
             }
             log.debug("put: " + job.getID());
 
             // call IdentityManager outside the resource lock to avoid deadlock
-            if (owner != null)
-            {
+            if (owner != null) {
                 job.appData = identManager.toOwner(owner);
                 prof.checkpoint("IdentityManager.toOwner");
             }
@@ -717,23 +689,16 @@ public class JobDAO
 
             JobPutStatementCreator npsc = new JobPutStatementCreator(update);
             npsc.setValues(job);
-            while (true)
-            {
-                try
-                {
+            while (true) {
+                try {
                     jdbc.update(npsc);
                     break;
-                }
-                catch (org.springframework.dao.DuplicateKeyException e)
-                {
+                } catch (org.springframework.dao.DuplicateKeyException e) {
                     log.warn("Re-try on job ID collision: " + job.getID());
-                    try
-                    {
+                    try {
                         rollbackTransaction();
                         prof.checkpoint("rollback.JobPutStatementCreator");
-                    }
-                    catch(Throwable oops)
-                    {
+                    } catch (Throwable oops) {
                         log.error("failed to rollback transaction", oops);
                         throw e;
                     }
@@ -747,14 +712,15 @@ public class JobDAO
             prof.checkpoint("JobPutStatementCreator");
 
             int numP = 0;
-            if (job.getParameterList() != null)
+            if (job.getParameterList() != null) {
                 numP = job.getParameterList().size();
+            }
             int numR = 0;
-            if (job.getResultsList() != null)
+            if (job.getResultsList() != null) {
                 numR = job.getResultsList().size();
+            }
 
-            if (numP + numR > 0)
-            {
+            if (numP + numR > 0) {
                 DetailDeleteStatementCreator dd = new DetailDeleteStatementCreator();
                 dd.setJobID(job.getID());
                 jdbc.update(dd);
@@ -762,22 +728,18 @@ public class JobDAO
             }
 
             DetailInsertStatementCreator disc = new DetailInsertStatementCreator();
-            if (numP > 0)
-            {
+            if (numP > 0) {
                 Iterator<Parameter> pi = job.getParameterList().iterator();
-                while (pi.hasNext())
-                {
+                while (pi.hasNext()) {
                     Parameter param = pi.next();
                     disc.setValues(job.getID(), param);
                     jdbc.update(disc);
                     prof.checkpoint("DetailInsertStatementCreator");
                 }
             }
-            if (numR > 0)
-            {
+            if (numR > 0) {
                 Iterator<Result> ri = job.getResultsList().iterator();
-                while (ri.hasNext())
-                {
+                while (ri.hasNext()) {
                     Result res = ri.next();
                     disc.setValues(job.getID(), res);
                     jdbc.update(disc);
@@ -790,48 +752,42 @@ public class JobDAO
 
             // OK to modify the job now
             job.ownerSubject = owner;
-            job.setOwnerID( identManager.toDisplayString(owner) );
+            job.setOwnerID(identManager.toDisplayString(owner));
             prof.checkpoint("IdentityManager.toOwnerString");
             return job;
-        }
-        catch(Throwable t)
-        {
+        } catch (Throwable t) {
             log.error("rollback for job: " + job.getID(), t);
-            try
-            {
+            try {
                 rollbackTransaction();
                 prof.checkpoint("rollback.JobPutStatementCreator");
+            } catch (Throwable oops) {
+                log.error("failed to rollback transaction", oops);
             }
-            catch(Throwable oops) { log.error("failed to rollback transaction", oops); }
-            if (DBUtil.isTransientDBException(t))
-            	throw new TransientException("failed to persist job: " + job.getID(), t);
-            else
+            if (DBUtil.isTransientDBException(t)) {
+                throw new TransientException("failed to persist job: " + job.getID(), t);
+            } else {
                 throw new JobPersistenceException("failed to persist job: " + job.getID(), t);
-        }
-        finally
-        {
-            if (transactionStatus != null)
-                try
-                {
+            }
+        } finally {
+            if (transactionStatus != null) {
+                try {
                     log.warn("put: BUG - transaction still open in finally... calling rollback");
                     rollbackTransaction();
+                } catch (Throwable oops) {
+                    log.error("failed to rollback transaction in finally", oops);
                 }
-                catch(Throwable oops) { log.error("failed to rollback transaction in finally", oops); }
+            }
         }
     }
 
     public void addParameters(String jobID, List<Parameter> params)
-        throws JobNotFoundException, JobPersistenceException, TransientException
-    {
+            throws JobNotFoundException, JobPersistenceException, TransientException {
         log.debug("addParameters: " + jobID);
-        try
-        {
-            if (params != null && params.size() > 0)
-            {
+        try {
+            if (params != null && params.size() > 0) {
                 startTransaction();
                 DetailInsertStatementCreator disc = new DetailInsertStatementCreator();
-                for (Parameter p : params)
-                {
+                for (Parameter p : params) {
                     disc.setValues(jobID, p);
                     jdbc.update(disc);
                     prof.checkpoint("DetailInsertStatementCreator");
@@ -839,34 +795,30 @@ public class JobDAO
                 commitTransaction();
                 prof.checkpoint("commit.DetailInsertStatementCreator");
             }
-        }
-        catch(DataIntegrityViolationException notFound)
-        {
+        } catch (DataIntegrityViolationException notFound) {
             throw new JobNotFoundException("not found: " + jobID);
-        }
-        catch(Throwable t)
-        {
+        } catch (Throwable t) {
             log.error("rollback for job: " + jobID, t);
-            try
-            {
+            try {
                 rollbackTransaction();
                 prof.checkpoint("rollback.DetailInsertStatementCreator");
+            } catch (Throwable oops) {
+                log.error("failed to rollback transaction", oops);
             }
-            catch(Throwable oops) { log.error("failed to rollback transaction", oops); }
-            if (DBUtil.isTransientDBException(t))
-            	throw new TransientException("failed to persist job parameters: " + jobID, t);
-            else
+            if (DBUtil.isTransientDBException(t)) {
+                throw new TransientException("failed to persist job parameters: " + jobID, t);
+            } else {
                 throw new JobPersistenceException("failed to persist job parameters: " + jobID, t);
-        }
-        finally
-        {
-            if (transactionStatus != null)
-                try
-                {
+            }
+        } finally {
+            if (transactionStatus != null) {
+                try {
                     log.warn("put: BUG - transaction still open in finally... calling rollback");
                     rollbackTransaction();
+                } catch (Throwable oops) {
+                    log.error("failed to rollback transaction in finally", oops);
                 }
-                catch(Throwable oops) { log.error("failed to rollback transaction in finally", oops); }
+            }
         }
     }
 
@@ -878,108 +830,99 @@ public class JobDAO
      * @throws TransientException
      */
     public void delete(String jobID)
-        throws JobPersistenceException, TransientException
-    {
+            throws JobPersistenceException, TransientException {
         log.debug("delete: " + jobID);
-        try
-        {
+        try {
             //startTransaction();
             JobDeleteStatementCreator jdl = new JobDeleteStatementCreator();
             jdl.setJobID(jobID);
             jdbc.update(jdl);
             prof.checkpoint("JobDeleteStatementCreator");
             //commitTransaction();
-        }
-        catch(Throwable t)
-        {
+        } catch (Throwable t) {
             log.error("failed to delete job", t);
-            if (transactionStatus != null)
-                try
-                {
+            if (transactionStatus != null) {
+                try {
                     rollbackTransaction();
                     prof.checkpoint("rollback.DetailInsertStatementCreator");
+                } catch (Throwable oops) {
+                    log.error("failed to rollback transaction", oops);
                 }
-                catch(Throwable oops) { log.error("failed to rollback transaction", oops); }
-            if (DBUtil.isTransientDBException(t))
-            	throw new TransientException("failed to delete job: " + jobID, t);
-            else
+            }
+            if (DBUtil.isTransientDBException(t)) {
+                throw new TransientException("failed to delete job: " + jobID, t);
+            } else {
                 throw new JobPersistenceException("failed to delete job: " + jobID, t);
-        }
-        finally
-        {
-            if (transactionStatus != null)
-                try
-                {
+            }
+        } finally {
+            if (transactionStatus != null) {
+                try {
                     log.warn("delete - BUG - transaction still open in finally... calling rollback");
                     rollbackTransaction();
+                } catch (Throwable oops) {
+                    log.error("failed to rollback transaction in finally", oops);
                 }
-                catch(Throwable oops) { log.error("failed to rollback transaction in finally", oops); }
+            }
         }
     }
 
-    protected void expectPersistentJob(Job job)
-    {
-        if (job == null)
+    protected void expectPersistentJob(Job job) {
+        if (job == null) {
             throw new IllegalArgumentException("job cannot be null");
-        if (job.getLastModified() == null)
+        }
+        if (job.getLastModified() == null) {
             throw new IllegalArgumentException("node is not a persistent job: has null lastModified");
+        }
     }
 
-    private void appendColumnNames(StringBuilder sb, List<String> arr, int start)
-    {
-        for (int c=start; c<arr.size(); c++)
-        {
+    private void appendColumnNames(StringBuilder sb, List<String> arr, int start) {
+        for (int c = start; c < arr.size(); c++) {
             String col = arr.get(c);
-            if (c > start)
+            if (c > start) {
                 sb.append(",");
+            }
             sb.append(col);
         }
     }
-    private void appendStatementParams(StringBuilder sb, int num)
-    {
-        for (int c=0; c<num; c++)
-        {
-            if (c > 0)
+
+    private void appendStatementParams(StringBuilder sb, int num) {
+        for (int c = 0; c < num; c++) {
+            if (c > 0) {
                 sb.append(",");
+            }
             sb.append("?");
         }
     }
 
     private int setString(PreparedStatement ps, int col, String tableName, String columnName, String value, StringBuilder sb)
-        throws SQLException
-    {
+            throws SQLException {
         Integer limit = jobSchema.getColumnLength(tableName, columnName);
 
-        if (limit == null)
-        {
+        if (limit == null) {
             // single column
-            if (value == null)
+            if (value == null) {
                 ps.setNull(col, Types.VARCHAR);
-            else
+            } else {
                 ps.setString(col, value);
+            }
             sb.append(value);
             sb.append(",");
             return 1;
         }
 
         // pair of columns
-        if (value == null)
-        {
+        if (value == null) {
             ps.setNull(col, Types.VARCHAR);
-            ps.setNull(col+1, Types.VARCHAR);
+            ps.setNull(col + 1, Types.VARCHAR);
             sb.append("null,null,");
-        }
-        else if (value.length() <= limit)
-        {
+        } else if (value.length() <= limit) {
             ps.setString(col, value);
-            ps.setNull(col+1, Types.VARCHAR);
+            ps.setNull(col + 1, Types.VARCHAR);
             sb.append(value);
             sb.append(",null,");
-        }
-        else
-        {
+        } else {
             ps.setNull(col, Types.VARCHAR);
-            ps.setString(col+1, value);
+            ps.setString(col + 1, value);
             sb.append("null,");
             sb.append(value);
             sb.append(",");
@@ -987,19 +930,18 @@ public class JobDAO
         return 2;
     }
 
-    class JobDeleteStatementCreator  implements PreparedStatementCreator
-    {
+    class JobDeleteStatementCreator implements PreparedStatementCreator {
+
         private String jobID;
 
-        public JobDeleteStatementCreator() { }
+        public JobDeleteStatementCreator() {
+        }
 
-        public void setJobID(String jobID)
-        {
+        public void setJobID(String jobID) {
             this.jobID = jobID;
         }
 
-        public PreparedStatement createPreparedStatement(Connection conn) throws SQLException
-        {
+        public PreparedStatement createPreparedStatement(Connection conn) throws SQLException {
             String sql = "UPDATE " + jobSchema.jobTable + " SET deletedByUser = 1 WHERE jobID = ?";
             log.debug(sql);
             log.debug(jobID);
@@ -1009,42 +951,38 @@ public class JobDAO
         }
     }
 
-    class JobPutStatementCreator implements PreparedStatementCreator
-    {
+    class JobPutStatementCreator implements PreparedStatementCreator {
+
         private boolean update;
         private Job job;
         private String sql;
 
-        public JobPutStatementCreator(boolean update)
-        {
+        public JobPutStatementCreator(boolean update) {
             this.update = update;
-            if (update)
+            if (update) {
                 this.sql = getUpdateSQL();
-            else
+            } else {
                 this.sql = getInsertSQL();
+            }
         }
 
-        public void setValues(Job job)
-        {
+        public void setValues(Job job) {
             this.job = job;
         }
 
-        public PreparedStatement createPreparedStatement(Connection conn) throws SQLException
-        {
+        public PreparedStatement createPreparedStatement(Connection conn) throws SQLException {
             log.debug(sql);
             PreparedStatement prep = conn.prepareStatement(sql);
-            setValues(prep);
+            loadValues(prep);
             return prep;
         }
 
-        private void setValues(PreparedStatement ps)
-            throws SQLException
-        {
+        private void loadValues(PreparedStatement ps)
+                throws SQLException {
             StringBuilder sb = new StringBuilder();
 
             int col = 1;
-            if (!update)
-            {
+            if (!update) {
                 log.debug("jobID: " + col);
                 ps.setString(col++, job.getID());
                 sb.append(job.getID());
@@ -1060,88 +998,72 @@ public class JobDAO
             sb.append(job.getExecutionPhase().name());
             sb.append(",");
 
-            if (job.getExecutionDuration() != null)
-            {
+            if (job.getExecutionDuration() != null) {
                 ps.setLong(col++, job.getExecutionDuration());
                 sb.append(job.getExecutionDuration());
                 sb.append(",");
-            }
-            else
-            {
+            } else {
                 ps.setNull(col++, Types.BIGINT);
                 sb.append("null,");
             }
 
-            if (job.getDestructionTime() != null)
-            {
+            if (job.getDestructionTime() != null) {
                 Timestamp ts = new Timestamp(job.getDestructionTime().getTime());
                 ps.setTimestamp(col++, ts, cal);
                 sb.append(dateFormat.format(job.getDestructionTime()));
                 sb.append(",");
-            }
-            else
-            {
+            } else {
                 ps.setNull(col++, Types.TIMESTAMP);
                 sb.append("null,");
             }
 
-            if (job.getQuote() != null)
-            {
+            if (job.getQuote() != null) {
                 Timestamp ts = new Timestamp(job.getQuote().getTime());
                 ps.setTimestamp(col++, ts, cal);
                 sb.append(dateFormat.format(job.getQuote()));
                 sb.append(",");
-            }
-            else
-            {
+            } else {
                 ps.setNull(col++, Types.TIMESTAMP);
                 sb.append("null,");
             }
 
-            if (job.getStartTime() != null)
-            {
+            if (job.getStartTime() != null) {
                 Timestamp ts = new Timestamp(job.getStartTime().getTime());
                 ps.setTimestamp(col++, ts, cal);
                 sb.append(dateFormat.format(job.getStartTime()));
                 sb.append(",");
-            }
-            else
-            {
+            } else {
                 ps.setNull(col++, Types.TIMESTAMP);
                 sb.append("null,");
             }
 
-            if (job.getEndTime() != null)
-            {
+            if (job.getEndTime() != null) {
                 Timestamp ts = new Timestamp(job.getEndTime().getTime());
                 ps.setTimestamp(col++, ts, cal);
                 sb.append(dateFormat.format(job.getEndTime()));
                 sb.append(",");
-            }
-            else
-            {
+            } else {
                 ps.setNull(col++, Types.TIMESTAMP);
                 sb.append("null,");
             }
             log.debug("error summary: " + col);
-            String eMsg = null;
-            String eType = null;
-            String eURL = null;
-            if (job.getErrorSummary() != null)
-            {
-                eMsg = job.getErrorSummary().getSummaryMessage();
-                eType = job.getErrorSummary().getErrorType().name();
-                if (job.getErrorSummary().getDocumentURL() != null)
-                    eURL = job.getErrorSummary().getDocumentURL().toExternalForm();
+            String errorMsg = null;
+            String errorType = null;
+            String errorURL = null;
+            if (job.getErrorSummary() != null) {
+                errorMsg = job.getErrorSummary().getSummaryMessage();
+                errorType = job.getErrorSummary().getErrorType().name();
+                if (job.getErrorSummary().getDocumentURL() != null) {
+                    errorURL = job.getErrorSummary().getDocumentURL().toExternalForm();
+                }
             }
-            col += setString(ps, col, jobSchema.jobTable, "error_summaryMessage", eMsg, sb);
-            col += setString(ps, col, jobSchema.jobTable, "error_type", eType, sb);
-            col += setString(ps, col, jobSchema.jobTable, "error_documentURL", eURL, sb);
+            col += setString(ps, col, jobSchema.jobTable, "error_summaryMessage", errorMsg, sb);
+            col += setString(ps, col, jobSchema.jobTable, "error_type", errorType, sb);
+            col += setString(ps, col, jobSchema.jobTable, "error_documentURL", errorURL, sb);
 
             log.debug("owner: " + col);
-            if (job.appData != null)
-            {
-                Object ownerObject  = job.appData;
+            if (job.appData != null) {
+                Object ownerObject = job.appData;
                 //int otype = identManager.getOwnerType();
                 int otype = Types.VARCHAR;
                 Object oval = ownerObject;
@@ -1158,13 +1080,11 @@ public class JobDAO
                     //throw new RuntimeException("BUG: cannot map " + oval.getClass().getName() + " to an SQL TYPE");
                     otype = Types.OTHER; // hope the JDBC driver can handle it
                 }
-                
+
                 ps.setObject(col++, oval, otype);
                 sb.append(oval);
                 sb.append(",");
-            }
-            else // anonymous
-            {
+            } else {
                 ps.setNull(col++, Types.OTHER); // hope the JDBC driver can handle it
                 sb.append("null,");
             }
@@ -1182,25 +1102,22 @@ public class JobDAO
             String jiContent = null;
             String jiContentType = null;
 
-            if (job.getJobInfo() != null)
-            {
+            if (job.getJobInfo() != null) {
                 jiContent = job.getJobInfo().getContent();
                 jiContentType = job.getJobInfo().getContentType();
 
             }
             col += setString(ps, col, jobSchema.jobTable, "jobInfo_content", jiContent, sb);
             col += setString(ps, col, jobSchema.jobTable, "jobInfo_contentType", jiContentType, sb);
-            if (job.getJobInfo() != null && job.getJobInfo().getValid() != null)
-            {
+            if (job.getJobInfo() != null && job.getJobInfo().getValid() != null) {
                 int jiValid = 0;
-                if (job.getJobInfo().getValid())
+                if (job.getJobInfo().getValid()) {
                     jiValid = 1;
+                }
                 ps.setInt(col++, jiValid);
                 sb.append(Integer.toString(jiValid));
                 sb.append(",");
-            }
-            else
-            {
+            } else {
                 ps.setNull(col++, Types.TINYINT);
                 sb.append("null,");
             }
@@ -1212,8 +1129,7 @@ public class JobDAO
             sb.append(dateFormat.format(now));
             sb.append(",");
 
-            if (update)
-            {
+            if (update) {
                 log.debug("update - jobID: " + col);
                 ps.setString(col++, job.getID());
                 sb.append(",");
@@ -1223,8 +1139,7 @@ public class JobDAO
             log.debug(sb);
         }
 
-        private String getInsertSQL()
-        {
+        private String getInsertSQL() {
             StringBuilder sb = new StringBuilder();
             sb.append("INSERT INTO ");
             sb.append(jobSchema.jobTable);
@@ -1235,8 +1150,8 @@ public class JobDAO
             sb.append(")");
             return sb.toString();
         }
-        private String getUpdateSQL()
-        {
+
+        private String getUpdateSQL() {
             StringBuilder sb = new StringBuilder();
             sb.append("UPDATE ");
             sb.append(jobSchema.jobTable);
@@ -1247,14 +1162,12 @@ public class JobDAO
             //sb.append(") = (");
             //appendStatementParams(sb, jobSchema.jobColumns.size());
             //sb.append(")");
-
             // don't include jobID (index 0) or creation time (index size-1)
-
             sb.append(" SET ");
-            for (int i=2; i<jobSchema.jobColumns.size(); i++)
-            {
-                if (i > 2)
+            for (int i = 2; i < jobSchema.jobColumns.size(); i++) {
+                if (i > 2) {
                     sb.append(",");
+                }
                 sb.append(jobSchema.jobColumns.get(i));
                 sb.append(" = ?");
             }
@@ -1263,8 +1176,8 @@ public class JobDAO
         }
     }
 
-    class JobListStatementCreator implements PreparedStatementCreator
-    {
+    class JobListStatementCreator implements PreparedStatementCreator {
+
         private Object owner;
         private String requestPath;
         private List<ExecutionPhase> phases;
@@ -1272,11 +1185,11 @@ public class JobDAO
         private Integer last;
         private String lastJobID;
         private Date lastCreationTime;
-        
+
         private Calendar utc = Calendar.getInstance(DateUtil.UTC);
 
-        public JobListStatementCreator(String lastJobID, Date lastCreationTime, Object owner, String requestPath, List<ExecutionPhase> phases, Date after, Integer last)
-        {
+        public JobListStatementCreator(String lastJobID, Date lastCreationTime, 
+                Object owner, String requestPath, List<ExecutionPhase> phases, Date after, Integer last) {
             this.lastJobID = lastJobID;
             this.lastCreationTime = lastCreationTime;
             this.requestPath = requestPath;
@@ -1286,14 +1199,12 @@ public class JobDAO
             this.last = last;
         }
 
-        public PreparedStatement createPreparedStatement(Connection conn) throws SQLException
-        {
+        public PreparedStatement createPreparedStatement(Connection conn) throws SQLException {
             String sql = getSQL();
             log.debug(sql);
             PreparedStatement ret = conn.prepareStatement(sql);
             int arg = 1;
-            if (owner != null)
-            {
+            if (owner != null) {
                 //int otype = identManager.getOwnerType();
                 int otype = Types.VARCHAR;
                 Object oval = owner;
@@ -1314,16 +1225,12 @@ public class JobDAO
                 ret.setObject(arg++, oval, otype);
             }
 
-            if (phases != null && !phases.isEmpty())
-            {
-                for (ExecutionPhase ep : phases)
-                {
+            if (phases != null && !phases.isEmpty()) {
+                for (ExecutionPhase ep : phases) {
                     log.debug(arg + " : " + ep);
                     ret.setString(arg++, ep.getValue());
                 }
-            }
-            else
-            {
+            } else {
                 log.debug(arg + " : " + ExecutionPhase.ARCHIVED);
                 ret.setString(arg++, ExecutionPhase.ARCHIVED.getValue());
             }
@@ -1408,20 +1315,20 @@ public class JobDAO
         }
     }
 
-    class JobSelectStatementCreator implements PreparedStatementCreator
-    {
+    class JobSelectStatementCreator implements PreparedStatementCreator {
+
         private String jobID;
         private String sql;
 
-        public JobSelectStatementCreator()
-        {
+        public JobSelectStatementCreator() {
             this.sql = getSQL();
         }
 
-        public void setJobID(String jobID) { this.jobID = jobID; }
+        public void setJobID(String jobID) {
+            this.jobID = jobID;
+        }
 
-        public PreparedStatement createPreparedStatement(Connection conn) throws SQLException
-        {
+        public PreparedStatement createPreparedStatement(Connection conn) throws SQLException {
             PreparedStatement ret = conn.prepareStatement(sql);
             ret.setString(1, jobID);
             log.debug(sql);
@@ -1429,10 +1336,10 @@ public class JobDAO
             return ret;
         }
 
-        String getSQL()
-        {
-            if (sql != null)
+        String getSQL() {
+            if (sql != null) {
                 return sql;
+            }
             StringBuilder sb = new StringBuilder();
             sb.append("SELECT ");
             appendColumnNames(sb, jobSchema.jobColumns, 0);
@@ -1444,20 +1351,20 @@ public class JobDAO
     }
 
     // select parameters and results from the param table
-    class JobDetailSelectStatementCreator implements PreparedStatementCreator
-    {
+    class JobDetailSelectStatementCreator implements PreparedStatementCreator {
+
         private String jobID;
         private String sql;
 
-        public JobDetailSelectStatementCreator()
-        {
+        public JobDetailSelectStatementCreator() {
             this.sql = getSQL();
         }
 
-        public void setJobID(String jobID) { this.jobID = jobID; }
+        public void setJobID(String jobID) {
+            this.jobID = jobID;
+        }
 
-        public PreparedStatement createPreparedStatement(Connection conn) throws SQLException
-        {
+        public PreparedStatement createPreparedStatement(Connection conn) throws SQLException {
             PreparedStatement ret = conn.prepareStatement(sql);
             ret.setString(1, jobID);
             log.debug(sql);
@@ -1465,10 +1372,10 @@ public class JobDAO
             return ret;
         }
 
-        String getSQL()
-        {
-            if (sql != null)
+        String getSQL() {
+            if (sql != null) {
                 return sql;
+            }
             StringBuilder sb = new StringBuilder();
             sb.append("SELECT ");
             appendColumnNames(sb, jobSchema.detailColumns, 0);
@@ -1479,66 +1386,60 @@ public class JobDAO
         }
     }
 
-    class DetailInsertStatementCreator implements PreparedStatementCreator
-    {
+    class DetailInsertStatementCreator implements PreparedStatementCreator {
+
         private String jobID;
-        private Parameter p;
-        private Result r;
+        private Parameter param;
+        private Result result;
 
         private String sql;
-        public DetailInsertStatementCreator()
-        {
+
+        public DetailInsertStatementCreator() {
             this.sql = getSQL();
         }
 
-        public void setValues(String jobID, Parameter p)
-        {
+        public void setValues(String jobID, Parameter p) {
             this.jobID = jobID;
-            this.p = p;
-            this.r = null;
+            this.param = p;
+            this.result = null;
         }
-        public void setValues(String jobID, Result r)
-        {
+
+        public void setValues(String jobID, Result r) {
             this.jobID = jobID;
-            this.p = null;
-            this.r = r;
+            this.param = null;
+            this.result = r;
         }
 
         public PreparedStatement createPreparedStatement(Connection conn)
-            throws SQLException
-        {
+                throws SQLException {
             log.debug(sql);
             PreparedStatement ps = conn.prepareStatement(sql);
             StringBuilder sb = new StringBuilder();
             ps.setString(1, jobID);
             sb.append(jobID);
             sb.append(",");
-            if (p != null)
-            {
+            if (param != null) {
                 ps.setString(2, TYPE_PARAMETER);
-                ps.setString(3, p.getName());
+                ps.setString(3, param.getName());
                 sb.append(TYPE_PARAMETER);
                 sb.append(",");
-                sb.append(p.getName());
+                sb.append(param.getName());
                 sb.append(",");
-                setString(ps, 4, jobSchema.detailTable, "value", p.getValue(), sb);
-            }
-            else if (r != null)
-            {
+                setString(ps, 4, jobSchema.detailTable, "value", param.getValue(), sb);
+            } else if (result != null) {
                 ps.setString(2, TYPE_RESULT);
-                ps.setString(3, r.getName());
+                ps.setString(3, result.getName());
                 sb.append(TYPE_RESULT);
                 sb.append(",");
-                sb.append(r.getName());
+                sb.append(result.getName());
                 sb.append(",");
-                setString(ps, 4, jobSchema.detailTable, "value", r.getURI().toASCIIString(), sb);
+                setString(ps, 4, jobSchema.detailTable, "value", result.getURI().toASCIIString(), sb);
             }
             log.debug(sb);
             return ps;
         }
 
-        private String getSQL()
-        {
+        private String getSQL() {
             StringBuilder sb = new StringBuilder();
             sb.append("INSERT INTO ");
             sb.append(jobSchema.detailTable);
@@ -1552,33 +1453,29 @@ public class JobDAO
         }
     }
 
-    class DetailDeleteStatementCreator implements PreparedStatementCreator
-    {
+    class DetailDeleteStatementCreator implements PreparedStatementCreator {
+
         private String jobID;
         private String sql;
 
-        public DetailDeleteStatementCreator()
-        {
+        public DetailDeleteStatementCreator() {
             this.sql = getSQL();
         }
 
-        public void setJobID(String jobID)
-        {
+        public void setJobID(String jobID) {
             this.jobID = jobID;
         }
 
         public PreparedStatement createPreparedStatement(Connection conn)
-            throws SQLException
-        {
+                throws SQLException {
             log.debug(sql);
-            log.debug("values: " +jobID);
+            log.debug("values: " + jobID);
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, jobID);
             return ps;
         }
 
-        private String getSQL()
-        {
+        private String getSQL() {
             StringBuilder sb = new StringBuilder();
             sb.append("DELETE FROM ");
             sb.append(jobSchema.detailTable);
@@ -1587,22 +1484,23 @@ public class JobDAO
         }
     }
 
-    class JobPhaseSelectStatementCreator implements PreparedStatementCreator
-    {
+    class JobPhaseSelectStatementCreator implements PreparedStatementCreator {
+
         private String jobID;
         private String sql;
 
-        public JobPhaseSelectStatementCreator()
-        {
+        public JobPhaseSelectStatementCreator() {
             this.sql = "SELECT executionPhase FROM " + jobSchema.jobTable
                     + " WHERE jobID = ?";
         }
-        public void setJobID(String jobID) { this.jobID = jobID; }
 
-        public PreparedStatement createPreparedStatement(Connection conn) throws SQLException
-        {
+        public void setJobID(String jobID) {
+            this.jobID = jobID;
+        }
+
+        public PreparedStatement createPreparedStatement(Connection conn) throws SQLException {
             log.debug(sql);
-            log.debug("values: " +jobID);
+            log.debug("values: " + jobID);
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, jobID);
             return ps;
@@ -1610,30 +1508,31 @@ public class JobDAO
 
     }
 
-    class JobPhaseUpdateStatementCreator implements PreparedStatementCreator
-    {
+    class JobPhaseUpdateStatementCreator implements PreparedStatementCreator {
+
         private String jobID;
         private ExecutionPhase start;
         private ExecutionPhase end;
         private ErrorSummary error;
         private Date date;
 
-        public JobPhaseUpdateStatementCreator() { }
+        public JobPhaseUpdateStatementCreator() {
+        }
 
         public void setValues(String jobID, ExecutionPhase start, ExecutionPhase end,
-                ErrorSummary error, Date date)
-        {
+                ErrorSummary error, Date date) {
             this.jobID = jobID;
             this.start = start;
             this.end = end;
             this.error = error;
             this.date = date;
         }
-        public PreparedStatement createPreparedStatement(Connection conn) throws SQLException
-        {
+
+        public PreparedStatement createPreparedStatement(Connection conn) throws SQLException {
             StringBuilder sb = new StringBuilder();
             String sql = getUpdateSQL();
-            log.debug(sql);PreparedStatement ps = conn.prepareStatement(sql);
+            log.debug(sql);
+            PreparedStatement ps = conn.prepareStatement(sql);
 
             int col = 1;
 
@@ -1642,21 +1541,20 @@ public class JobDAO
             sb.append(",");
 
             log.debug("error summary: " + col);
-            String eMsg = null;
-            String eType = null;
-            String eURL = null;
-            if (error != null)
-            {
-                eMsg = error.getSummaryMessage();
-                eType = error.getErrorType().name();
-                if (error.getDocumentURL() != null)
-                    eURL = error.getDocumentURL().toExternalForm();
-                col += setString(ps, col, jobSchema.jobTable, "error_summaryMessage", eMsg, sb);
-                col += setString(ps, col, jobSchema.jobTable, "error_type", eType, sb);
-                col += setString(ps, col, jobSchema.jobTable, "error_documentURL", eURL, sb);
+            String errorMsg = null;
+            String errorType = null;
+            String errorURL = null;
+            if (error != null) {
+                errorMsg = error.getSummaryMessage();
+                errorType = error.getErrorType().name();
+                if (error.getDocumentURL() != null) {
+                    errorURL = error.getDocumentURL().toExternalForm();
+                }
+                col += setString(ps, col, jobSchema.jobTable, "error_summaryMessage", errorMsg, sb);
+                col += setString(ps, col, jobSchema.jobTable, "error_type", errorType, sb);
+                col += setString(ps, col, jobSchema.jobTable, "error_documentURL", errorURL, sb);
             }
-            if (date != null)
-            {
+            if (date != null) {
                 Timestamp ts = new Timestamp(date.getTime());
                 ps.setTimestamp(col++, ts, cal);
                 sb.append(dateFormat.format(date));
@@ -1672,8 +1570,7 @@ public class JobDAO
             ps.setString(col++, jobID);
             sb.append(jobID);
             sb.append(",");
-            if (start != null)
-            {
+            if (start != null) {
                 ps.setString(col++, start.name());
                 sb.append(start.name());
             }
@@ -1681,52 +1578,49 @@ public class JobDAO
             log.debug(sb.toString());
             return ps;
         }
-        private String getUpdateSQL()
-        {
+
+        private String getUpdateSQL() {
             StringBuilder sb = new StringBuilder();
             sb.append("UPDATE ");
             sb.append(jobSchema.jobTable);
             sb.append(" SET executionPhase = ?");
-            if (error != null)
-            {
+            if (error != null) {
                 sb.append(", error_summaryMessage = ?");
                 String alt = jobSchema.getAlternateColumn(jobSchema.jobTable, "error_summaryMessage");
-                if (alt != null)
-                {
+                if (alt != null) {
                     sb.append(",");
                     sb.append(alt);
                     sb.append("= ?");
                 }
                 sb.append(", error_type = ?");
                 alt = jobSchema.getAlternateColumn(jobSchema.jobTable, "error_type");
-                if (alt != null)
-                {
+                if (alt != null) {
                     sb.append(",");
                     sb.append(alt);
                     sb.append("= ?");
                 }
                 sb.append(", error_documentURL = ?");
                 alt = jobSchema.getAlternateColumn(jobSchema.jobTable, "error_documentURL");
-                if (alt != null)
-                {
+                if (alt != null) {
                     sb.append(",");
                     sb.append(alt);
                     sb.append("= ?");
                 }
             }
-            if (date != null)
-            {
-                if (ExecutionPhase.EXECUTING.equals(end))
+            if (date != null) {
+                if (ExecutionPhase.EXECUTING.equals(end)) {
                     sb.append(", startTime = ?");
-                else if ( JobPersistenceUtil.isFinalPhase(end))
+                } else if (JobPersistenceUtil.isFinalPhase(end)) {
                     sb.append(", endTime = ?");
-                else
+                } else {
                     date = null; // ignore
+                }
             }
             sb.append(", lastModified = ?");
             sb.append(" WHERE jobID = ?");
-            if (start != null)
+            if (start != null) {
                 sb.append(" AND executionPhase = ?");
+            }
             return sb.toString();
         }
     }
@@ -1745,114 +1639,82 @@ public class JobDAO
      * @throws SQLException
      */
     protected String getString(ResultSet rs, String tableName, String columnName)
-        throws SQLException
-    {
+            throws SQLException {
         String value = rs.getString(columnName);
-        if (value == null)
-        {
+        if (value == null) {
             String extCol = jobSchema.getAlternateColumn(tableName, columnName);
-            if ( extCol != null )
+            if (extCol != null) {
                 value = rs.getString(extCol);
+            }
         }
         return value;
     }
 
     // extract a single job job from the result set
-    private class JobExtractor implements ResultSetExtractor
-    {
+    private class JobExtractor implements ResultSetExtractor {
+
         private JobSchema js;
 
-        public JobExtractor(JobSchema js)
-        {
+        public JobExtractor(JobSchema js) {
             this.js = js;
         }
 
-        public Object extractData(ResultSet rs) throws SQLException, DataAccessException
-        {
-            if (rs.next())
-            {
-                // jobID
-                String jobID = rs.getString("jobID");
-
-                // executionPhase
-                ExecutionPhase executionPhase = ExecutionPhase.valueOf(rs.getString("executionPhase").toUpperCase());
-
-                // executionDuration
-                long executionDuration = rs.getLong("executionDuration");
-
-                // destructionTime
-                Date destructionTime = rs.getTimestamp("destructionTime", Calendar.getInstance(DateUtil.UTC));
-
-                // quote
-                Date quote = rs.getTimestamp("quote", Calendar.getInstance(DateUtil.UTC));
-
-                // startTime
-                Date startTime = rs.getTimestamp("startTime", Calendar.getInstance(DateUtil.UTC));
-
-                // endTime
-                Date endTime = rs.getTimestamp("endTime", Calendar.getInstance(DateUtil.UTC));
-
-                // creationTime
-                Date creationTime = rs.getTimestamp("creationTime", Calendar.getInstance(DateUtil.UTC));
-
-                // errorSummary
+        public Object extractData(ResultSet rs) throws SQLException, DataAccessException {
+            if (rs.next()) {
+                final String jobID = rs.getString("jobID");
+                final ExecutionPhase executionPhase = ExecutionPhase.valueOf(rs.getString("executionPhase").toUpperCase());
+                final long executionDuration = rs.getLong("executionDuration");
+                final Date destructionTime = rs.getTimestamp("destructionTime", Calendar.getInstance(DateUtil.UTC));
+                final Date quote = rs.getTimestamp("quote", Calendar.getInstance(DateUtil.UTC));
+                final Date startTime = rs.getTimestamp("startTime", Calendar.getInstance(DateUtil.UTC));
+                final Date endTime = rs.getTimestamp("endTime", Calendar.getInstance(DateUtil.UTC));
+                final Date creationTime = rs.getTimestamp("creationTime", Calendar.getInstance(DateUtil.UTC));
+                
                 ErrorSummary errorSummary = null;
-                String eMsg = getString(rs, jobSchema.jobTable, "error_summaryMessage");
-                String et = getString(rs, jobSchema.jobTable, "error_type");
-                ErrorType eType = null;
-                if (et != null)
-                    eType = ErrorType.valueOf(et);
-                if (eMsg != null)
-                {
-                    URL errorUrl= null;
-                    try
-                    {
+                String errorMsg = getString(rs, jobSchema.jobTable, "error_summaryMessage");
+                String errorTypeStr = getString(rs, jobSchema.jobTable, "error_type");
+                ErrorType errorType = null;
+                if (errorTypeStr != null) {
+                    errorType = ErrorType.valueOf(errorTypeStr);
+                }
+                if (errorMsg != null) {
+                    URL errorUrl = null;
+                    try {
                         String surl = getString(rs, jobSchema.jobTable, "error_documentURL");
                         errorUrl = new URL(surl);
-                    }
-                    catch (MalformedURLException e)
-                    {
+                    } catch (MalformedURLException e) {
                         errorUrl = null;
                     }
-                    errorSummary = new ErrorSummary(eMsg, eType, errorUrl);
+                    errorSummary = new ErrorSummary(errorMsg, errorType, errorUrl);
                 }
 
-                // owner
-                Object appData = rs.getObject("ownerID");
-
-                // runID
+                final Object appData = rs.getObject("ownerID");
                 String runID = getString(rs, jobSchema.jobTable, "runID");
-
-                // request path
                 String requestPath = getString(rs, jobSchema.jobTable, "requestPath");
-
-                // remoteIP
                 String remoteIP = getString(rs, jobSchema.jobTable, "remoteIP");
-
-                // JobInfo content
                 String content = getString(rs, jobSchema.jobTable, "jobInfo_content");
-
-                // JobInfo ContentType
                 String contentType = getString(rs, jobSchema.jobTable, "jobInfo_contentType");
 
                 // JobInfo valid
                 Boolean valid = null;
                 int i = rs.getInt("jobInfo_valid");
-                if (!rs.wasNull())
+                if (!rs.wasNull()) {
                     valid = i == 0 ? false : true;
+                }
 
                 // JobInfo
                 JobInfo jobInfo;
-                if (content == null && contentType == null)
+                if (content == null && contentType == null) {
                     jobInfo = null;
-                else
+                } else {
                     jobInfo = new JobInfo(content, contentType, valid);
+                }
 
                 Date lastModified = rs.getTimestamp("lastModified", cal);
 
                 Job job = new Job(executionPhase, executionDuration, destructionTime,
-                                  quote, startTime, endTime, creationTime, errorSummary, null, runID,
-                                  requestPath, remoteIP, jobInfo, null, null);
+                        quote, startTime, endTime, creationTime, errorSummary, null, runID,
+                        requestPath, remoteIP, jobInfo, null, null);
                 JobPersistenceUtil.assignID(job, jobID);
                 assignLastModified(job, lastModified);
                 job.appData = appData;
@@ -1861,21 +1723,21 @@ public class JobDAO
             return null;
         }
 
-        private void assignLastModified(Job job, Date lastModified)
-        {
-            try
-            {
+        private void assignLastModified(Job job, Date lastModified) {
+            try {
                 Field f = job.getClass().getDeclaredField("lastModified");
                 f.setAccessible(true);
                 f.set(job, lastModified);
+            } catch (NoSuchFieldException fex) {
+                throw new RuntimeException("BUG", fex);
+            } catch (IllegalAccessException bug) {
+                throw new RuntimeException("BUG", bug);
             }
-            catch(NoSuchFieldException fex) { throw new RuntimeException("BUG", fex); }
-            catch(IllegalAccessException bug) { throw new RuntimeException("BUG", bug); }
         }
     }
 
-    private class JobListIterator implements Iterator<JobRef>
-    {
+    private class JobListIterator implements Iterator<JobRef> {
+
         private JdbcTemplate jdbcTemplate;
         private Iterator<JobRef> jobRefIterator;
         private String lastJobID = null;
@@ -1887,8 +1749,7 @@ public class JobDAO
         private Integer last;
         private long count = 0;
 
-        JobListIterator(JdbcTemplate jdbc, Object owner, String requestPath, List<ExecutionPhase> phases, Date after, Integer last)
-        {
+        JobListIterator(JdbcTemplate jdbc, Object owner, String requestPath, List<ExecutionPhase> phases, Date after, Integer last) {
             this.jdbcTemplate = jdbc;
             this.owner = owner;
             this.requestPath = requestPath;
@@ -1925,17 +1786,17 @@ public class JobDAO
             JobListStatementCreator sc = new JobListStatementCreator(lastJobID, lastCreationTime, owner, requestPath, phases, after, last);
             final Calendar utc = Calendar.getInstance(DateUtil.UTC);
             List<JobRef> jobs = this.jdbcTemplate.query(sc, new RowMapper<JobRef>() {
-                    public JobRef mapRow(ResultSet rs, int rowNum) throws SQLException {
-                        ExecutionPhase executionPhase = ExecutionPhase.valueOf(rs.getString("executionPhase").toUpperCase());
-                        Date startTime = rs.getTimestamp("creationTime", utc);
-                        String runID = rs.getString("runID");
-                        Object ownerID = rs.getObject("ownerID");
-                        Subject osub = identManager.toSubject(ownerID);
-                        String odisp = identManager.toDisplayString(osub);
-                        return new JobRef(rs.getString("jobID"), executionPhase, startTime, runID, odisp);
-                    }
-                });
-            
+                public JobRef mapRow(ResultSet rs, int rowNum) throws SQLException {
+                    ExecutionPhase executionPhase = ExecutionPhase.valueOf(rs.getString("executionPhase").toUpperCase());
+                    Date startTime = rs.getTimestamp("creationTime", utc);
+                    String runID = rs.getString("runID");
+                    Object ownerID = rs.getObject("ownerID");
+                    Subject osub = identManager.toSubject(ownerID);
+                    String odisp = identManager.toDisplayString(osub);
+                    return new JobRef(rs.getString("jobID"), executionPhase, startTime, runID, odisp);
+                }
+            });
+
             if (!jobs.isEmpty()) {
                 if (lastCreationTime != null) {
                     // check for duplicate due to creationTime <= ? constraint
@@ -1948,24 +1809,23 @@ public class JobDAO
                     }
                 }
             }
-            
+
             return jobs.iterator();
         }
-        
+
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
     }
 
-
     // extract a single phase value from the result set
-    private class PhaseExtractor implements ResultSetExtractor
-    {
-        public Object extractData(ResultSet rs) throws SQLException, DataAccessException
-        {
-            if (rs.next())
+    private class PhaseExtractor implements ResultSetExtractor {
+
+        public Object extractData(ResultSet rs) throws SQLException, DataAccessException {
+            if (rs.next()) {
                 return ExecutionPhase.valueOf(getString(rs, jobSchema.jobTable, "executionPhase"));
+            }
             return null;
         }
 
@@ -1973,54 +1833,47 @@ public class JobDAO
 
     // map rows from the JobDetailSelectStatementCreator into Parameter or Result
     // and store them in the specified job
-    private class DetailExtractor implements ResultSetExtractor
-    {
+    private class DetailExtractor implements ResultSetExtractor {
+
         private JobSchema js;
         private Job job;
-        public DetailExtractor(JobSchema js, Job job)
-        {
+
+        public DetailExtractor(JobSchema js, Job job) {
             this.js = js;
             this.job = job;
-            if (job.getParameterList() == null)
+            if (job.getParameterList() == null) {
                 job.setParameterList(new ArrayList<Parameter>());
-            if (job.getResultsList() == null)
+            }
+            if (job.getResultsList() == null) {
                 job.setResultsList(new ArrayList<Result>());
+            }
         }
-        public Object extractData(ResultSet rs) throws SQLException, DataAccessException
-        {
-            while (rs.next())
+
+        public Object extractData(ResultSet rs) throws SQLException, DataAccessException {
+            while (rs.next()) {
                 mapAndStoreRow(rs);
+            }
             return job;
         }
 
-        public void mapAndStoreRow(ResultSet rs) throws SQLException
-        {
+        public void mapAndStoreRow(ResultSet rs) throws SQLException {
             String type = rs.getString("type");
             String name = rs.getString("name");
             String value = getString(rs, jobSchema.detailTable, "value");
 
-            if (TYPE_PARAMETER.equals(type))
-            {
+            if (TYPE_PARAMETER.equals(type)) {
                 job.getParameterList().add(new Parameter(name, value));
-            }
-            else if (TYPE_RESULT.equals(type))
-            {
-                try
-                {
+            } else if (TYPE_RESULT.equals(type)) {
+                try {
                     URI uri = new URI(value);
                     job.getResultsList().add(new Result(name, uri));
-                }
-                catch(URISyntaxException ex)
-                {
+                } catch (URISyntaxException ex) {
                     throw new IllegalStateException("failed to convert " + value + " to a URI");
                 }
-            }
-            else
+            } else {
                 throw new IllegalStateException("unexpected type in param table: " + type);
+            }
         }
     }
 
 }
-
-
-
