@@ -150,10 +150,10 @@ public class JobListWriter {
             }
         };
 
-        Element root = new IterableContent<Element, JobRef>(JobAttribute.JOBS.getAttributeName(), UWS.NS, jobs, contentConverter);
+        Element root = new IterableContent<Element, JobRef>(JobAttribute.JOBS.getValue(), UWS.NS, jobs, contentConverter);
         root.addNamespaceDeclaration(UWS.NS);
         root.addNamespaceDeclaration(UWS.XLINK_NS);
-        root.setAttribute(JobAttribute.VERSION.getAttributeName(), UWS.UWS_VERSION);
+        root.setAttribute(JobAttribute.VERSION.getValue(), UWS.UWS_VERSION);
         return root;
     }
 
@@ -164,7 +164,7 @@ public class JobListWriter {
      * @return
      */
     public Element getShortJobDescription(JobRef jobRef) {
-        Element shortJobDescription = new Element(JobAttribute.JOB_REF.getAttributeName(), UWS.NS);
+        Element shortJobDescription = new Element(JobAttribute.JOB_REF.getValue(), UWS.NS);
         shortJobDescription.setAttribute("id", jobRef.getJobID());
         shortJobDescription.addContent(getPhase(jobRef));
         Element runID = getRunID(jobRef);
@@ -185,7 +185,7 @@ public class JobListWriter {
      * @return The Job phase Element.
      */
     private Element getPhase(JobRef jobRef) {
-        Element element = new Element(JobAttribute.EXECUTION_PHASE.getAttributeName(), UWS.NS);
+        Element element = new Element(JobAttribute.EXECUTION_PHASE.getValue(), UWS.NS);
         element.addContent(jobRef.getExecutionPhase().toString());
         return element;
     }
@@ -198,7 +198,7 @@ public class JobListWriter {
     private Element getRunID(JobRef jobRef) {
         String runID = jobRef.getRunID();
         if (runID != null) {
-            Element element = new Element(JobAttribute.RUN_ID.getAttributeName(), UWS.NS);
+            Element element = new Element(JobAttribute.RUN_ID.getValue(), UWS.NS);
             element.addContent(runID);
             return element;
         }
@@ -213,7 +213,7 @@ public class JobListWriter {
     private Element getCreationTime(JobRef jobRef) {
         Date creationTime = jobRef.getCreationTime();
         if (creationTime != null) {
-            Element element = new Element(JobAttribute.CREATION_TIME.getAttributeName(), UWS.NS);
+            Element element = new Element(JobAttribute.CREATION_TIME.getValue(), UWS.NS);
             element.addContent(dateFormat.format(jobRef.getCreationTime()));
             return element;
         }
@@ -226,7 +226,7 @@ public class JobListWriter {
      * @return The owner ID Element.
      */
     private Element getOwnerID(JobRef jobRef) {
-        Element element = new Element(JobAttribute.OWNER_ID.getAttributeName(), UWS.NS);
+        Element element = new Element(JobAttribute.OWNER_ID.getValue(), UWS.NS);
         element.addContent(jobRef.getOwnerID());
         return element;
     }

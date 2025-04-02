@@ -224,9 +224,9 @@ public class JobCreator {
     }
 
     private void processUWSParameter(Job job, String name, String value) {
-        if (name.equalsIgnoreCase(JobAttribute.RUN_ID.getAttributeName())) {
+        if (name.equalsIgnoreCase(JobAttribute.RUN_ID.getValue())) {
             job.setRunID(value);
-        } else if (name.equalsIgnoreCase(JobAttribute.DESTRUCTION_TIME.getAttributeName())) {
+        } else if (name.equalsIgnoreCase(JobAttribute.DESTRUCTION_TIME.getValue())) {
             if (StringUtil.hasText(value)) {
                 try {
                     job.setDestructionTime(dateFormat.parse(value));
@@ -237,11 +237,11 @@ public class JobCreator {
             } else {
                 job.setDestructionTime(null);
             }
-        } else if (name.equalsIgnoreCase(JobAttribute.EXECUTION_DURATION.getAttributeName())) {
+        } else if (name.equalsIgnoreCase(JobAttribute.EXECUTION_DURATION.getValue())) {
             if (StringUtil.hasText(value)) {
                 job.setExecutionDuration(Long.parseLong(value));
             }
-        } else if (name.equalsIgnoreCase(JobAttribute.QUOTE.getAttributeName())) {
+        } else if (name.equalsIgnoreCase(JobAttribute.QUOTE.getValue())) {
             if (StringUtil.hasText(value)) {
                 try {
                     job.setQuote(dateFormat.parse(value));

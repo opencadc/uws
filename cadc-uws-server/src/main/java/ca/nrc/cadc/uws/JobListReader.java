@@ -203,22 +203,22 @@ public class JobListReader {
             Element next = childIterator.next();
             final String jobID = next.getAttributeValue("id");
 
-            Element phaseElement = next.getChild(JobAttribute.EXECUTION_PHASE.getAttributeName(), UWS.NS);
+            Element phaseElement = next.getChild(JobAttribute.EXECUTION_PHASE.getValue(), UWS.NS);
             String phase = phaseElement.getValue();
             final ExecutionPhase executionPhase = ExecutionPhase.valueOf(phase);
 
-            Element creationTimeElement = next.getChild(JobAttribute.CREATION_TIME.getAttributeName(), UWS.NS);
+            Element creationTimeElement = next.getChild(JobAttribute.CREATION_TIME.getValue(), UWS.NS);
             if (creationTimeElement != null) {
                 String time = creationTimeElement.getValue();
                 creationTime = dateFormat.parse(time);
             }
 
-            Element runIDElement = next.getChild(JobAttribute.RUN_ID.getAttributeName(), UWS.NS);
+            Element runIDElement = next.getChild(JobAttribute.RUN_ID.getValue(), UWS.NS);
             if (runIDElement != null) {
                 runID = runIDElement.getTextTrim();
             }
 
-            Element ownerIDElement = next.getChild(JobAttribute.OWNER_ID.getAttributeName(), UWS.NS);
+            Element ownerIDElement = next.getChild(JobAttribute.OWNER_ID.getValue(), UWS.NS);
             ownerID = ownerIDElement.getTextTrim();
 
             jobRef = new JobRef(jobID, executionPhase, creationTime, runID, ownerID);
