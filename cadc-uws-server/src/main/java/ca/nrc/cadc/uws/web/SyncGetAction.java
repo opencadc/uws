@@ -94,17 +94,17 @@ public class SyncGetAction extends JobAction {
         
         Job job = null;
         boolean exec = false;
-        
+        String jobID = getJobID();
         try {
         
-            if (getJobID() == null) {
+            if (jobID == null) {
                 // create
                 JobCreator jc = new JobCreator();
                 Job in = jc.create(syncInput);
                 job = jobManager.create(syncInput.getRequestPath(), in);
                 exec = true;
             } else {
-                job = jobManager.get(syncInput.getRequestPath(), getJobID());
+                job = jobManager.get(syncInput.getRequestPath(), jobID);
             }
 
             String token = getJobField();
@@ -115,7 +115,7 @@ public class SyncGetAction extends JobAction {
                 writeJob(job);
             }
         } catch (JobNotFoundException ex) {
-            throw new ResourceNotFoundException("not found: " + job.getID());
+            throw new ResourceNotFoundException("not found: " + jobID);
         } catch (JobPhaseException ex) {
             throw new IllegalArgumentException(ex.getMessage());
         } catch (JobPersistenceException ex) {
