@@ -15,22 +15,20 @@ sourceCompatibility = 11
 
 group = 'org.opencadc'
 
-version = '1.2.5'
+version = '1.2.6'
 
 description = 'OpenCADC UWS test library'
 def git_url = 'https://github.com/opencadc/uws'
 
 
 dependencies {
-    implementation 'httpunit:httpunit:1.7'
-    implementation 'junit:junit:[4.13,5.0)'
-    implementation 'xmlunit:xmlunit:[1.0,)'
-    implementation 'org.opencadc:cadc-registry:[1.5.0,)'
-    implementation 'org.opencadc:cadc-util:[1.6,)'
-    implementation 'org.opencadc:cadc-uws:[1.0.5,)'
+    api 'httpunit:httpunit:1.7'
+    api 'junit:junit:[4.13,5.0)'
+    api 'xmlunit:xmlunit:[1.0,)'
+    api'org.opencadc:cadc-registry:[1.5.0,)'
+    api 'org.opencadc:cadc-util:[1.6,)'
+    api 'org.opencadc:cadc-uws:[1.0.5,)'
     
-    runtimeOnly 'nekohtml:nekohtml:1.9.6'
-    runtimeOnly 'rhino:js:[1.6,)'
-
-    
+    api 'nekohtml:nekohtml:1.9.6'
+    api 'rhino:js:[1.6,)'
 }
