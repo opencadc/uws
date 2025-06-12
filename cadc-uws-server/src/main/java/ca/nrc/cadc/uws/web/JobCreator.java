@@ -118,12 +118,11 @@ public class JobCreator {
                 processJobParameter(job, pname, input.getParameters(pname));
             }
         }
-        log.warn("raw job params: " + job.getParameterList().size());
+        log.debug("raw job params: " + job.getParameterList().size());
         for (Parameter p : job.getParameterList()) {
-            log.warn("   raw: " + p.getName() + " = " + p.getValue());
+            log.debug("   raw: " + p.getName() + " = " + p.getValue());
         }
         for (String cname : input.getContentNames()) {
-            log.warn("content name: " + cname);
             if (UWSInlineContentHandler.CONTENT_JOBINFO.equals(cname)) {
                 JobInfo ji = (JobInfo) input.getContent(cname);
                 job.setJobInfo(ji);
@@ -145,7 +144,7 @@ public class JobCreator {
                         String ostr = p.getValue();
                         String nstr = ostr.replace(pr.origStr, pr.newStr);
                         if (!ostr.equals(nstr)) {
-                            log.warn("replace param: " + p.getName() + ": " + ostr + " -> " + nstr);
+                            log.debug("replace param: " + p.getName() + ": " + ostr + " -> " + nstr);
                             p.setValue(nstr);
                             replaced = true;
                         }
@@ -155,7 +154,7 @@ public class JobCreator {
                     }
                 }
             } else {
-                log.warn("inline content: " + cname + " -> new param");
+                log.debug("inline content: " + cname + " -> new param");
                 // assume content -> param key=value
                 Object val = input.getContent(cname);
                 if (val != null) {
