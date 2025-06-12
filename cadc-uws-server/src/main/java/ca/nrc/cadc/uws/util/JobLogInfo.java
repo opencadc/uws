@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.uws.util;
 
+import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.log.WebServiceLogInfo;
 import ca.nrc.cadc.uws.Job;
 
@@ -93,7 +94,11 @@ public class JobLogInfo extends WebServiceLogInfo {
         this.method = METHOD_JOB;
         this.ip = job.getRemoteIP();
         this.path = job.getRequestPath();
-        this.user = getUser(job.ownerSubject);
+        if (job.owner != null) {
+            job.ownerDisplay = AuthenticationUtil.getIdentityManager().toDisplayString(job.owner);
+            this.user = getUser(job.owner);
+        }
+        
         this.serviceName = this.parseServiceName(job.getRequestPath());
         this.runID = job.getRunID();
         setJobID(job.getID());
