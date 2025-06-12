@@ -200,7 +200,7 @@ public class JobReader {
             jobID = null;
         }
         String runID = parseStringContent(root.getChild(JobAttribute.RUN_ID.getValue(), UWS.NS));
-        String ownerID = parseStringContent(root.getChild(JobAttribute.OWNER_ID.getValue(), UWS.NS));
+        String owner = parseStringContent(root.getChild(JobAttribute.OWNER_ID.getValue(), UWS.NS));
         Date quote = parseDate(parseStringContent(root.getChild(JobAttribute.QUOTE.getValue(), UWS.NS)));
         Date startTime = parseDate(parseStringContent(root.getChild(JobAttribute.START_TIME.getValue(), UWS.NS)));
         Date endTime = parseDate(parseStringContent(root.getChild(JobAttribute.END_TIME.getValue(), UWS.NS)));
@@ -222,9 +222,9 @@ public class JobReader {
         JobInfo jobInfo = parseJobInfo(doc);
 
         Job job = new Job(jobID, executionPhase, executionDuration, destructionTime, quote,
-                startTime, endTime, creationTime, errorSummary, ownerID, runID,
+                startTime, endTime, creationTime, errorSummary, runID,
                 null, null, jobInfo, parameterList, resultsList);
-
+        job.ownerDisplay = owner;
         return job;
     }
 

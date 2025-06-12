@@ -88,7 +88,6 @@ public class Job {
     private Date endTime;
     private Date creationTime;
     private ErrorSummary errorSummary;
-    private String ownerID;
     private String runID;
     private List<Result> resultsList;
     private List<Parameter> parameterList;
@@ -99,10 +98,12 @@ public class Job {
     private Date lastModified;
 
     // used on the server side only for authorization checks
-    public transient Subject ownerSubject;
+    public transient Subject owner;
+    public transient String ownerDisplay;
+    public Object ownerID;
 
     // usable for hooking app-specific value here temporarily
-    public transient Object appData;
+    //public transient Object appData;
 
     // so that protocols are not switched in the result
     public transient String protocol;
@@ -125,7 +126,6 @@ public class Job {
             Date endTime,
             Date creationTime,
             ErrorSummary errorSummary,
-            String ownerID,
             String runID,
             String requestPath,
             String remoteIP,
@@ -133,7 +133,7 @@ public class Job {
             List<Parameter> params,
             List<Result> results) {
         this(executionPhase, executionDuration, destructionTime, quote,
-                startTime, endTime, creationTime, errorSummary, ownerID, runID,
+                startTime, endTime, creationTime, errorSummary, runID,
                 requestPath, remoteIP, jobInfo, params, results);
         this.jobID = jobID;
     }
@@ -147,8 +147,8 @@ public class Job {
      * @param quote
      * @param startTime
      * @param endTime
+     * @param creationTime
      * @param errorSummary
-     * @param ownerID
      * @param runID
      * @param requestPath
      * @param remoteIP
@@ -164,7 +164,6 @@ public class Job {
             Date endTime,
             Date creationTime,
             ErrorSummary errorSummary,
-            String ownerID,
             String runID,
             String requestPath,
             String remoteIP,
@@ -179,7 +178,6 @@ public class Job {
         this.endTime = endTime;
         this.creationTime = creationTime;
         this.errorSummary = errorSummary;
-        this.ownerID = ownerID;
         this.runID = runID;
         this.requestPath = requestPath;
         this.remoteIP = remoteIP;
@@ -205,7 +203,9 @@ public class Job {
         this.creationTime = job.getCreationTime();
 
         this.errorSummary = job.getErrorSummary();
-        this.ownerID = job.getOwnerID();
+        this.ownerID = job.ownerID;
+        this.owner = job.owner;
+        this.ownerDisplay = job.ownerDisplay;
         this.runID = job.getRunID();
         this.requestPath = job.getRequestPath();
         this.remoteIP = job.getRemoteIP();
@@ -233,11 +233,7 @@ public class Job {
 
     @Override
     public String toString() {
-        return "Job [jobInfo=" + jobInfo + " destructionTime=" + destructionTime + ", endTime=" + endTime + ", creationTime="
-                + creationTime + ", errorSummary=" + errorSummary + ", executionDuration=" + executionDuration + ", executionPhase="
-                + executionPhase + ", jobID=" + jobID + ", ownerID=" + ownerID + ", parameterList=" + parameterList + ", quote="
-                + quote + ", requestPath=" + requestPath + ", remoteIP=" + remoteIP + ", resultsList=" + resultsList + ", runID="
-                + runID + ", startTime=" + startTime + "]";
+        return "Job [" + jobID + "," + executionPhase + "]";
     }
 
     public Date getLastModified() {
@@ -257,18 +253,22 @@ public class Job {
      * Get the string representation of the ownerID.
      *
      * @return
+     * @deprecated this now returns the owner display string because type
      */
+    @Deprecated
     public String getOwnerID() {
-        return ownerID;
+        return ownerDisplay;
     }
 
     /**
      * Set the string representation of the ownerID.
      *
      * @param ownerID
+     * @deprecated this now sets the owner display string because type
      */
+    @Deprecated
     public void setOwnerID(String ownerID) {
-        this.ownerID = ownerID;
+        this.ownerDisplay = ownerID;
     }
 
     /**
