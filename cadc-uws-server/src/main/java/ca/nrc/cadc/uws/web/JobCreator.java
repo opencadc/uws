@@ -67,7 +67,6 @@
 
 package ca.nrc.cadc.uws.web;
 
-import ca.nrc.cadc.net.NetUtil;
 import ca.nrc.cadc.rest.SyncInput;
 import ca.nrc.cadc.util.StringUtil;
 import ca.nrc.cadc.uws.ExecutionPhase;
@@ -78,18 +77,14 @@ import ca.nrc.cadc.uws.Parameter;
 import ca.nrc.cadc.uws.UWS;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Enumeration;
-import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
 import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.fileupload.util.Streams;
 import org.apache.log4j.Logger;
 
@@ -123,28 +118,44 @@ public class JobCreator {
                 processJobParameter(job, pname, input.getParameters(pname));
             }
         }
-
+        log.warn("raw job params: " + job.getParameterList().size());
+        for (Parameter p : job.getParameterList()) {
+            log.warn("   raw: " + p.getName() + " = " + p.getValue());
+        }
         for (String cname : input.getContentNames()) {
+            log.warn("content name: " + cname);
             if (UWSInlineContentHandler.CONTENT_JOBINFO.equals(cname)) {
                 JobInfo ji = (JobInfo) input.getContent(cname);
                 job.setJobInfo(ji);
             } else if (UWSInlineContentHandler.CONTENT_PARAM_REPLACE.equals(cname)) {
-                UWSInlineContentHandler.ParameterReplacement pr = (UWSInlineContentHandler.ParameterReplacement) input.getContent(cname);
-                boolean replaced = false;
-                for (Parameter p : job.getParameterList()) {
-                    String ostr = p.getValue();
-                    String nstr = ostr.replace(pr.origStr, pr.newStr);
-                    if (!ostr.equals(nstr)) {
-                        log.debug("replace param: " + p.getName() + ": " + ostr + " -> " + nstr);
-                        p.setValue(nstr);
-                        replaced = true;
+                Object o = input.getContent(cname);
+                List<UWSInlineContentHandler.ParameterReplacement> prs = new ArrayList();
+                if (o instanceof List) {
+                    List olist = (List) o;
+                    for (Object ov : olist) {
+                        prs.add((UWSInlineContentHandler.ParameterReplacement) ov);
+                    }
+                } else {
+                    UWSInlineContentHandler.ParameterReplacement pr = (UWSInlineContentHandler.ParameterReplacement) o;
+                    prs.add(pr);
+                }
+                for (UWSInlineContentHandler.ParameterReplacement pr : prs) {
+                    boolean replaced = false;
+                    for (Parameter p : job.getParameterList()) {
+                        String ostr = p.getValue();
+                        String nstr = ostr.replace(pr.origStr, pr.newStr);
+                        if (!ostr.equals(nstr)) {
+                            log.warn("replace param: " + p.getName() + ": " + ostr + " -> " + nstr);
+                            p.setValue(nstr);
+                            replaced = true;
+                        }
+                    }
+                    if (!replaced) {
+                        log.debug("no parameter modified by " + pr);
                     }
                 }
-                if (!replaced) {
-                    log.debug("no parameter modified by " + pr);
-                }
             } else {
-                log.debug("inline content: " + cname + " -> new param");
+                log.warn("inline content: " + cname + " -> new param");
                 // assume content -> param key=value
                 Object val = input.getContent(cname);
                 if (val != null) {
@@ -155,61 +166,6 @@ public class JobCreator {
 
         job.setRequestPath(input.getRequestPath());
         job.setRemoteIP(input.getClientIP());
-        return job;
-    }
-
-    // old restlet based create method
-    @Deprecated
-    public Job create(HttpServletRequest request, InlineContentHandler inlineContentHandler)
-            throws FileUploadException, IOException {
-        Job job = new Job();
-        job.setExecutionPhase(ExecutionPhase.PENDING);
-        job.setParameterList(new ArrayList<Parameter>());
-
-        if (request.getMethod().equals("GET")) {
-            Enumeration<String> names = request.getParameterNames();
-            while (names.hasMoreElements()) {
-                String name = names.nextElement();
-                processParameter(job, name, request.getParameterValues(name));
-            }
-        } else {
-            String contentType = request.getContentType();
-            if (contentType != null) {
-                int i = contentType.indexOf(';');
-                if (i > 0) {
-                    contentType = contentType.substring(0, i);
-                }
-            }
-            log.debug("Content-Type: " + contentType);
-            if (contentType != null && contentType.equalsIgnoreCase(URLENCODED)) {
-                Enumeration<String> names = request.getParameterNames();
-                while (names.hasMoreElements()) {
-                    String name = names.nextElement();
-                    processParameter(job, name, request.getParameterValues(name));
-                }
-            } else if (inlineContentHandler != null) {
-                if (contentType != null && contentType.startsWith(MULTIPART)) {
-                    ServletFileUpload upload = new ServletFileUpload();
-                    FileItemIterator itemIterator = upload.getItemIterator(request);
-                    processMultiPart(job, itemIterator, inlineContentHandler);
-                } else {
-                    processStream(null, contentType, request.getInputStream(), inlineContentHandler);
-                }
-
-                inlineContentHandler.setParameterList(job.getParameterList());
-                job.setParameterList(inlineContentHandler.getParameterList());
-                job.setJobInfo(inlineContentHandler.getJobInfo());
-            }
-        }
-
-        try {
-            URL u = new URL(request.getRequestURL().toString());
-            job.setRequestPath(u.getPath());
-        } catch (MalformedURLException oops) {
-            log.error("failed to get request path", oops);
-        }
-
-        job.setRemoteIP(NetUtil.getClientIP(request));
         return job;
     }
 
