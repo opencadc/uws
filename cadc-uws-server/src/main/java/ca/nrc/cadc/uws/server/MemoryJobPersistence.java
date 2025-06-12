@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.uws.server;
 
+import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.IdentityManager;
 import ca.nrc.cadc.auth.X500IdentityManager;
 import ca.nrc.cadc.uws.ErrorSummary;
@@ -213,7 +214,7 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater {
         expectNotNull("jobID", jobID);
         Job job = getJobFromMap(jobID);
         Job ret = JobPersistenceUtil.deepCopy(job);
-        ret.ownerSubject = job.ownerSubject;
+        ret.owner = job.owner;
         return ret;
     }
 
@@ -290,20 +291,16 @@ public class MemoryJobPersistence implements JobPersistence, JobUpdater {
     public Job put(Job job) {
         expectNotNull("job", job);
 
-        AccessControlContext acContext = AccessController.getContext();
-        Subject caller = Subject.getSubject(acContext);
+        Subject caller = AuthenticationUtil.getCurrentSubject();
         String ownerID = null;
         if (caller != null) {
-            ownerID = identityManager.toDisplayString(caller);
+            job.owner = caller;
+            job.ownerID = identityManager.toOwner(caller);
         }
-        job.setOwnerID(ownerID);
         if (job.getID() == null) {
             JobPersistenceUtil.assignID(job, generateJobID());
         }
         Job keep = JobPersistenceUtil.deepCopy(job);
-        if (ownerID != null) {
-            keep.ownerSubject = caller;
-        }
         synchronized (jobs) {
             jobs.put(keep.getID(), keep);
         }

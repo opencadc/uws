@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.uws.server;
 
+import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.IdentityManager;
 import ca.nrc.cadc.auth.X500IdentityManager;
 import ca.nrc.cadc.net.TransientException;
@@ -182,10 +183,18 @@ public abstract class DatabaseJobPersistence implements JobPersistence, JobUpdat
 
     public Job put(Job job)
             throws JobPersistenceException, TransientException {
-        AccessControlContext acContext = AccessController.getContext();
-        Subject caller = Subject.getSubject(acContext);
+        Subject caller = AuthenticationUtil.getCurrentSubject();
+        if (job.ownerID == null) {
+            if (job.owner != null) {
+                job.ownerID = identityManager.toOwner(job.owner);
+            } else if (caller != null) {
+                // this is backwards compat: the REST layer should have assigned job.owner
+                job.owner = caller;
+                job.ownerID = identityManager.toOwner(job.owner);
+            }
+        }
         JobDAO dao = getDAO();
-        return dao.put(job, caller);
+        return dao.put(job);
     }
 
     public void addParameters(String jobID, List<Parameter> params)

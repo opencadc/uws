@@ -192,7 +192,7 @@ public abstract class AbstractJobDAOTest
             job = createJob();
 
             JobDAO dao = getDAO();
-            after = dao.put(job, null);
+            after = dao.put(job);
             compareJobs("returned", job, after);
             Assert.assertNotNull("jobID", after.getID());
             persisted = dao.get(job.getID());
@@ -200,7 +200,7 @@ public abstract class AbstractJobDAOTest
 
             job.setExecutionPhase(ExecutionPhase.UNKNOWN);
             job.setStartTime(new Date());
-            after = dao.put(job, null);
+            after = dao.put(job);
             compareJobs("returned", job, after);
             persisted = dao.get(job.getID());
             compareJobs("updated", job, persisted);
@@ -225,7 +225,7 @@ public abstract class AbstractJobDAOTest
             job.setErrorSummary(es);
 
             JobDAO dao = getDAO();
-            after = dao.put(job, null);
+            after = dao.put(job);
             compareJobs("returned", job, after);
             persisted = dao.get(job.getID());
             compareJobs("persisted", job, persisted);
@@ -236,7 +236,7 @@ public abstract class AbstractJobDAOTest
             es = new ErrorSummary("summary message", ErrorType.TRANSIENT);
             job.setErrorSummary(es);
 
-            after = dao.put(job, null);
+            after = dao.put(job);
             compareJobs("returned", job, after);
             persisted = dao.get(job.getID());
             compareJobs("persisted", job, persisted);
@@ -248,7 +248,7 @@ public abstract class AbstractJobDAOTest
                     new URL("http://www.ivoa.net/oops"));
             job.setErrorSummary(es);
 
-            after = dao.put(job, null);
+            after = dao.put(job);
             compareJobs("returned", job, after);
             persisted = dao.get(job.getID());
             compareJobs("persisted", job, persisted);
@@ -273,15 +273,16 @@ public abstract class AbstractJobDAOTest
             Subject owner = new Subject(true, pset, new HashSet(), new HashSet());
 
             job = createJob();
+            job.ownerID = identManager.toOwner(owner);
             JobDAO dao = getDAO();
-            after = dao.put(job, owner);
-
-            job.setOwnerID(principal.getName()); // using X500IdentityManager in test
+            after = dao.put(job);
 
             compareJobs("returned", job, after);
             persisted = dao.get(job.getID());
-            compareJobs("persisted", job, persisted);
-            Assert.assertNotNull(persisted.ownerSubject);
+            compareJobs("persisted", after, persisted);
+            Assert.assertNotNull(persisted.ownerID);
+            Assert.assertEquals(job.ownerID, persisted.ownerID);
+            Assert.assertNotNull(persisted.owner);
         }
         catch(Exception unexpected)
         {
@@ -301,7 +302,7 @@ public abstract class AbstractJobDAOTest
             job = createJob();
             job.setParameterList(new ArrayList<Parameter>());
             JobDAO dao = getDAO();
-            after = dao.put(job, null);
+            after = dao.put(job);
             compareJobs("returned", job, after);
             persisted = dao.get(job.getID());
             dao.getDetails(persisted);
@@ -313,7 +314,7 @@ public abstract class AbstractJobDAOTest
             job.getParameterList().add(new Parameter("FOO", "bar"));
             job.getParameterList().add(new Parameter("BAR", "baz"));
 
-            after = dao.put(job, null);
+            after = dao.put(job);
             compareJobs("returned", job, after);
             persisted = dao.get(job.getID());
             dao.getDetails(persisted);
@@ -326,7 +327,7 @@ public abstract class AbstractJobDAOTest
             job.getParameterList().add(new Parameter("BAR", "baz"));
             job.getParameterList().add(new Parameter("FOO", "bar"));
             job.getParameterList().add(new Parameter("BAR", "baz"));
-            after = dao.put(job, null);
+            after = dao.put(job);
             compareJobs("returned", job, after);
             persisted = dao.get(job.getID());
             dao.getDetails(persisted);
@@ -350,7 +351,7 @@ public abstract class AbstractJobDAOTest
             job = createJob();
             job.setParameterList(new ArrayList<Parameter>());
             JobDAO dao = getDAO();
-            after = dao.put(job, null);
+            after = dao.put(job);
             compareJobs("returned", job, after);
             persisted = dao.get(job.getID());
             dao.getDetails(persisted);
@@ -399,7 +400,7 @@ public abstract class AbstractJobDAOTest
             job = createJob();
             job.setJobInfo(new JobInfo("<foo/>", "text/xml", Boolean.TRUE));
             JobDAO dao = getDAO();
-            after = dao.put(job, null);
+            after = dao.put(job);
             compareJobs("returned", job, after);
             persisted = dao.get(job.getID());
             //dao.getDetails(persisted);
@@ -408,7 +409,7 @@ public abstract class AbstractJobDAOTest
             // valid, no type
             job = createJob();
             job.setJobInfo(new JobInfo("<foo/>", null, Boolean.TRUE));
-            after = dao.put(job, null);
+            after = dao.put(job);
             compareJobs("returned", job, after);
             persisted = dao.get(job.getID());
             //dao.getDetails(persisted);
@@ -417,7 +418,7 @@ public abstract class AbstractJobDAOTest
             // invalid
             job = createJob();
             job.setJobInfo(new JobInfo("<foo>", "text/xml", Boolean.FALSE));
-            after = dao.put(job, null);
+            after = dao.put(job);
             compareJobs("returned", job, after);
             persisted = dao.get(job.getID());
             //dao.getDetails(persisted);
@@ -443,7 +444,7 @@ public abstract class AbstractJobDAOTest
             job = createJob();
             job.setParameterList(new ArrayList<Parameter>());
             JobDAO dao = getDAO();
-            after = dao.put(job, null);
+            after = dao.put(job);
             compareJobs("returned", job, after);
             persisted = dao.get(job.getID());
             dao.getDetails(persisted);
@@ -455,7 +456,7 @@ public abstract class AbstractJobDAOTest
             job.getResultsList().add(new Result("r1", new URI("http://www.example.com/path/to/result.txt")));
             job.getResultsList().add(new Result("r2", new URI("http://www.example.com/path/to/other/result.txt")));
 
-            after = dao.put(job, null);
+            after = dao.put(job);
             compareJobs("returned", job, after);
             persisted = dao.get(job.getID());
             dao.getDetails(persisted);
@@ -480,7 +481,7 @@ public abstract class AbstractJobDAOTest
             job = createJob();
             job.setParameterList(new ArrayList<Parameter>());
             JobDAO dao = getDAO();
-            after = dao.put(job, null);
+            after = dao.put(job);
             compareJobs("returned", job, after);
             persisted = dao.get(job.getID());
             dao.getDetails(persisted);
@@ -495,7 +496,7 @@ public abstract class AbstractJobDAOTest
             job.getResultsList().add(new Result("r1", new URI("http://www.example.com/path/to/result.txt")));
             job.getResultsList().add(new Result("r2", new URI("http://www.example.com/path/to/other/result.txt")));
 
-            after = dao.put(job, null);
+            after = dao.put(job);
             compareJobs("returned", job, after);
             persisted = dao.get(job.getID());
             dao.getDetails(persisted);
@@ -528,13 +529,17 @@ public abstract class AbstractJobDAOTest
                         job1 = createJob();
                         job2 = createJob();
                         job3 = createJob();
+                        Object ownerID = identManager.toOwner(subject);
+                        job1.ownerID = ownerID;
+                        job2.ownerID = ownerID;
+                        job3.ownerID = ownerID;
 
                         JobDAO dao = getDAO();
-                        ret = dao.put(job1, subject);
+                        ret = dao.put(job1);
                         id1 = ret.getID();
-                        ret = dao.put(job2, subject);
+                        ret = dao.put(job2);
                         id2 = ret.getID();
-                        ret = dao.put(job3, subject);
+                        ret = dao.put(job3);
                         id3 = ret.getID();
 
                         Iterator<JobRef> it = dao.iterator(REQUEST_PATH, null, null, null);
@@ -584,13 +589,17 @@ public abstract class AbstractJobDAOTest
                         job1 = createJob(ExecutionPhase.EXECUTING);
                         job2 = createJob(ExecutionPhase.EXECUTING);
                         job3 = createJob(ExecutionPhase.ABORTED);
-
+                        Object ownerID = identManager.toOwner(subject);
+                        job1.ownerID = ownerID;
+                        job2.ownerID = ownerID;
+                        job3.ownerID = ownerID;
+                        
                         JobDAO dao = getDAO();
-                        ret = dao.put(job1, subject);
+                        ret = dao.put(job1);
                         id1 = ret.getID();
-                        ret = dao.put(job2, subject);
+                        ret = dao.put(job2);
                         id2 = ret.getID();
-                        ret = dao.put(job3, subject);
+                        ret = dao.put(job3);
                         id3 = ret.getID();
 
                         List<ExecutionPhase> phases = new ArrayList<ExecutionPhase>(1);
@@ -642,14 +651,18 @@ public abstract class AbstractJobDAOTest
                         job1 = createJob(ExecutionPhase.EXECUTING);
                         job2 = createJob(ExecutionPhase.EXECUTING);
                         job3 = createJob(ExecutionPhase.EXECUTING);
+                        Object ownerID = identManager.toOwner(subject);
+                        job1.ownerID = ownerID;
+                        job2.ownerID = ownerID;
+                        job3.ownerID = ownerID;
 
                         JobDAO dao = getDAO();
-                        ret = dao.put(job1, subject);
+                        ret = dao.put(job1);
                         id1 = ret.getID();
-                        ret = dao.put(job2, subject);
+                        ret = dao.put(job2);
                         id2 = ret.getID();
                         Thread.sleep(2000);
-                        ret = dao.put(job3, subject);
+                        ret = dao.put(job3);
                         id3 = ret.getID();
 
                         Date now = new Date();
@@ -697,22 +710,25 @@ public abstract class AbstractJobDAOTest
                 {
                     public Object run() throws Exception
                     {
-
                         Job ret, job1, job2, job3;
                         String id1, id2, id3;
 
                         job1 = createJob(ExecutionPhase.EXECUTING);
                         job2 = createJob(ExecutionPhase.EXECUTING);
                         job3 = createJob(ExecutionPhase.EXECUTING);
+                        Object ownerID = identManager.toOwner(subject);
+                        job1.ownerID = ownerID;
+                        job2.ownerID = ownerID;
+                        job3.ownerID = ownerID;
 
                         JobDAO dao = getDAO();
-                        ret = dao.put(job1, subject);
+                        ret = dao.put(job1);
                         id1 = ret.getID();
                         Thread.sleep(1000);
-                        ret = dao.put(job2, subject);
+                        ret = dao.put(job2);
                         id2 = ret.getID();
                         Thread.sleep(1000);
-                        ret = dao.put(job3, subject);
+                        ret = dao.put(job3);
                         id3 = ret.getID();
 
                         Iterator<JobRef> it = dao.iterator(REQUEST_PATH, null, null, 2);
@@ -803,7 +819,7 @@ public abstract class AbstractJobDAOTest
             JobDAO dao = getDAO();
 
             job = createJob();
-            after = dao.put(job, null);
+            after = dao.put(job);
             compareJobs("returned", job, after);
             persisted = dao.get(job.getID());
             compareJobs("persisted", job, persisted);
@@ -883,7 +899,7 @@ public abstract class AbstractJobDAOTest
             // not being in the right starting phase
             job = createJob();
             JobDAO dao = getDAO();
-            after = dao.put(job, null);
+            after = dao.put(job);
             compareJobs("returned", job, after);
             persisted = dao.get(job.getID());
             dao.getDetails(persisted);
@@ -928,7 +944,7 @@ public abstract class AbstractJobDAOTest
         {
             job = createJob();
             JobDAO dao = getDAO();
-            after = dao.put(job, null);
+            after = dao.put(job);
             compareJobs("returned", job, after);
             persisted = dao.get(job.getID());
             dao.getDetails(persisted);
@@ -985,7 +1001,7 @@ public abstract class AbstractJobDAOTest
         {
             job = createJob();
             JobDAO dao = getDAO();
-            after = dao.put(job, null);
+            after = dao.put(job);
             compareJobs("returned", job, after);
             persisted = dao.get(job.getID());
             dao.getDetails(persisted);
@@ -1016,6 +1032,55 @@ public abstract class AbstractJobDAOTest
     }
 
     @Test
+    public void testUpdateJobInfo()
+    {
+        log.debug("testUpdateJobInfo");
+        try {
+            Job job = createJob();
+            JobDAO dao = getDAO();
+            dao.put(job); // jobID side effect
+
+            dao.set(job.getID(), ExecutionPhase.EXECUTING);
+            Job persisted = dao.get(job.getID());
+            
+            // add JobInfo
+            JobInfo ji = new JobInfo("<foo>hello</foo>", "text/xml", true);
+            persisted.setJobInfo(ji);
+            dao.put(persisted);
+            Job updated = dao.get(job.getID());
+            Assert.assertNotNull(updated);
+            Assert.assertEquals(persisted.getExecutionPhase(), updated.getExecutionPhase());
+            Assert.assertNotNull(updated.getJobInfo());
+            Assert.assertEquals(persisted.getJobInfo().getContent(), updated.getJobInfo().getContent());
+            Assert.assertEquals(persisted.ownerID, updated.ownerID);
+            
+            // now with an owner
+            Principal principal = new X500Principal("CN=CADC Regtest1 10577,OU=CADC,O=HIA");
+            Set<Principal> pset = new HashSet<Principal>();
+            pset.add(principal);
+            Subject owner = new Subject(true, pset, new HashSet(), new HashSet());
+            
+            job = createJob();
+            job.owner = owner;
+            dao.put(job);
+            persisted = dao.get(job.getID());
+            persisted.setJobInfo(ji);
+            dao.put(persisted);
+            updated = dao.get(job.getID());
+            Assert.assertNotNull(updated);
+            Assert.assertEquals(persisted.getExecutionPhase(), updated.getExecutionPhase());
+            Assert.assertNotNull(updated.getJobInfo());
+            Assert.assertEquals(persisted.getJobInfo().getContent(), updated.getJobInfo().getContent());
+            Assert.assertEquals(persisted.ownerID, updated.ownerID);
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+
+    @Test
     public void testDelete()
     {
         Job job, after, persisted;
@@ -1025,7 +1090,7 @@ public abstract class AbstractJobDAOTest
             job = createJob();
 
             JobDAO dao = getDAO();
-            after = dao.put(job, null);
+            after = dao.put(job);
             String jobID = after.getID();
 
             compareJobs("returned", job, after);
@@ -1086,13 +1151,14 @@ public abstract class AbstractJobDAOTest
             Assert.assertEquals("error url", exp.getErrorSummary().getDocumentURL(), act.getErrorSummary().getDocumentURL());
         }
 
-        if (exp.getOwnerID() == null)
-            Assert.assertNull(act.getOwnerID());
+        if (exp.ownerID == null)
+            Assert.assertNull(act.ownerID);
         else
         {
-            Assert.assertNotNull(act.getOwnerID());
-            X500Principal ep = new X500Principal(exp.getOwnerID());
-            X500Principal ap = new X500Principal(act.getOwnerID());
+            Assert.assertNotNull(act.ownerID);
+            // ownerID is a string
+            X500Principal ep = new X500Principal((String) exp.ownerID);
+            X500Principal ap = new X500Principal((String) act.ownerID);
             Assert.assertTrue("principals", AuthenticationUtil.equals(ep, ap));
         }
 
