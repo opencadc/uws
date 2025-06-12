@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2025.                            (c) 2025.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -117,14 +117,7 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 /**
- * JobDAO class that stores the jobs in a RDBMS. This is an abstract class;
- * users of this class must implement the abstract methods to return the names of tables
- * where the job is to be stored. The subclass must also call setDataSource before any
- * persistence methods are called.
- * <p>
- * Users must create at least 3 tables (possibly multiple parameter tables) with the
- * following columns. TODO: List the required columns for each table.
- * </p>
+ * JobDAO class that stores the jobs in a RDBMS.
  *
  * @author pdowler, jburke
  */
@@ -662,8 +655,7 @@ public class JobDAO {
      * Persist the specified job.
      *
      * @param job
-     * @param owner
-     * @return
+     * @return the job (possibly modified)
      * @throws JobPersistenceException
      * @throws TransientException
      */
