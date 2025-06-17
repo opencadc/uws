@@ -279,8 +279,8 @@ public class JobWriter {
      */
     public Element getOwnerId(Job job) {
         Element element = new Element(JobAttribute.OWNER_ID.getValue(), UWS.NS);
-        if (job.getOwnerID() != null) {
-            element.addContent(job.getOwnerID());
+        if (job.ownerDisplay != null) {
+            element.addContent(job.ownerDisplay);
         } else {
             element.setAttribute("nil", "true", UWS.XSI_NS);
         }

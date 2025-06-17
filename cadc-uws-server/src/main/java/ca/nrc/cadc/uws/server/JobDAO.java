@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2025.                            (c) 2025.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -117,14 +117,7 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 /**
- * JobDAO class that stores the jobs in a RDBMS. This is an abstract class;
- * users of this class must implement the abstract methods to return the names of tables
- * where the job is to be stored. The subclass must also call setDataSource before any
- * persistence methods are called.
- * <p>
- * Users must create at least 3 tables (possibly multiple parameter tables) with the
- * following columns. TODO: List the required columns for each table.
- * </p>
+ * JobDAO class that stores the jobs in a RDBMS.
  *
  * @author pdowler, jburke
  */
@@ -382,11 +375,10 @@ public class JobDAO {
             prof.checkpoint("JobSelectStatementCreator");
             if (ret != null) {
                 // call IdentityManager outside the resource lock to avoid deadlock
-                if (ret.appData != null) {
-                    Subject s = identManager.toSubject(ret.appData);
-                    ret.setOwnerID(identManager.toDisplayString(s));
-                    ret.ownerSubject = s; // for later authorization checks
-                    ret.appData = null;
+                if (ret.ownerID != null) {
+                    ret.owner = identManager.toSubject(ret.ownerID);
+                    ret.ownerID = identManager.toOwner(ret.owner); // type change
+                    ret.ownerDisplay = identManager.toDisplayString(ret.owner);
                     prof.checkpoint("IdentityManager.toSubject");
                 }
                 return ret;
@@ -643,18 +635,18 @@ public class JobDAO {
      */
     public Iterator<JobRef> iterator(Subject subject, String requestPath, List<ExecutionPhase> phases, Date after, Integer last)
             throws TransientException, JobPersistenceException {
-        Object owner = identManager.toOwner(subject);
-        log.debug("iterator(" + owner + ")");
+        Object ownerID = identManager.toOwner(subject);
+        log.debug("iterator(" + ownerID + ")");
 
         try {
-            JobListIterator jobListIterator = new JobListIterator(jdbc, owner, requestPath, phases, after, last);
+            JobListIterator jobListIterator = new JobListIterator(jdbc, ownerID, requestPath, phases, after, last);
             prof.checkpoint("JobListStatementCreator");
             return jobListIterator;
         } catch (Throwable t) {
             if (DBUtil.isTransientDBException(t)) {
-                throw new TransientException("failed to get job list for owner: " + owner, t);
+                throw new TransientException("failed to get job list for owner: " + ownerID, t);
             } else {
-                throw new JobPersistenceException("failed to get job list for owner: " + owner, t);
+                throw new JobPersistenceException("failed to get job list for owner: " + ownerID, t);
             }
         }
     }
@@ -663,12 +655,11 @@ public class JobDAO {
      * Persist the specified job.
      *
      * @param job
-     * @param owner
-     * @return
+     * @return the job (possibly modified)
      * @throws JobPersistenceException
      * @throws TransientException
      */
-    public Job put(Job job, Subject owner)
+    public Job put(Job job)
             throws JobPersistenceException, TransientException {
         try {
             boolean update = (job.getID() != null);
@@ -677,12 +668,6 @@ public class JobDAO {
                 job.setCreationTime(new Date());
             }
             log.debug("put: " + job.getID());
-
-            // call IdentityManager outside the resource lock to avoid deadlock
-            if (owner != null) {
-                job.appData = identManager.toOwner(owner);
-                prof.checkpoint("IdentityManager.toOwner");
-            }
 
             startTransaction();
             prof.checkpoint("start.JobPutStatementCreator");
@@ -751,9 +736,14 @@ public class JobDAO {
             prof.checkpoint("commit.JobPutStatementCreator");
 
             // OK to modify the job now
-            job.ownerSubject = owner;
-            job.setOwnerID(identManager.toDisplayString(owner));
-            prof.checkpoint("IdentityManager.toOwnerString");
+            Job ret = job; // side effect
+            if (ret.ownerID != null) {
+                ret.owner = identManager.toSubject(ret.ownerID);
+                ret.ownerID = identManager.toOwner(ret.owner); // type change
+                ret.ownerDisplay = identManager.toDisplayString(ret.owner);
+                prof.checkpoint("IdentityManager.toSubject");
+            }
+            
             return job;
         } catch (Throwable t) {
             log.error("rollback for job: " + job.getID(), t);
@@ -1062,20 +1052,19 @@ public class JobDAO {
             col += setString(ps, col, jobSchema.jobTable, "error_documentURL", errorURL, sb);
 
             log.debug("owner: " + col);
-            if (job.appData != null) {
-                Object ownerObject = job.appData;
-                //int otype = identManager.getOwnerType();
+            if (job.ownerID != null) {
+                Object ownerObject = job.ownerID;
                 int otype = Types.VARCHAR;
                 Object oval = ownerObject;
-                if (jobSchema.storeOwnerASCII) {
+                if (jobSchema.storeOwnerASCII) { // standard usage now
                     otype = Types.VARCHAR;
                     oval = ownerObject.toString();
                 } else if (oval instanceof String) {
                     otype = Types.VARCHAR;
                 } else if (oval instanceof Integer) {
-                    otype = Types.INTEGER;
+                    otype = Types.INTEGER; // deprecated
                 } else if (oval instanceof Long) {
-                    otype = Types.BIGINT;
+                    otype = Types.BIGINT; // deprecated
                 } else {
                     //throw new RuntimeException("BUG: cannot map " + oval.getClass().getName() + " to an SQL TYPE");
                     otype = Types.OTHER; // hope the JDBC driver can handle it
@@ -1178,7 +1167,7 @@ public class JobDAO {
 
     class JobListStatementCreator implements PreparedStatementCreator {
 
-        private Object owner;
+        private Object ownerID;
         private String requestPath;
         private List<ExecutionPhase> phases;
         private Date after;
@@ -1189,11 +1178,11 @@ public class JobDAO {
         private Calendar utc = Calendar.getInstance(DateUtil.UTC);
 
         public JobListStatementCreator(String lastJobID, Date lastCreationTime, 
-                Object owner, String requestPath, List<ExecutionPhase> phases, Date after, Integer last) {
+                Object ownerID, String requestPath, List<ExecutionPhase> phases, Date after, Integer last) {
             this.lastJobID = lastJobID;
             this.lastCreationTime = lastCreationTime;
             this.requestPath = requestPath;
-            this.owner = owner;
+            this.ownerID = ownerID;
             this.phases = phases;
             this.after = after;
             this.last = last;
@@ -1204,13 +1193,12 @@ public class JobDAO {
             log.debug(sql);
             PreparedStatement ret = conn.prepareStatement(sql);
             int arg = 1;
-            if (owner != null) {
-                //int otype = identManager.getOwnerType();
+            if (ownerID != null) {
                 int otype = Types.VARCHAR;
-                Object oval = owner;
+                Object oval = ownerID;
                 if (jobSchema.storeOwnerASCII) {
                     otype = Types.VARCHAR;
-                    oval = owner.toString();
+                    oval = ownerID.toString();
                 } else if (oval instanceof String) {
                     otype = Types.VARCHAR;
                 } else if (oval instanceof Integer) {
@@ -1266,7 +1254,7 @@ public class JobDAO {
             sb.append(" jobID, executionPhase, creationTime, runID, ownerID FROM ");
             sb.append(jobSchema.jobTable);
             sb.append(" WHERE deletedByUser = 0");
-            if (owner != null) {
+            if (ownerID != null) {
                 sb.append(" AND ownerID = ?");
             }
 
@@ -1688,7 +1676,7 @@ public class JobDAO {
                     errorSummary = new ErrorSummary(errorMsg, errorType, errorUrl);
                 }
 
-                final Object appData = rs.getObject("ownerID");
+                final Object ownerID = rs.getObject("ownerID");
                 String runID = getString(rs, jobSchema.jobTable, "runID");
                 String requestPath = getString(rs, jobSchema.jobTable, "requestPath");
                 String remoteIP = getString(rs, jobSchema.jobTable, "remoteIP");
@@ -1713,11 +1701,11 @@ public class JobDAO {
                 Date lastModified = rs.getTimestamp("lastModified", cal);
 
                 Job job = new Job(executionPhase, executionDuration, destructionTime,
-                        quote, startTime, endTime, creationTime, errorSummary, null, runID,
+                        quote, startTime, endTime, creationTime, errorSummary, runID,
                         requestPath, remoteIP, jobInfo, null, null);
                 JobPersistenceUtil.assignID(job, jobID);
                 assignLastModified(job, lastModified);
-                job.appData = appData;
+                job.ownerID = ownerID; // string at this point (see get method above)
                 return job;
             }
             return null;
@@ -1742,16 +1730,16 @@ public class JobDAO {
         private Iterator<JobRef> jobRefIterator;
         private String lastJobID = null;
         private Date lastCreationTime = null;
-        private Object owner;
+        private Object ownerID;
         private String requestPath;
         private List<ExecutionPhase> phases;
         private Date after;
         private Integer last;
         private long count = 0;
 
-        JobListIterator(JdbcTemplate jdbc, Object owner, String requestPath, List<ExecutionPhase> phases, Date after, Integer last) {
+        JobListIterator(JdbcTemplate jdbc, Object ownerID, String requestPath, List<ExecutionPhase> phases, Date after, Integer last) {
             this.jdbcTemplate = jdbc;
-            this.owner = owner;
+            this.ownerID = ownerID;
             this.requestPath = requestPath;
             this.phases = phases;
             this.after = after;
@@ -1783,7 +1771,7 @@ public class JobDAO {
 
         @SuppressWarnings("unchecked")
         private Iterator<JobRef> getNextBatchIterator() {
-            JobListStatementCreator sc = new JobListStatementCreator(lastJobID, lastCreationTime, owner, requestPath, phases, after, last);
+            JobListStatementCreator sc = new JobListStatementCreator(lastJobID, lastCreationTime, ownerID, requestPath, phases, after, last);
             final Calendar utc = Calendar.getInstance(DateUtil.UTC);
             List<JobRef> jobs = this.jdbcTemplate.query(sc, new RowMapper<JobRef>() {
                 public JobRef mapRow(ResultSet rs, int rowNum) throws SQLException {

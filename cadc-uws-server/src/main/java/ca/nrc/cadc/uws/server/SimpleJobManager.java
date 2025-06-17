@@ -341,14 +341,13 @@ public class SimpleJobManager implements JobManager {
      */
     protected void doAuthorizationCheck(Job job)
             throws AccessControlException {
-        log.debug("doAuthorizationCheck: " + job.getID() + "," + job.getOwnerID());
-        if (job.ownerSubject == null) {
+        log.debug("doAuthorizationCheck: " + job.getID() + "," + job.ownerID);
+        if (job.owner == null) {
             return;
         }
-        AccessControlContext acContext = AccessController.getContext();
-        Subject caller = Subject.getSubject(acContext);
+        Subject caller = AuthenticationUtil.getCurrentSubject();
         if (caller != null) {
-            Set<Principal> ownerPrincipals = job.ownerSubject.getPrincipals();
+            Set<Principal> ownerPrincipals = job.owner.getPrincipals();
             Set<Principal> callerPrincipals = caller.getPrincipals();
             for (Principal ownerP : ownerPrincipals) {
                 for (Principal callerP : callerPrincipals) {
