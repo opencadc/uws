@@ -342,7 +342,7 @@ public class SimpleJobManager implements JobManager {
     protected void doAuthorizationCheck(Job job)
             throws AccessControlException {
         log.debug("doAuthorizationCheck: " + job.getID() + "," + job.ownerID);
-        if (job.owner == null) {
+        if (job.owner == null || job.owner.getPrincipals().isEmpty()) {
             return;
         }
         Subject caller = AuthenticationUtil.getCurrentSubject();
