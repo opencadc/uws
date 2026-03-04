@@ -87,6 +87,7 @@ public class InitDatabaseUWS extends InitDatabase {
     public static final String MODEL_NAME = "UWS";
     public static final String MODEL_VERSION = "1.3.0";
     public static final String PREV_MODEL_VERSION = "1.2.18";
+    private static final boolean MAJOR_MINOR_UPGRADE = true;
 
     public static final String[] CREATE_SQL = new String[] {
         "uws.ModelVersion.sql",
@@ -100,26 +101,45 @@ public class InitDatabaseUWS extends InitDatabase {
         "uws.upgrade-1.3.0.sql"
     };
 
-    public static final String[] MAINT_SQL = new String[] {
+    public static final String[] ROLLOVER_SQL = new String[] {
         "uws.rollover.sql",
         "uws.Job.sql",
         "uws.JobDetail.sql",
         "uws.permissions.sql"
     };
-
+    
     public InitDatabaseUWS(DataSource dataSource, String database, String schema) {
+        this(dataSource, database, schema, false);
+    }
+
+    public InitDatabaseUWS(DataSource dataSource, String database, String schema, boolean forceRolloverBeforeMinorUpgrade) {
         super(dataSource, database, schema, MODEL_NAME, MODEL_VERSION, PREV_MODEL_VERSION);
         for (String s : CREATE_SQL) {
             createSQL.add(s);
         }
-        for (String s : UPGRADE_SQL) {
-            upgradeSQL.add(s);
+        if (forceRolloverBeforeMinorUpgrade) {
+            // TODO: this has to be examined carefully for each upgrade
+            // for 1.2.18 to 1.3.0 the change is in Job table structure so rollover replaces the upgrade
+            upgradeSQL.add("uws.rollover-1218.sql");
+            for (int i = 1; i < ROLLOVER_SQL.length; i++) {
+                upgradeSQL.add(ROLLOVER_SQL[i]);
+            }
+        } else {
+            for (String s : UPGRADE_SQL) {
+                upgradeSQL.add(s);
+            }
         }
-        for (String s : MAINT_SQL) {
+        for (String s : ROLLOVER_SQL) {
             maintenanceSQL.add(s);
         }
     }
 
+    @Override
+    public boolean doInit() {
+        return super.doInit();
+    }
+
+    
     @Override
     public boolean doMaintenance(Date lastModified, String tag) {
         if (tag == null) {
