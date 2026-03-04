@@ -1,11 +1,14 @@
 configurations {
     checkstyleDep
     intTestImplementation.extendsFrom testImplementation
+
+    runtimeOnly.exclude module: 'slf4j-reload4j'
+    runtimeOnly.exclude module: 'reload4j'
 }
 
 dependencies {
     testImplementation 'com.puppycrawl.tools:checkstyle:8.2'
-    checkstyleDep 'org.opencadc:cadc-quality:[1.0,)'
+    checkstyleDep 'org.opencadc:cadc-quality:[1.0,1.1)'
 }
 
 checkstyle {
@@ -28,17 +31,16 @@ sourceSets {
 
 // Temporary work around for issue https://github.com/gradle/gradle/issues/881 - 
 // gradle not displaying fail build status when warnings reported -->
-
-//tasks.withType(Checkstyle).each { checkstyleTask ->
-//    checkstyleTask.doLast {
-//        reports.all { report ->
-//            def outputFile = report.destination
-//            if (outputFile.exists() && outputFile.text.contains("<error ")) {
-//                throw new GradleException("There were checkstyle warnings! For more info check $outputFile")
-//            }
-//        }
-//    }
-//}
+tasks.withType(Checkstyle).each { checkstyleTask ->
+    checkstyleTask.doLast {
+        reports.all { report ->
+            def outputFile = report.outputLocation.get().asFile
+            if (outputFile.exists() && outputFile.text.contains("<error ")) {
+                throw new GradleException("There were checkstyle warnings! For more info check $outputFile")
+            }
+        }
+    }
+}
 
 tasks.withType(Test) {
     // reset the report destinations so that intTests go to their own page
