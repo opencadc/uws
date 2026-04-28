@@ -79,7 +79,6 @@ import java.text.DateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.Element;
